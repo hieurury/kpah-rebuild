@@ -1,0 +1,15 @@
+The USER performed the following action:
+Show the contents of file /home/hieurury/Programs/mod_game/kpah/kpah_mod_chill/server/KPAH/src/map/Monster.java from lines 275 to 295
+File Path: `file:///home/hieurury/Programs/mod_game/kpah/kpah_mod_chill/server/KPAH/src/map/Monster.java`
+Total Lines: 352
+Total Bytes: 14193
+Showing lines 275 to 295
+The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
+275:                     
+276:                     // Target adjacent coordinates
+277:                     final short targetX = (short) (playerTarget.getLocation().getX() + Util.nextInt(-10, 10));
+278:                     final short targetY = (short) (playerTarget.getLocation().getY() + Util.nextInt(-10, 10));
+279:                     
+280:                     Thread.startVirtualThread(() -> {
+281:                         try {
+<truncated 785 bytes>

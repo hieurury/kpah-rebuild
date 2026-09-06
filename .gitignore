@@ -1,0 +1,22 @@
+# Safe Task Executor — Backup & Temp Files
+_backup/
+_tmp/
+*.bak.*
+
+# Build artifacts
+build/
+dist/
+**/build/
+**/dist/
+
+# NetBeans & IDE
+nbproject/private/
+**/nbproject/private/
+.idea/
+**/.idea/
+
+# Logs & Temp
+log/
+*.log
+decompile_tmp/
+.DS_Store

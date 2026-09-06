@@ -1,0 +1,126 @@
+Initialize engine version: 5.1.2f1 (afd2369b692a)
+GfxDevice: creating device client; threaded=1
+Direct3D:
+    Version:  Direct3D 11.0 [level 11.0]
+    Renderer: NVIDIA GeForce GT 740 (ID=0xfc8)
+    Vendor:   NVIDIA
+    VRAM:     2018 MB
+Begin MonoManager ReloadAssembly
+Platform assembly: D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.dll (this message is harmless)
+Loading D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.dll into Unity Child Domain
+Platform assembly: D:\download\KPAH_225\KPAH_225_Data\Managed\Assembly-CSharp.dll (this message is harmless)
+Loading D:\download\KPAH_225\KPAH_225_Data\Managed\Assembly-CSharp.dll into Unity Child Domain
+Platform assembly: D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.UI.dll (this message is harmless)
+Loading D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
+Platform assembly: D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
+Loading D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
+Platform assembly: D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.Analytics.dll (this message is harmless)
+Loading D:\download\KPAH_225\KPAH_225_Data\Managed\UnityEngine.Analytics.dll into Unity Child Domain
+- Completed reload, in  0.069 seconds
+<RI> Initializing input.
+<RI> Input initialized.
+desktop: 1366x768 60Hz; virtual: 1366x768 at 0,0
+<RI> Initialized touch support.
+Platform assembly: D:\download\KPAH_225\KPAH_225_Data\Managed\System.Core.dll (this message is harmless)
+Platform assembly: D:\download\KPAH_225\KPAH_225_Data\Managed\System.dll (this message is harmless)
+Init Scale GUI: Screen.w=800 Screen.h=600
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+Ban: -- khi phach anh hung
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+init Session_ME
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+False agent >>>>>0
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+False provider >>>>>0
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+False client  >>>>>0
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+
+Unloading 668 unused Assets to reduce memory usage. Loaded Objects now: 1443.
+Total: 1.081400 ms (FindLiveObjects: 0.062800 ms CreateObjectMapping: 0.117100 ms MarkObjects: 0.496700 ms  DeleteObjects: 0.403900 ms)
+
+Connect: 27.0.12.112     19130 name Server  Cổ Loa (mới)
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+connecting...!
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+host: 27.0.12.112
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+port: 19130
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+ trung---------------------------ê---------
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+
+Unloading 293 unused Assets to reduce memory usage. Loaded Objects now: 1191.
+Total: 1.300600 ms (FindLiveObjects: 0.067200 ms CreateObjectMapping: 0.063400 ms MarkObjects: 0.980400 ms  DeleteObjects: 0.188700 ms)
+
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+
+Unloading 6 unused Assets to reduce memory usage. Loaded Objects now: 1291.
+Total: 1.000800 ms (FindLiveObjects: 0.047600 ms CreateObjectMapping: 0.050900 ms MarkObjects: 0.888700 ms  DeleteObjects: 0.013200 ms)
+
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+ trung---------------------------ê---------
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+
+Unloading 54 unused Assets to reduce memory usage. Loaded Objects now: 1234.
+Total: 1.285100 ms (FindLiveObjects: 0.054300 ms CreateObjectMapping: 0.049600 ms MarkObjects: 1.114200 ms  DeleteObjects: 0.066600 ms)
+
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+
+Unloading 7 unused Assets to reduce memory usage. Loaded Objects now: 1272.
+Total: 1.016800 ms (FindLiveObjects: 0.051100 ms CreateObjectMapping: 0.048200 ms MarkObjects: 0.901600 ms  DeleteObjects: 0.015400 ms)
+
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+ trung---------------------------ê---------
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+
+Unloading 36 unused Assets to reduce memory usage. Loaded Objects now: 1254.
+Total: 1.101500 ms (FindLiveObjects: 0.063600 ms CreateObjectMapping: 0.046900 ms MarkObjects: 0.970300 ms  DeleteObjects: 0.020100 ms)
+
+Unloading 0 Unused Serialized files (Serialized files now loaded: 0)
+
+Unloading 7 unused Assets to reduce memory usage. Loaded Objects now: 1320.
+Total: 0.973900 ms (FindLiveObjects: 0.046100 ms CreateObjectMapping: 0.047300 ms MarkObjects: 0.867500 ms  DeleteObjects: 0.012400 ms)
+
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+ trung---------------------------ê---------
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/UnityEngineDebugBindings.gen.cpp Line: 65)
+
+
+Unloading 43 unused Assets to reduce memory usage. Loaded Objects now: 1287.
+Total: 1.077100 ms (FindLiveObjects: 0.052500 ms CreateObjectMapping: 0.057800 ms MarkObjects: 0.921900 ms  DeleteObjects: 0.044100 ms)
+
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+
+Unloading 7 unused Assets to reduce memory usage. Loaded Objects now: 1325.
+Total: 1.096000 ms (FindLiveObjects: 0.068000 ms CreateObjectMapping: 0.064900 ms MarkObjects: 0.948100 ms  DeleteObjects: 0.014400 ms)
+

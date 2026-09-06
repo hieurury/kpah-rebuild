@@ -1,0 +1,137 @@
+<project name="J2ME_Build" default="run">
+    <!--    replace with your jre path-->
+    <condition property="jdk.home"
+               value="/Users/${user.name}/Library/Java/JavaVirtualMachines/corretto-1.8.0_472/Contents/Home/jre">
+        <os family="mac"/>
+    </condition>
+    <condition property="jdk.home" value="/usr/lib/jvm/java-8-openjdk-amd64/jre">
+        <or>
+            <os family="windows"/>
+            <and>
+                <os family="unix"/>
+                <not>
+                    <os family="mac"/>
+                </not>
+            </and>
+        </or>
+    </condition>
+
+    <property name="wtk.home" value="wtk"/>
+    <property name="microemu.jar" value="tools/emulator.jar"/>
+    <property name="libs.dir" value="libs"/>
+    <!--    app name, you can rename it-->
+    <property name="app.name" value="KPAH_MOD"/>
+
+    <property environment="env"/>
+    <!--    lib classpath-->
+    <path id="external.libs">
+        <fileset dir="${jdk.home}/lib">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${wtk.home}/lib">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${libs.dir}">
+            <include name="*.jar"/>
+        </fileset>
+    </path>
+
+    <property name="cp.string" refid="external.libs"/>
+
+    <target name="clean">
+        <delete dir="build"/>
+    </target>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="app/src" destdir="build/classes" includeantruntime="false">
+            <bootclasspath>
+                <path refid="external.libs"/>
+            </bootclasspath>
+            <classpath refid="external.libs"/>
+        </javac>
+    </target>
+
+    <target name="dist" depends="compile">
+        <mkdir dir="build/bin"/>
+        <jar destfile="build/bin/preverifed.jar" manifest="app/res/META-INF/MANIFEST.MF" duplicate="preserve">
+            <zipgroupfileset dir="${libs.dir}" includes="*.jar" erroronmissingdir="false"/>
+            <fileset dir="build/classes"/>
+            <fileset dir="res" excludes="META-INF/MANIFEST.MF" erroronmissingdir="false"/>
+        </jar>
+
+        <!--preverify with -->
+        <java jar="tools/proguard.jar" fork="true">
+            <arg line="-injars"/>
+            <arg line="build/bin/preverifed.jar"/>
+            <arg line="-outjars"/>
+            <arg line="build/dist/${app.name}.jar"/>
+            <arg line="-libraryjars"/>
+            <arg line="${cp.string}"/>
+            <arg line="-ignorewarnings"/>
+            <arg line="-dontusemixedcaseclassnames"/>
+            <arg line="-dontshrink"/>
+            <arg line="-dontoptimize"/>
+            <arg line="-dontobfuscate"/>
+            <arg line="-microedition"/>
+        </java>
+
+        <delete dir="build/bin"/>
+        <delete dir="out"/>
+
+    </target>
+
+    <!--    obfuscate jar with proguard-->
+    <target name="obfuscate">
+        <taskdef resource="proguard/ant/task.properties"
+                 classpath="tools/proguard-ant.jar"/>
+
+        <proguard>
+
+            -verbose
+
+            <!-- Specify the input jars, output jars, and library jars. -->
+
+            -injars build/dist/${app.name}.jar
+            -outjars build/dist/${app.name}_obf.jar
+
+            -libraryjars ${cp.string}
+
+            -allowaccessmodification
+            -overloadaggressively
+            -repackageclasses ''
+            -verbose
+            -dontnote
+            -dontwarn
+            -ignorewarnings
+
+            -keep public class * extends javax.microedition.midlet.MIDlet {
+            public &lt;init&gt;();
+            public void startApp();
+            public void pauseApp();
+            public void destroyApp(boolean);
+            }
+
+            -keepclasseswithmembers,includedescriptorclasses,allowshrinking class * {
+            native &lt;methods&gt;;
+            }
+
+            -keep class javak.** {
+            &lt;fields&gt;;
+            &lt;methods&gt;;
+            }
+        </proguard>
+
+        <echo message="Obfuscation process started..."/>
+
+    </target>
+
+    <!--    Run midlet with microemulator-->
+    <target name="run" depends="dist">
+        <java jar="${microemu.jar}" fork="true">
+            <jvmarg value="-noverify"/>
+            <arg value="build/dist/${app.name}.jar"/>
+        </java>
+    </target>
+    <!--    Cre Tran Duc Huy-->
+</project>
