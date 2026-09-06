@@ -253,5 +253,38 @@
 - Đã biên dịch server thành công với Java 21 và khởi động lại tiến trình server (port 19129).
 - Đã dọn dẹp sạch sẽ các file test tạm trong `_tmp/`.
 
+## [2026-09-06 17:31] — Tăng độ bền (trâu) quái vật, giảm EXP và mở rộng cân bằng toàn diện Lv 1 - 35
+
+**Yêu cầu:** 
+1. Giảm EXP thưởng từ quái để tránh tình trạng người chơi lên cấp quá nhanh, giữ chuẩn nhịp độ cày cuốc.
+2. Tăng khả năng chống chịu, máu và phòng ngự của quái vật để người chơi không thể "chọt 2, 3 chiêu là quái clear hết", đặc biệt trước sức mạnh của trang bị cấp cao rất OP.
+3. Đồng bộ và cân bằng toàn bộ cho cả nhóm quái vật từ Lv 1 - 15.
+
+**Mức độ rủi ro:** Trung bình
+
+**Files & Database thay đổi:**
+- `server/KPAH/src/map/Monster.java`:
+  - `injured`: 
+    - Bổ sung giáp phòng thủ phẳng: `mobDef = level * 4` (từ 4 đến 140).
+    - Thêm cơ chế **Kháng sát thương theo % (Damage Mitigation)**: `resistPercent = Math.min(45, (int)(level * 1.2))` (dao động từ 1% đến 42%) giúp quái hấp thụ bớt sát thương bộc phát cực lớn từ các vũ khí/trang bị cấp cao OP, buộc người chơi phải đánh nhiều combo chiêu thức liên hoàn mới hạ gục được bãi quái.
+  - `calculatePowerPlus`: Giảm mạnh Base EXP thưởng từ 9 - 15 lần (Lv 1-5: $L \times 8$; Lv 6-10: $L \times 12$; Lv 11-15: $L^2 \times 2.5$; Lv 16-20: $L^2 \times 4$; Lv 21-27: $L^2 \times 5$; Lv 28-35: $L^2 \times 6$) giúp tiến trình lên cấp chậm lại, đòi hỏi người chơi phải cày cuốc đúng nghĩa.
+  - `getDameAttack`: Thống nhất công thức sát thương cho toàn bộ quái Lv 1 - 35 (`minAtk = 10 * level - 15`, `maxAtk = 14 * level - 5`, cận chiến +15% bonus), gây sát thương bào mòn đều đặn 5% - 10% HP người chơi mỗi hit, buộc người chơi phải dùng dược phẩm hồi phục.
+  - `getItemDrop`: Thiết lập danh mục rơi đồ chuẩn từ Lv 1 - 35:
+    - Bình dược phẩm: Lv 1-15 rơi HP/MP nhỏ (25%); Lv 16-25 rơi HP/MP vừa (30%); Lv 26-35 rơi HP/MP to và vừa (30%).
+    - Tiền vàng (15% - 20%): Rơi xu theo cấp độ vừa phải.
+    - Trang bị (3% - 4%): Rớt đồ theo cấp độ quái và người chơi.
+    - Nguyên liệu luyện kim (2% - 5%): Lv 10 trở lên bắt đầu rớt Đá may mắn cấp 1, Luyện kim dược, Đá may mắn cấp 2 và Vé quay số.
+- Database MariaDB (`kpah.monsters`):
+  - Nâng cấp chỉ số `maxHp` cho toàn bộ 34 loài quái vật từ Lv 1 đến Lv 35 (Nhím từ 200 lên 650 HP; Quỷ hoa từ 3.000 lên 10.000 HP; Cọp khổng lồ từ 10.800 lên 42.000 HP; Sơn tặc từ 34.500 lên 138.000 HP).
+
+**Backup:**
+- `server/KPAH/src/map/_backup/Monster.java.bak.20260906_1729`
+- `_backup/monsters_before_nerf_exp_20260906_1729.sql`
+
+**Kết quả:** ✅ Thành công
+- Đã chạy kiểm tra mô phỏng combat trên bộ số mới, xác nhận quái sống dai và chịu đòn tốt trước dame OP, EXP lên cấp chậm rãi và ổn định.
+- Biên dịch server thành công với Java 21 và khởi động lại Server (port 19129).
+- Đã dọn dẹp toàn bộ file test tạm trong `_tmp/`.
+
 ---
 
