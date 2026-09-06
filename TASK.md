@@ -225,5 +225,33 @@
 
 **Kết quả:** ✅ Thành công (Đã commit toàn bộ 5.036 files, sẵn sàng push lên GitHub)
 
+## [2026-09-06 17:22] — Cân bằng & Điều chỉnh Quái vật Lv 16 - 35 (Chỉ số, EXP, Dame, Drop)
+
+**Yêu cầu:** Điều chỉnh tiếp quái từ lv 16 - 35 và báo cáo kết quả chi tiết về chỉ số (HP, speed), exp, dame, vật phẩm rớt (potions, vàng, trang bị, đá may mắn, luyện kim dược...).
+
+**Mức độ rủi ro:** Trung bình
+
+**Files & Database thay đổi:**
+- `server/KPAH/src/map/Monster.java`:
+  - `injured`: Bổ sung cơ chế giảm trừ giáp quái hợp lý theo level (`mobDef = level * 2.5`) cho lv 16-35 thay vì trừ cố định 2% maxHp (tránh tình trạng quái lv cao có hàng nghìn giáp khiến người chơi đánh ra 0 dame). Đảm bảo sát thương tối thiểu = 1.
+  - `getDameAttack`: Cân bằng sát thương quái tấn công người chơi cho lv 16-35 (`minAtk = 15 * level - 40`, `maxAtk = 20 * level - 20`, cận chiến +15% bonus), tương thích với lượng máu và giáp của người chơi ở từng cấp độ (gây khoảng 8% - 15% HP người chơi/hit thay vì one-shot như trước).
+  - `calculatePowerPlus`: Cải thiện công thức EXP thưởng khi tiêu diệt quái lv 16-35 (Lv 16-20: $L^2 \times 35$; Lv 21-27: $L^2 \times 55$; Lv 28-35: $L^2 \times 90$) giúp tiến trình lên cấp mượt mà, hợp lý và tạo cảm giác cày cuốc sảng khoái (chill).
+  - `getItemDrop`: Cải tiến hệ thống rơi đồ:
+    - Bình dược phẩm (30%): Lv 16-25 rơi HP/MP vừa; Lv 26-35 rơi HP/MP vừa và HP/MP to.
+    - Tiền vàng (20%): Tăng lượng xu rơi theo cấp độ (`level * 120` đến `level * 350`).
+    - Trang bị (4%): Tăng tỉ lệ rơi đồ kích ẩn/phôi trang bị theo level người chơi và quái.
+    - Nguyên liệu/Đá may mắn (4% - 6%): Rơi Đá may mắn cấp 1, Luyện kim dược, Đá may mắn cấp 2 và Vé quay số.
+- Database MariaDB (`kpah.monsters`):
+  - Cập nhật chỉ số `maxHp` và `speed` cho toàn bộ 17 loài quái vật từ lv 16 đến lv 35 theo đường cong tăng trưởng mượt mà (nối tiếp từ 6.900 HP ở lv 15 lên 34.500 HP ở lv 35; điều chỉnh tốc độ chạy các loài quái nhanh như Bướm, Nhện, Cọp, Sơn tặc lên speed 2).
+
+**Backup:**
+- `server/KPAH/src/map/_backup/Monster.java.bak.20260906_1718`
+- `_backup/monsters_backup_20260906_1718.sql`
+
+**Kết quả:** ✅ Thành công
+- Đã chạy kiểm tra database và simulation test tính toán dame, exp, drop rate.
+- Đã biên dịch server thành công với Java 21 và khởi động lại tiến trình server (port 19129).
+- Đã dọn dẹp sạch sẽ các file test tạm trong `_tmp/`.
+
 ---
 

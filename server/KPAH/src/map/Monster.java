@@ -75,11 +75,17 @@ public class Monster implements Cloneable {
         if (!this.isDie()) {
             if (!isKhoangSan()) {
                 if (!isXuyenGiap) {
-                    damage -= this.template.getMaxHp() * 0.02;
+                    if (this.template.getLevel() <= 15) {
+                        damage -= (int) (this.template.getMaxHp() * 0.02);
+                    } else {
+                        // Cho lv 16-35: Giáp quái tỉ lệ theo cấp độ, tránh trừ quá mức làm dame người chơi = 0
+                        int mobDef = (int) (this.template.getLevel() * 2.5);
+                        damage -= mobDef;
+                    }
                 }
             }
-            if (damage < 0) {
-                damage = 0;
+            if (damage <= 0) {
+                damage = 1;
             }
             if (isInjuredByEffect && this.buffInfluence.isPoisoned()) {
                 if (hp - damage < 1) {
@@ -163,10 +169,22 @@ public class Monster implements Cloneable {
         playerAttack.add(pl);
     }
 
-    public int getDameAttack(@NonNull Player pl) {
-        int dameAtt = Util.nextInt((int) (this.template.getMaxHp() * 0.05), (int) (this.template.getMaxHp() * 0.07));
-        if (isMelee()) {
-            dameAtt = (int) (dameAtt * 1.5);
+    public int getDameAttack(Player pl) {
+        int level = this.template.getLevel();
+        int dameAtt;
+        if (level <= 15) {
+            dameAtt = Util.nextInt((int) (this.template.getMaxHp() * 0.05), (int) (this.template.getMaxHp() * 0.07));
+            if (isMelee()) {
+                dameAtt = (int) (dameAtt * 1.5);
+            }
+        } else {
+            // Cho lv 16-35: Cân bằng sát thương tương thích với chỉ số phòng thủ và HP người chơi
+            int minAtk = Math.max(10, 15 * level - 40);
+            int maxAtk = Math.max(minAtk + 20, 20 * level - 20);
+            dameAtt = Util.nextInt(minAtk, maxAtk);
+            if (isMelee()) {
+                dameAtt = (int) (dameAtt * 1.15); // Cận chiến 15% bonus dame
+            }
         }
         if (dameAtt <= 0) {
             dameAtt = 1;
@@ -177,7 +195,17 @@ public class Monster implements Cloneable {
     @Synchronized
     public void calculatePowerPlus(@NonNull Player pl, int damage) throws IOException {
         // Cố định exp theo level, và tỷ lệ thuận với lượng máu bị mất
-        double baseExp = this.template.getLevel() * this.template.getLevel() * 10.0;
+        int level = this.template.getLevel();
+        double baseExp;
+        if (level <= 15) {
+            baseExp = level * level * 10.0;
+        } else if (level <= 20) {
+            baseExp = level * level * 35.0;
+        } else if (level <= 27) {
+            baseExp = level * level * 55.0;
+        } else {
+            baseExp = level * level * 90.0;
+        }
         if (baseExp <= 0) {
             baseExp = 10.0;
         }
@@ -242,30 +270,79 @@ public class Monster implements Cloneable {
         short destX = (short) (x + (plAttack.getLocation().getX() - x) / 2 + Util.nextInt(-20, 20));
         short destY = (short) (y + (plAttack.getLocation().getY() - y) / 2 + Util.nextInt(-20, 20));
 
-        // Potion drop (25%)
-        if (Util.isTrue(25.0, 100.0)) {
-            short idItemPotion = (short) Util.nextInt(1, 6);
+        int level = this.template.getLevel();
+
+        // 1. Potion drop (30% cho lv 16-35, 25% cho lv <= 15)
+        double potionRate = level <= 15 ? 25.0 : 30.0;
+        if (Util.isTrue(potionRate, 100.0)) {
+            short idItemPotion;
             short quantity = (short) Util.nextInt(1, 2);
-            if (this.template.getLevel() <= 15) {
+            if (level <= 15) {
                 // Quái lv 1-15 chỉ drop bình nhỏ (1 = HP nhỏ, 4 = MP nhỏ)
                 idItemPotion = Util.isTrue(50, 100) ? (short) 1 : (short) 4;
+            } else if (level <= 25) {
+                // Quái lv 16-25: 60% HP vừa (2), 40% MP vừa (5)
+                idItemPotion = Util.isTrue(60, 100) ? (short) 2 : (short) 5;
+            } else {
+                // Quái lv 26-35: 40% HP to (3), 30% HP vừa (2), 20% MP to (6), 10% MP vừa (5)
+                int rand = Util.nextInt(1, 100);
+                if (rand <= 40) {
+                    idItemPotion = (short) 3; // HP to
+                } else if (rand <= 70) {
+                    idItemPotion = (short) 2; // HP vừa
+                } else if (rand <= 90) {
+                    idItemPotion = (short) 6; // MP to
+                } else {
+                    idItemPotion = (short) 5; // MP vừa
+                }
             }
             its.add(ItemService.instance.createNewItemMap(idItemPotion, quantity, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
         }
         
-        // Gold drop (10%)
-        if (Util.isTrue(10.0, 100.0)) {
-            short quantity = (short) Util.nextInt(this.template.getLevel() * 100, this.template.getLevel() * 300);
+        // 2. Gold drop (20% cho lv 16-35, 10% cho lv <= 15)
+        double goldRate = level <= 15 ? 10.0 : 20.0;
+        if (Util.isTrue(goldRate, 100.0)) {
+            short quantity;
+            if (level <= 15) {
+                quantity = (short) Util.nextInt(level * 100, level * 300);
+            } else {
+                quantity = (short) Util.nextInt(level * 120, level * 350);
+            }
             if (quantity <= 0) quantity = 100;
             its.add(ItemService.instance.createNewItemMap((short) 0, quantity, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
         }
         
-        // Equipment drop (2%)
-        if (Util.isTrue(2.0, 100.0)) {
-            byte maxLevelEquip = (byte) this.template.getLevel();
+        // 3. Equipment drop (4% cho lv 16-35, 2% cho lv <= 15)
+        double equipRate = level <= 15 ? 2.0 : 4.0;
+        if (Util.isTrue(equipRate, 100.0)) {
+            byte maxLevelEquip = (byte) level;
             short idItemEquipment = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
             if (idItemEquipment != -1) {
                 its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+            }
+        }
+
+        // 4. Gems & Materials drop (cho lv 16-35)
+        if (level >= 16 && level <= 35) {
+            double gemRate = level <= 25 ? 4.0 : 6.0;
+            if (Util.isTrue(gemRate, 100.0)) {
+                if (level <= 25) {
+                    // Lv 16-25: 50% Đá may mắn cấp 1 (5), 50% Luyện kim dược (8)
+                    short gemId = Util.isTrue(50, 100) ? (short) 5 : (short) 8;
+                    its.add(ItemService.instance.createNewItemMap(gemId, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                } else {
+                    // Lv 26-35: 40% Đá may mắn cấp 1 (5), 40% Luyện kim dược (8), 15% Đá may mắn cấp 2 (6), 5% Vé quay số (69)
+                    int rand = Util.nextInt(1, 100);
+                    if (rand <= 40) {
+                        its.add(ItemService.instance.createNewItemMap((short) 5, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    } else if (rand <= 80) {
+                        its.add(ItemService.instance.createNewItemMap((short) 8, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    } else if (rand <= 95) {
+                        its.add(ItemService.instance.createNewItemMap((short) 6, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    } else {
+                        its.add(ItemService.instance.createNewItemMap((short) 69, (short) 1, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+                    }
+                }
             }
         }
         
