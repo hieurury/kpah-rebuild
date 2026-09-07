@@ -1038,4 +1038,52 @@
 - Server Java 21 biên dịch thành công không lỗi.
 - Đã khởi động lại server daemon (`task-2867`), server đang hoạt động bình thường trên cổng 19129.
 
+---
+
+## [2026-09-07 15:15] — Phân Hóa Rương Tinh Anh 4 Bậc (Cấp Quái Lv 1 - 35), Giữ Nguyên Tỷ Lệ Rớt & Chỉnh Tỷ Lệ Trang Bị Mặc Định Về 2%
+
+**Yêu cầu:**
+1. Điều chỉnh phần thưởng trong Rương Tinh Anh cho hợp lý: Phân loại rương tinh anh ra 4 cấp độ từ Bậc 1 đến Bậc 4 tương ứng theo cấp quái Lv 1 - 35, số vật phẩm trong rương phân phát theo chất lượng từng bậc rương.
+2. Tỷ lệ rớt vật phẩm của quái tinh anh giữ nguyên như trước (tỷ lệ x2.5, 100% rớt 1 rương, 20% rớt bình kinh nghiệm), chỉ khác biệt về số lượng rớt và loại rương nhận được theo cấp độ quái.
+3. Điều chỉnh tỷ lệ rơi trang bị mặc định về 2% (thay vì 3-4% như trước).
+
+**Giải pháp đã triển khai:**
+1. **Phân hóa 4 Bậc Rương Tinh Anh trong Database:**
+   - Cập nhật và bổ sung 4 bậc rương vào bảng `potion_template`:
+     - **ID 106:** `Rương Tinh Anh (Bậc 1)` (Quái Lv 1 - 9, Icon rương bạc 68).
+     - **ID 160:** `Rương Tinh Anh (Bậc 2)` (Quái Lv 10 - 19, Icon rương bạc 68).
+     - **ID 161:** `Rương Tinh Anh (Bậc 3)` (Quái Lv 20 - 29, Icon rương vàng 67).
+     - **ID 162:** `Rương Tinh Anh (Bậc 4)` (Quái Lv 30 - 35, Icon rương vàng 67).
+   - Đồng bộ file SQL `server/kpah.sql` với dữ liệu database mới.
+2. **Cân đối phần thưởng mở Rương theo từng Bậc:**
+   - `server/KPAH/src/services/UseItemService.java`:
+     - Sửa `useItemPotion` nhận `short id` (đọc unsigned byte `& 0xFF` từ gói tin `USE_POTION` trong `MessageHandler.java` để hỗ trợ các ID >= 128 an toàn).
+     - Mở rộng switch-case xử lý `case 106, 160, 161, 162 -> openEliteChest(player, potion)`.
+     - Phân bổ phần thưởng theo từng bậc:
+       - **Bậc 1 (Quái Lv 1-9):** 1 - 2 Lượng, 50% nhận 1 Tinh Anh Đan, 5 - 10 bình thuốc vừa/nhỏ, 50% nhận 1 nguyên liệu sơ cấp (Đá may mắn 1 hoặc Luyện kim dược), 40% nhận trang bị/vũ khí cùng phái Lv 1 - 9. Không rơi nguyên liệu cao cấp.
+       - **Bậc 2 (Quái Lv 10-19):** 2 - 4 Lượng, 1 Tinh Anh Đan (100%), 8 - 15 bình thuốc vừa/to, 1 - 2 nguyên liệu sơ cấp, 25% nhận 1 nguyên liệu cao cấp, 60% nhận trang bị/vũ khí cùng phái Lv 10 - 19.
+       - **Bậc 3 (Quái Lv 20-29):** 3 - 6 Lượng, 1 - 2 Tinh Anh Đan, 10 - 20 bình thuốc to/đặc biệt, 2 - 3 nguyên liệu sơ cấp, 50% nhận 1 - 2 nguyên liệu cao cấp, 80% nhận trang bị/vũ khí cùng phái Lv 20 - 29.
+       - **Bậc 4 (Quái Lv 30-35 - Trần cao nhất):** 5 - 10 Lượng, 2 Tinh Anh Đan, 15 - 25 bình thuốc cao cấp, 2 - 4 nguyên liệu sơ cấp, 75% nhận 1 - 3 nguyên liệu cao cấp, 100% nhận 1 trang bị/vũ khí cùng phái Lv 30 - 35.
+3. **Cập nhật rơi đồ quái tinh anh & tỷ lệ trang bị 2%:**
+   - `server/KPAH/src/map/Monster.java`:
+     - **Tỷ lệ rớt đồ quái tinh anh:** Giữ nguyên mức cao chuẩn (`rateMultiplier = isElite ? 2.5 : 1.0`).
+     - **Tỷ lệ rơi trang bị mặc định:** Đặt về `2.0%` (`equipRate = 2.0 * rateMultiplier`, quái thường là 2.0%, quái tinh anh là 5.0%). Khi rớt trang bị, quái tinh anh luôn rơi thêm món thứ 2.
+     - **Rương Tinh Anh:** 100% quái tinh anh rơi đúng 1 rương tương ứng cấp quái:
+       - Lv <= 9: Rớt ID 106 (Bậc 1).
+       - Lv 10 - 19: Rớt ID 160 (Bậc 2).
+       - Lv 20 - 29: Rớt ID 161 (Bậc 3).
+       - Lv 30 - 35: Rớt ID 162 (Bậc 4).
+     - **Bình kinh nghiệm:** Giữ nguyên tỷ lệ 20% rớt 1 bình theo 4 bậc cấp quái (ID 108, 109, 110, 111).
+     - **Số lượng rớt (Vàng, Potion, Ngọc):** Vẫn giữ cơ chế lấy lv35 làm trần tối đa và quái cấp thấp giảm dần số lượng.
+
+**Backup:**
+- `server/KPAH/src/map/_backup/Monster.java.bak.20260907_1510`
+- `server/KPAH/src/services/_backup/UseItemService.java.bak.20260907_1510`
+- `server/KPAH/src/network/_backup/MessageHandler.java.bak.20260907_1512`
+
+**Kết quả:** ✅ Thành công
+- Server Java 21 biên dịch không lỗi (`BUILD SUCCESSFUL`).
+- Đã khởi động lại server daemon (`task-3077`), tải đủ 163 Potion Template và đang lắng nghe cổng 19129.
+
+
 

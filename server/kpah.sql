@@ -2660,7 +2660,7 @@ INSERT INTO `potion_template` (`id`, `name`, `name2`, `idImage`, `delay`, `isTra
 (103, 'Lá vàng', 'lavang', 43, 0, 0, 0, 0),
 (104, 'Dây thừng. Dùng để bắt thú nuôi', 'daythungdungdebatthunuoi', 246, 0, 0, 0, 0),
 (105, 'Mảnh bản đồ 2', 'manhbando', 214, 0, 0, 0, 0),
-(106, '', '', 0, 0, 0, 0, 0),
+(106, 'Rương Tinh Anh (Bậc 1)', 'ruongtinhanhbac1', 68, 0, 1, 0, 0),
 (107, '', '', 0, 0, 0, 0, 0),
 (108, '', '', 0, 0, 0, 0, 0),
 (109, '', '', 83, 0, 0, 0, 0),
@@ -2713,7 +2713,10 @@ INSERT INTO `potion_template` (`id`, `name`, `name2`, `idImage`, `delay`, `isTra
 (156, 'Lửa thường', 'luathuong', 200, 0, 0, 0, 0),
 (157, 'Lửa vừa', 'luavua', 201, 0, 0, 0, 0),
 (158, 'Lửa to', 'luato', 202, 0, 0, 0, 0),
-(159, 'Bao lì xì', 'baolixi', 76, 0, 0, 0, 0);
+(159, 'Bao lì xì', 'baolixi', 76, 0, 0, 0, 0),
+(160, 'Rương Tinh Anh (Bậc 2)', 'ruongtinhanhbac2', 68, 0, 1, 0, 0),
+(161, 'Rương Tinh Anh (Bậc 3)', 'ruongtinhanhbac3', 67, 0, 1, 0, 0),
+(162, 'Rương Tinh Anh (Bậc 4)', 'ruongtinhanhbac4', 67, 0, 1, 0, 0);
 
 -- --------------------------------------------------------
 

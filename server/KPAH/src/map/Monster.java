@@ -308,9 +308,9 @@ public class Monster implements Cloneable {
         short destY = (short) (y + (plAttack.getLocation().getY() - y) / 2 + Util.nextInt(-20, 20));
 
         int level = this.template.getLevel();
-        // Tỷ lệ và số lượng quái tinh anh lấy lv35 làm trần cao nhất, cấp thấp hơn giảm dần theo cấp quái
+        // Quái tinh anh giữ tỷ lệ rớt đồ cao như cũ (x2.5), số lượng vật phẩm điều tiết theo cấp quái (trần lv35)
         double lvRatio = Math.min(1.0, (double) Math.max(1, level) / 35.0);
-        double rateMultiplier = isElite ? (1.0 + 1.5 * lvRatio) : 1.0; // Tối đa x2.5 ở lv35, giảm dần theo cấp
+        double rateMultiplier = isElite ? 2.5 : 1.0; // Tỷ lệ rớt đồ giữ nguyên x2.5
 
         // 1. Potion drop (25% cho lv <= 15, 30% cho lv 16-35)
         double potionRate = Math.min(100.0, (level <= 15 ? 25.0 : 30.0) * rateMultiplier);
@@ -364,8 +364,8 @@ public class Monster implements Cloneable {
             its.add(ItemService.instance.createNewItemMap((short) 0, quantity, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
         }
         
-        // 3. Equipment drop (3% cho lv <= 15, 4% cho lv 16-35)
-        double equipRate = Math.min(100.0, (level <= 15 ? 3.0 : 4.0) * rateMultiplier);
+        // 3. Equipment drop (mặc định 2.0%, quái tinh anh x2.5 = 5.0%)
+        double equipRate = Math.min(100.0, 2.0 * rateMultiplier);
         if (Util.isTrue(equipRate, 100.0)) {
             byte maxLevelEquip = (byte) level;
             short idItemEquipment = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
@@ -373,13 +373,10 @@ public class Monster implements Cloneable {
                 its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
             }
             if (isElite) {
-                // Tinh anh cơ hội rơi thêm món trang bị thứ 2: trần 100% ở lv35, cấp thấp giảm dần
-                double extraEquipChance = Math.min(100.0, lvRatio * 100.0);
-                if (Util.isTrue(extraEquipChance, 100.0)) {
-                    short extraEquip = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
-                    if (extraEquip != -1) {
-                        its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
-                    }
+                // Tinh anh luôn có thêm cơ hội rơi món trang bị thứ 2
+                short extraEquip = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
+                if (extraEquip != -1) {
+                    its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
                 }
             }
         }
@@ -414,17 +411,23 @@ public class Monster implements Cloneable {
             }
         }
 
-        // 5. Rương tinh anh: Trần lv35 là 100% rơi 1 rương, cấp thấp hơn tỷ lệ giảm dần theo cấp quái
+        // 5. Rương tinh anh: 100% quái tinh anh rớt đúng 1 rương phân loại theo 4 bậc
         if (isElite) {
-            double chestChance = Math.min(100.0, 30.0 + 70.0 * lvRatio);
-            if (Util.isTrue(chestChance, 100.0)) {
-                short chestQty = 1;
-                its.add(ItemService.instance.createNewItemMap((short) 106, chestQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+            short idChest;
+            if (level <= 9) {
+                idChest = 106; // Rương Tinh Anh (Bậc 1)
+            } else if (level <= 19) {
+                idChest = 160; // Rương Tinh Anh (Bậc 2)
+            } else if (level <= 29) {
+                idChest = 161; // Rương Tinh Anh (Bậc 3)
+            } else {
+                idChest = 162; // Rương Tinh Anh (Bậc 4)
             }
+            short chestQty = 1;
+            its.add(ItemService.instance.createNewItemMap(idChest, chestQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
 
-            // 6. Bình kinh nghiệm: Trần lv35 là 20%, cấp thấp hơn giảm dần theo cấp quái
-            double expPotionChance = Math.min(20.0, 5.0 + 15.0 * lvRatio);
-            if (Util.isTrue(expPotionChance, 100.0)) {
+            // 6. Bình kinh nghiệm: 20% rơi từ quái tinh anh theo 4 bậc
+            if (Util.isTrue(20.0, 100.0)) {
                 short idPotionExp;
                 if (level <= 9) {
                     idPotionExp = 108; // Sơ cấp: 3.500 EXP

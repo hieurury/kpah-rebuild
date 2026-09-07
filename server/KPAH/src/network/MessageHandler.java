@@ -576,7 +576,7 @@ public class MessageHandler {
                 }
                 case CommandMessage.USE_POTION -> {
                     if (player != null) {
-                        byte idPotion = msg.reader().readByte();
+                        short idPotion = (short) (msg.reader().readByte() & 0xFF);
                         UseItemService.instance.useItemPotion(player, idPotion);
                     }
                 }
