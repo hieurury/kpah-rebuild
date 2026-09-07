@@ -31,7 +31,7 @@ public class Settings {
     public static final byte PERCENT_EXP_PARTY = 5;
     public static final byte MAX_PLAYER_IN_PARTY = 10;
 
-    public static final int MILISECOND_UPDATE_DATABASE = 300000;
+    public static final int MILISECOND_UPDATE_DATABASE = 15000; // Auto-save database mỗi 15 giây
 
     public static final int TIME_LIVE_MOB = 8000;
     public static final short DISTANCE_MOB_CAN_ATTACK = 90;

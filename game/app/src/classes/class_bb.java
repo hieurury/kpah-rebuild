@@ -235,8 +235,8 @@ extends class_ap {
                     int posY = ((class_vh)this).cL + by3;
                     long time = System.currentTimeMillis();
                     int pulse = (int) ((time / 120L) % 6);
-                    int rX = 18 + pulse;
-                    int rY = 8 + (pulse >> 1);
+                    int rX = 22 + pulse;
+                    int rY = 10 + (pulse >> 1);
                     // Vòng ngoài màu cam vàng
                     graphics.setColor(0xFFA500);
                     graphics.drawArc(posX - rX, posY - rY, rX << 1, rY << 1, 0, 360);
@@ -251,13 +251,20 @@ extends class_ap {
                 }
 
                 // Hiệu ứng kích thước to hơn và hào quang xung quanh quái Tinh Anh
+                Object tx = null;
                 if (this.isElite) {
-                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B - 1, ((class_vh)this).cL + this.C + this.H + this.x, 0, 0, (int)by);
-                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B + 1, ((class_vh)this).cL + this.C + this.H + this.x, 0, 0, (int)by);
-                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B, ((class_vh)this).cL + this.C + this.H + this.x - 1, 0, 0, (int)by);
-                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B, ((class_vh)this).cL + this.C + this.H + this.x + 1, 0, 0, (int)by);
+                    int cx = ((class_vh)this).cK + this.B;
+                    int cy = ((class_vh)this).cL + this.C + this.H + this.x;
+                    tx = ModHelpers.beginScale(graphics, cx, cy, 1.2);
+                    class_yi.T[this.l].a(graphics, cx - 1, cy, 0, 0, (int)by);
+                    class_yi.T[this.l].a(graphics, cx + 1, cy, 0, 0, (int)by);
+                    class_yi.T[this.l].a(graphics, cx, cy - 1, 0, 0, (int)by);
+                    class_yi.T[this.l].a(graphics, cx, cy + 1, 0, 0, (int)by);
                 }
                 class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B, ((class_vh)this).cL + this.C + this.H + this.x, 0, 0, (int)by);
+                if (tx != null) {
+                    ModHelpers.endScale(graphics, tx);
+                }
 
                 // Hạt lấp lánh (sparkles) bay quanh quái Tinh Anh
                 if (this.isElite) {

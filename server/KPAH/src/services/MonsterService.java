@@ -51,6 +51,9 @@ public class MonsterService {
         if (!monster.isDie()) {
             return;
         }
+        if (monster.isElite()) {
+            ChatService.instance.sendChatOnlyMe(plAtt, "Bạn đã tiêu diệt Quái Tinh Anh [" + monster.getTemplate().getName() + "]!");
+        }
         services.QuestService.instance.onKillMonster(plAtt, monster.getTemplate().getId(), (byte) monster.getTemplate().getLevel());
         Message msg = new Message(CommandMessage.MONSTER_DIE);
         msg.writer().writeShort(plAtt.getIdPlayer());

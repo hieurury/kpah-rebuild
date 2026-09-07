@@ -103,36 +103,78 @@ public class UseItemService {
                     MapService.instance.sendInfoMe(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
                 }
-                case 30 -> {
-                    if (player.getHorse().getUseHorse() != HorseConst.NON_HORSE) {
-                        Service.instance.sendLogOut(player.getSession(), "Vui lòng xuống ngựa");
-                        return;
-                    }
-                    player.getHorse().setFly(false);
-                    player.getHorse().setUseHorse(HorseConst.HORSE);
-                    player.getHorse().setImageHorse(HorseConst.IMAGE_THIEN_LY_MA);
-                    player.getHorse().setIdItem(id);
-                    player.getPoint().initPoint();
-                    Service.instance.sendMainCharInfo(player);
-                    MapService.instance.sendInfoMe(player);
+                case 9 -> {
+                    player.getPoint().setHp(player.getPoint().getHpMax());
+                    player.getPoint().setMp(player.getPoint().getMpMax());
+                    MapService.instance.onNewHpMp(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Nhân Sâm! Hồi phục đầy đủ HP và MP.");
                 }
-                case 34 -> {
-                    if (player.getHorse().getUseHorse() != HorseConst.NON_HORSE) {
-                        Service.instance.sendLogOut(player.getSession(), "Vui lòng xuống ngựa");
-                        return;
-                    }
-                    player.getHorse().setFly(false);
-                    player.getHorse().setUseHorse(HorseConst.HORSE);
-                    player.getHorse().setImageHorse(HorseConst.IMAGE_XICH_THO);
-                    player.getHorse().setIdItem(id);
+                case 10, 11, 12, 108, 109, 110, 111 -> {
+                    useExpPotion(player, potion, id);
+                }
+                case 25 -> {
+                    player.getPoint().resetPotentialPoints();
+                    Service.instance.sendMainCharInfo(player);
+                    MapService.instance.onNewHpMp(player);
+                    InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã tẩy lại toàn bộ điểm tiềm năng thành công!");
+                }
+                case 26 -> {
+                    player.getPoint().resetSkillPoints();
+                    Service.instance.sendMainCharInfo(player);
+                    InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã tẩy lại toàn bộ điểm kỹ năng thành công!");
+                }
+                case 30, 34, 64, 65, 66, 67, 68, 86 -> {
+                    useHorsePotion(player, potion, id);
+                }
+                case 35 -> {
+                    player.setBuffGioVang(3600000L, (short) 100);
+                    player.getPoint().initPoint();
+                    InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Vé giờ vàng 1h! Tăng 100% kinh nghiệm trong 1 giờ.");
+                }
+                case 75 -> {
+                    player.setBuffGioVang(3 * 3600000L, (short) 100);
+                    player.getPoint().initPoint();
+                    InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Vé giờ vàng 3h! Tăng 100% kinh nghiệm trong 3 giờ.");
+                }
+                case 80 -> {
+                    player.setBuffTinhAnh(3600000L); // Hiệu lực 1 giờ
                     player.getPoint().initPoint();
                     Service.instance.sendMainCharInfo(player);
                     MapService.instance.sendInfoMe(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Bình tăng lực! Tăng sức mạnh trong 1 giờ.");
+                }
+                case 81 -> {
+                    player.setBuffGioVang(3600000L, (short) 150);
+                    player.getPoint().initPoint();
+                    InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Vé giờ vàng! Tăng 150% kinh nghiệm.");
                 }
                 case 106 -> {
                     openEliteChest(player, potion);
+                }
+                case 107 -> {
+                    player.setBuffTinhAnh(180000L); // Hiệu lực 3 phút (180 giây)
+                    player.getPoint().initPoint();
+                    Service.instance.sendMainCharInfo(player);
+                    MapService.instance.sendInfoMe(player);
+                    InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Tinh Anh Đan! Tăng 20% sát thương, giáp và HP trong 3 phút.");
+                }
+                case 119 -> {
+                    if (!player.isDie()) {
+                        Service.instance.sendLogOut(player.getSession(), "Bạn chưa chết, không thể sử dụng Tiên đan.");
+                        return;
+                    }
+                    MapService.instance.revivePlayer(player, (byte) 100);
+                    player.getSundry().setLastTimeRevived(System.currentTimeMillis());
+                    InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã sử dụng Tiên đan hồi sinh thành công!");
                 }
                 default -> {
                     Service.instance.sendLogOut(player.getSession(), "Không thể sử dụng");
@@ -141,6 +183,77 @@ public class UseItemService {
             }
         }
         InventoryService.instance.sendItemPotion(player);
+    }
+
+    private void useHorsePotion(@NonNull Player player, @NonNull ItemPotion potion, short id) throws IOException {
+        if (player.getHorse().getUseHorse() != HorseConst.NON_HORSE) {
+            Service.instance.sendLogOut(player.getSession(), "Vui lòng xuống ngựa");
+            return;
+        }
+        byte imageHorse = switch (id) {
+            case 30 -> HorseConst.IMAGE_THIEN_LY_MA;
+            case 34 -> HorseConst.IMAGE_XICH_THO;
+            case 68 -> HorseConst.IMAGE_BACH_MA;
+            case 64 -> HorseConst.IMAGE_HAC_NGUU;
+            case 65 -> HorseConst.IMAGE_MANH_HO;
+            case 66 -> HorseConst.IMAGE_SOI_XAM;
+            case 67 -> HorseConst.IMAGE_TIEN_HAC;
+            case 86 -> HorseConst.IMAGE_PHUONG_HOANG;
+            default -> HorseConst.IMAGE_THIEN_LY_MA;
+        };
+        byte horseType = switch (id) {
+            case 64 -> HorseConst.HORSE_HAC_NGUU;
+            case 65 -> HorseConst.HORSE_MANH_HO;
+            case 66 -> HorseConst.HORSE_SOI_XAM;
+            case 67 -> HorseConst.HORSE_TIEN_HAC;
+            case 86 -> HorseConst.HORSE_PHUONG_HOANG;
+            default -> HorseConst.HORSE;
+        };
+        player.getHorse().setFly(id == 67 || id == 86);
+        player.getHorse().setUseHorse(horseType);
+        player.getHorse().setImageHorse(imageHorse);
+        player.getHorse().setIdItem(id);
+        player.getPoint().initPoint();
+        Service.instance.sendMainCharInfo(player);
+        MapService.instance.sendInfoMe(player);
+        InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+    }
+
+    private void useExpPotion(@NonNull Player player, @NonNull ItemPotion potion, short id) throws IOException {
+        int expAdd = switch (id) {
+            case 10 -> 100000;
+            case 11 -> 500000;
+            case 12 -> 1000000;
+            case 108 -> 3500;
+            case 109 -> 25000;
+            case 110 -> 90000;
+            case 111 -> 220000;
+            default -> 1000;
+        };
+        InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
+        player.getPoint().plusExp(expAdd);
+        
+        // Kiểm tra thăng cấp nếu đủ kinh nghiệm
+        boolean isLevelUp = false;
+        while (player.getPoint().getExp() >= Util.getExp(player.getInfo().getLevel())) {
+            player.getPoint().setExp(player.getPoint().getExp() - Util.getExp(player.getInfo().getLevel()));
+            player.getInfo().plusLevel((byte) 1);
+            player.getPoint().plusStrength(1);
+            player.getPoint().plusHealth(1);
+            player.getPoint().plusAgility(1);
+            player.getPoint().plusLuck(1);
+            player.getPoint().plusSpirit(1);
+            player.getPoint().plusSkillPoint(1);
+            player.getPoint().plusBasePoint(5);
+            isLevelUp = true;
+        }
+        if (isLevelUp) {
+            player.getPoint().initPoint();
+            MapService.instance.onLevelUp(player);
+        }
+        Service.instance.sendMainCharInfo(player);
+        MapService.instance.onSetXP(player, expAdd);
+        ChatService.instance.sendChatOnlyMe(player, "Bạn nhận được " + Util.formatNumber(expAdd) + " điểm kinh nghiệm!");
     }
 
     private void openEliteChest(@NonNull Player player, @NonNull ItemPotion chest) throws IOException {
@@ -161,7 +274,12 @@ public class UseItemService {
         player.getInventory().plusLuong(luong);
         rewardNames.add(luong + " Lượng");
 
-        // 2. Bình thuốc cao cấp: 10 - 20 bình (HP to, MP to, HP đặc biệt, MP đặc biệt)
+        // 2. Tinh Anh Đan: 1 - 2 viên (100% nhận)
+        short tanQty = (short) Util.nextInt(1, 2);
+        InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, tanQty));
+        rewardNames.add(tanQty + " Tinh Anh Đan");
+
+        // 3. Bình thuốc cao cấp: 10 - 20 bình (HP to, MP to, HP đặc biệt, MP đặc biệt)
         short[] highPotions = {3, 6, 21, 23};
         short potId = highPotions[Util.nextInt(0, highPotions.length - 1)];
         short potQty = (short) Util.nextInt(10, 20);

@@ -101,15 +101,21 @@ public class LoginService {
         m.writer().writeByte(pl.getPoint().getSpeed());
         m.writer().writeShort(Manager.getPotionTemplate((byte) 20).getPrice());
         m.writer().writeByte(Manager.POTION_TEMPLATES.size());
-        Enumeration<Short> keys = Manager.POTION_TEMPLATES.keys();
-        while (keys.hasMoreElements()) {
-            short key = keys.nextElement();
+        for (short key = 0; key < Manager.POTION_TEMPLATES.size(); key++) {
             PotionTemplate itemPotion = Manager.getPotionTemplate(key);
-            m.writer().writeByte(itemPotion.getIdImage());
-            m.writer().writeUTF(itemPotion.getName());
-            m.writer().writeUTF(itemPotion.getName2());
-            m.writer().writeShort(itemPotion.getDelay());
-            m.writer().writeBoolean(itemPotion.isTrade());
+            if (itemPotion == null) {
+                m.writer().writeByte(0);
+                m.writer().writeUTF("");
+                m.writer().writeUTF("");
+                m.writer().writeShort(0);
+                m.writer().writeBoolean(false);
+            } else {
+                m.writer().writeByte(itemPotion.getIdImage());
+                m.writer().writeUTF(itemPotion.getName());
+                m.writer().writeUTF(itemPotion.getName2());
+                m.writer().writeShort(itemPotion.getDelay());
+                m.writer().writeBoolean(itemPotion.isTrade());
+            }
         }
         for (int i = 0; i < Manager.NUM_SKILLS.length; i++) {
             m.writer().writeByte(Manager.NUM_SKILLS[i]);

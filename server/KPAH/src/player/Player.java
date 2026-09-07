@@ -62,6 +62,31 @@ public class Player {
     private List<Short> otherItemMapInside;
     private List<Short> otherPlayerInside;
     private QuestData questData;
+    private long timeEndBuffTinhAnh;
+
+    public boolean hasBuffTinhAnh() {
+        return System.currentTimeMillis() < this.timeEndBuffTinhAnh;
+    }
+
+    public void setBuffTinhAnh(long durationMs) {
+        this.timeEndBuffTinhAnh = System.currentTimeMillis() + durationMs;
+    }
+
+    private long timeEndBuffGioVang;
+    private short percentBuffGioVang;
+
+    public boolean hasBuffGioVang() {
+        return System.currentTimeMillis() < this.timeEndBuffGioVang;
+    }
+
+    public void setBuffGioVang(long durationMs, short percent) {
+        this.timeEndBuffGioVang = System.currentTimeMillis() + durationMs;
+        this.percentBuffGioVang = percent;
+    }
+
+    public short getPercentBuffGioVang() {
+        return hasBuffGioVang() ? this.percentBuffGioVang : 0;
+    }
 
     public void setUp() {
         sundry.setLastTimeUpdateDatabase(System.currentTimeMillis());

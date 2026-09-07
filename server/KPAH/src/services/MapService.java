@@ -201,12 +201,24 @@ public class MapService {
             ChatService.instance.sendChatOnlyMe(player, "Không thể nhặt vật phẩm của người khác");
             return;
         }
+        // Xử lý riêng tiền Xu (template ID = 0)
+        if (itemMap.getItemTemplateID() == 0) {
+            ItemService.instance.removeItemPotionFromGround(player, itemMap);
+            player.getInventory().plusXu(itemMap.getQuantity());
+            Service.instance.sendMainCharInfo(player);
+            // Không hiện chat khi nhặt xu
+            return;
+        }
         if (player.getInventory().isFullInventory()) {
             ChatService.instance.sendChatOnlyMe(player, "Hành trang đã đầy");
             return;
         }
         ItemService.instance.removeItemPotionFromGround(player, itemMap);
         InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(itemMap));
+        template.PotionTemplate pt = Manager.getPotionTemplate(itemMap.getItemTemplateID());
+        if (pt != null && pt.getName() != null && pt.getName().toLowerCase().contains("rương")) {
+            ChatService.instance.sendChatOnlyMe(player, "Bạn nhận được " + pt.getName().split("\n")[0]);
+        }
     }
 
     public void onNewHpMp(@NonNull Player pl) throws IOException {

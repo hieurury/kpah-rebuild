@@ -22,13 +22,111 @@ public class ModController {
 
 	public static long refeshTime = 0;
 
+	// Đóng băng auto khi người chơi thao tác thủ công (bấm phím di chuyển, click chuột):
+	public static long manualFreezeUntil = 0; // Timestamp ms kết thúc đóng băng 5s
+	public static boolean autoWasActiveBeforeManual = false; // Ghi nhớ cờ auto để tự kích hoạt lại sau 5s
+
+	public static boolean isNpc(Object target) {
+		if (target == null) {
+			return false;
+		}
+		if (target instanceof class_vh) {
+			class_vh vh = (class_vh) target;
+			if (vh.cF == 2 || vh.M() || vh.d_() || vh instanceof class_gn) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	public static void disableAutoCompletely() {
+		class_abj.au = false;
+		class_abj.av = false;
+		autoCombatKeepActive = false;
+		autoWasActiveBeforeManual = false;
+		manualFreezeUntil = 0;
+		isRegulating = false;
+		autoAnchorMapId = -1;
+		autoAnchorX = -1;
+		autoAnchorY = -1;
+		lastAttackMobId = -1;
+		lastMobHp = -1;
+		mobAttackStartTime = 0;
+
+		class_abj gameScreen = class_acv.s;
+		if (gameScreen != null && gameScreen.q != null) {
+			((class_sc) gameScreen.q).s = null; // Huỷ ngay đường đi tự động
+		}
+		// Nhả toàn bộ phím đánh tự động
+		class_acv.c[1] = false;
+		class_acv.c[3] = false;
+		class_acv.c[5] = false;
+		class_acv.c[7] = false;
+		class_acv.c[9] = false;
+	}
+
 	public static void update() {
-//		class_abj.as = 100;
-		// 1. Kiểm tra nếu người dùng chủ động bấm phím di chuyển (2, 4, 6, 8 hoặc mũi tên điều hướng)
-		if (class_acv.c[2] || class_acv.c[4] || class_acv.c[6] || class_acv.c[8]
-				|| class_acv.e[2] || class_acv.e[4] || class_acv.e[6] || class_acv.e[8]) {
+		class_abj gameScreen = class_acv.s;
+		long now = System.currentTimeMillis();
+
+		// 1. Kiểm tra nếu người chơi chủ động tắt Auto trong cài đặt hoặc chết:
+		// Khi cả 2 cờ au (auto đánh) và av (cờ cấu hình auto) đều tắt,
+		// nghĩa là người chơi đã chủ động TẮT AUTO!
+		if (!class_abj.au && !class_abj.av) {
+			if (autoCombatKeepActive || autoWasActiveBeforeManual || isRegulating) {
+				disableAutoCompletely();
+			}
+			return;
+		}
+
+		// 2. Kiểm tra nếu người dùng đang chủ động nhấn phím di chuyển (phím 2, 4, 6, 8)
+		if (class_acv.e[2] || class_acv.e[4] || class_acv.e[6] || class_acv.e[8]) {
 			onUserManualMove();
 			return;
+		}
+
+		// 3. Kiểm tra nếu đang trong thời gian đóng băng 5s do người chơi thao tác thủ công
+		if (now < manualFreezeUntil) {
+			// Đang bị đóng băng: Tuyệt đối không can thiệp, để người chơi tự do điều khiển.
+			// TUYỆT ĐỐI KHÔNG xóa gameScreen.r để người chơi có thể tự do target NPC hoặc quái!
+			return;
+		}
+
+		// 4. Đã hết thời gian đóng băng 5s (người chơi ngừng thao tác đủ 5 giây):
+		// Tự động kích hoạt lại auto cho người chơi nếu trước đó auto đang chạy!
+		if (autoWasActiveBeforeManual) {
+			autoWasActiveBeforeManual = false;
+			class_abj.au = true;
+			class_abj.av = true;
+			autoCombatKeepActive = true;
+
+			if (gameScreen != null && gameScreen.q != null) {
+				class_hw player = gameScreen.q;
+				autoAnchorMapId = gameScreen.aG;
+				autoAnchorX = player.cK;
+				autoAnchorY = player.cL;
+				player.ag = autoAnchorX;
+				player.ah = autoAnchorY;
+				lastAttackMobId = -1;
+				lastMobHp = -1;
+				mobAttackStartTime = 0;
+				isRegulating = false;
+				class_acv.a("Auto đã tự kích hoạt lại.");
+			}
+		}
+
+		if (gameScreen != null && gameScreen.q != null) {
+			class_hw player = gameScreen.q;
+			// Chỉ khôi phục au nếu av đang bật (tức là người chơi chưa tắt trong cài đặt)
+			if (class_abj.av && autoCombatKeepActive) {
+				if (!player.cW && player.cV != 3 && !class_abj.au) {
+					class_abj.au = true;
+				}
+			}
+			// Nếu đang trong trạng thái điều tiết về tâm: chỉ xóa target quái vật/item, không xóa NPC
+			if (isRegulating && gameScreen.r != null && !isNpc(gameScreen.r)) {
+				gameScreen.r = null;
+			}
 		}
 
 		doAutoGame();
@@ -134,39 +232,111 @@ public class ModController {
 	}
 
 	/**
-	 * Được gọi khi người dùng chủ động di chuyển (bấm phím điều hướng 2,4,6,8 / mũi tên
-	 * hoặc click chuột/chạm màn hình để di chuyển).
-	 * Tắt hoàn toàn tự động di chuyển & xóa dấu tích tọa độ cũ để nhân vật không bao giờ bị kéo giật ngược về chỗ cũ.
+	 * Được gọi từ bytecode hook movePlayer_(int, int) khi người dùng click chuột hoặc chạm đất di chuyển.
+	 * Nhận tọa độ click chuột pixel trong thế giới (clickX, clickY).
+	 * Nếu click vào NPC: LẬP TỨC khóa target vào NPC và kích hoạt giao tiếp nếu đứng gần!
 	 */
-	public static void onUserManualMove() {
-		class_abj.au = false; // Tắt Auto đánh
-		class_abj.av = false; // Tắt cờ cấu hình auto (tránh class_hw tự động kích hoạt lại au)
+	public static void onUserManualClick(int clickX, int clickY) {
+		onUserManualMove();
+
 		class_abj gameScreen = class_acv.s;
-		if (gameScreen != null) {
-			gameScreen.r = null; // Bỏ target mục tiêu
-			if (gameScreen.q != null) {
-				// Cập nhật tâm bãi train về vị trí hiện tại để xóa hoàn toàn dấu tích tọa độ cũ
-				gameScreen.q.ag = gameScreen.q.cK;
-				gameScreen.q.ah = gameScreen.q.cL;
+		if (gameScreen != null && gameScreen.l != null) {
+			int size = gameScreen.l.size();
+			for (int i = 0; i < size; i++) {
+				Object obj = gameScreen.l.elementAt(i);
+				if (obj instanceof class_vh) {
+					class_vh vh = (class_vh) obj;
+					if (isNpc(vh)) {
+						if (class_yg.d(vh.cK - clickX) < 22 && class_yg.d(vh.cL - 20 - clickY) < 42) {
+							gameScreen.r = vh; // Khóa target vào NPC ngay lập tức!
+							class_acv.g = false;
+							if (gameScreen.q != null) {
+								int dist = class_yg.a((int) gameScreen.q.cK, (int) gameScreen.q.cL, (int) vh.cK, (int) vh.cL);
+								if (dist <= 40) {
+									class_acv.c[5] = true;
+								}
+							}
+							return;
+						}
+					}
+				}
 			}
 		}
 	}
 
 	/**
+	 * Được gọi khi người dùng chủ động di chuyển (bấm phím điều hướng 2,4,6,8 / mũi tên
+	 * hoặc click chuột/chạm màn hình để di chuyển).
+	 * Đóng băng auto trong 5 giây, sau khi người chơi ngừng thao tác thì sau 5s tự động bật lại.
+	 */
+	public static void onUserManualMove() {
+		class_abj gameScreen = class_acv.s;
+		if (gameScreen != null && gameScreen.q != null) {
+			// Nếu nhân vật đang bị choáng (cW), không tính là thao tác thủ công
+			if (gameScreen.q.cW) {
+				return;
+			}
+		}
+
+		// Nếu auto đang bật hoặc trước đó đã kích hoạt: ghi nhớ để sau 5s tự động kích hoạt lại
+		if (class_abj.au || class_abj.av || autoCombatKeepActive) {
+			autoWasActiveBeforeManual = true;
+		}
+
+		// Tạm dừng auto và kéo dài thời gian đóng băng: 5 giây tính từ thao tác cuối cùng
+		long now = System.currentTimeMillis();
+		manualFreezeUntil = now + 5000L;
+
+		// Tạm thời tắt cờ au của client để không tranh chấp quyền điều khiển với người chơi
+		class_abj.au = false;
+		isRegulating = false;
+		if (gameScreen != null && gameScreen.r != null) {
+			// Chỉ bỏ target quái vật cũ, TUYỆT ĐỐI KHÔNG bỏ target nếu đang chọn NPC
+			if (!isNpc(gameScreen.r)) {
+				gameScreen.r = null;
+			}
+		}
+	}
+
+	public static boolean isAutoRunning() {
+		if (!class_abj.au && !class_abj.av) {
+			return false;
+		}
+		if (System.currentTimeMillis() < manualFreezeUntil) {
+			return false;
+		}
+		return class_abj.au || class_abj.av;
+	}
+
+	/**
 	 * Được gọi từ bytecode patch trong class_abj.b(class_vh, int)
-	 * Cho phép nhân vật tự động di chuyển đuổi theo mục tiêu khi auto đánh,
-	 * áp dụng cho cả quái vật (cF == 1) lẫn mục tiêu PK (cY == true).
-	 * Nếu mục tiêu ở quá xa (vượt quá MAX_TARGET_DISTANCE) -> không đuổi.
+	 * Cho phép nhân vật tự động di chuyển đuổi theo mục tiêu khi auto đánh.
+	 * TUYỆT ĐỐI KHÔNG đuổi theo ra ngoài vùng 4 góc của bãi treo máy,
+	 * và KHÔNG đuổi theo bất cứ mục tiêu nào khi đang trong trạng thái điều tiết về trung tâm.
 	 */
 	public static boolean shouldChase(Object target) {
-		if (!class_abj.au) return false;
+		if (!isAutoRunning()) return false;
 		if (target == null) return false;
+		// Nếu đang trong trạng thái điều tiết về trung tâm -> không đuổi theo bất kỳ ai
+		if (isRegulating) return false;
+
 		if (target instanceof class_vh) {
 			class_vh vh = (class_vh) target;
 			class_abj gameScreen = class_acv.s;
 			if (gameScreen != null && gameScreen.q != null) {
+				// Với vật phẩm rơi: kiểm tra phạm vi mở rộng có vùng đệm loot
+				if (vh instanceof class_ba) {
+					if (!isInsideLootZone((int) vh.cK, (int) vh.cL)) {
+						return false;
+					}
+				} else {
+					// Quái vật BẮT BUỘC phải nằm bên trong phạm vi 4 góc bãi treo máy
+					if (!isInsideZone((int) vh.cK, (int) vh.cL)) {
+						return false;
+					}
+				}
 				int dist = class_yg.a((int) gameScreen.q.cK, (int) gameScreen.q.cL, (int) vh.cK, (int) vh.cL);
-				if (dist > MAX_TARGET_DISTANCE) {
+				if (dist > (MAX_TARGET_DISTANCE + LOOT_BUFFER)) {
 					return false; // Quá xa mục tiêu -> không kích hoạt đuổi
 				}
 			}
@@ -177,12 +347,125 @@ public class ModController {
 		return false;
 	}
 
-	// Trạng thái tuần tra và đuổi quái khi auto đánh
-	public static int slot5Range = -1; // Tầm chiêu ô số 5 trích xuất tự động từ game
+	// =========================================================================
+	// KHOANH VÙNG 4 GÓC BÃI TREO MÁY & ĐIỀU TIẾT VỀ TRUNG TÂM
+	// =========================================================================
+	public static short autoAnchorMapId = -1;
+	public static int autoAnchorX = -1;
+	public static int autoAnchorY = -1;
+	public static final int ZONE_BOX_RADIUS_X = 130;  // Nửa chiều rộng bãi train (pixel)
+	public static final int ZONE_BOX_RADIUS_Y = 110;  // Nửa chiều cao bãi train (pixel)
+	public static final int MAX_TARGET_DISTANCE = 140; // Cự ly tối đa để phát hiện/tiếp cận mục tiêu trong bãi
+	public static final int LOOT_BUFFER = 35;         // Vùng đệm nhặt đồ xung quanh (+35px) tránh bỏ sót item rơi ngoài rìa
+
+	// Bán kính và bộ đếm thời gian cho cơ chế tuần tra qua lại tìm quái trong bãi
+	public static final int PATROL_RADIUS_X = 65;
+	public static final int PATROL_RADIUS_Y = 55;
 	private static long lastPatrolTime = 0;
+	private static int nextPatrolDelay = 2500;
+
+	// Tham chiếu mảng phím tắt từ class_abj (được cập nhật mỗi tick từ Patch 0)
+	public static int[] currentShortcutSlots = null;
+
+	// Trạng thái điều tiết về trung tâm bãi
+	public static boolean isRegulating = false;
+	private static long lastRegulateMoveTime = 0;
+
+	/**
+	 * Kiểm tra xem tọa độ (x, y) có nằm trọn vẹn trong vùng 4 góc của bãi treo máy hay không.
+	 */
+	public static boolean isInsideZone(int x, int y) {
+		if (autoAnchorX == -1 || autoAnchorY == -1) {
+			return true;
+		}
+		int minX = autoAnchorX - ZONE_BOX_RADIUS_X;
+		int maxX = autoAnchorX + ZONE_BOX_RADIUS_X;
+		int minY = autoAnchorY - ZONE_BOX_RADIUS_Y;
+		int maxY = autoAnchorY + ZONE_BOX_RADIUS_Y;
+		return (x >= minX && x <= maxX && y >= minY && y <= maxY);
+	}
+
+	/**
+	 * Kiểm tra xem tọa độ vật phẩm rơi có nằm trong vùng bãi train mở rộng (kèm đệm LOOT_BUFFER) hay không.
+	 */
+	public static boolean isInsideLootZone(int x, int y) {
+		if (autoAnchorX == -1 || autoAnchorY == -1) {
+			return true;
+		}
+		int minX = autoAnchorX - (ZONE_BOX_RADIUS_X + LOOT_BUFFER);
+		int maxX = autoAnchorX + (ZONE_BOX_RADIUS_X + LOOT_BUFFER);
+		int minY = autoAnchorY - (ZONE_BOX_RADIUS_Y + LOOT_BUFFER);
+		int maxY = autoAnchorY + (ZONE_BOX_RADIUS_Y + LOOT_BUFFER);
+		return (x >= minX && x <= maxX && y >= minY && y <= maxY);
+	}
+
+	/**
+	 * Kích hoạt chiêu thức thông minh theo thứ tự ưu tiên:
+	 * Ưu tiên chiêu ô số 5 -> ô số 3 -> các chiêu khác (nếu có trên ô 7, 9)
+	 * Khi các chiêu đặc biệt đang hồi chiêu hoặc không đủ mana, sử dụng chiêu thường (ô số 1) để giữ nhịp đánh.
+	 * Đảm bảo chỉ kích hoạt duy nhất 1 chiêu mỗi tick để không bị chiêu thường độc chiếm vòng lặp phím.
+	 */
+	public static void triggerAutoAttack(class_abj gameScreen) {
+		if (gameScreen == null || gameScreen.q == null) {
+			class_acv.c[1] = true;
+			return;
+		}
+		class_hw player = gameScreen.q;
+		long now = System.currentTimeMillis();
+
+		int[] priorityKeys = new int[]{5, 3, 7, 9};
+		int page = class_abj.V;
+		if (currentShortcutSlots != null && class_sc.a != null && page >= 0 && page < class_sc.a.length && class_sc.a[page] != null) {
+			for (int i = 0; i < priorityKeys.length; i++) {
+				int key = priorityKeys[i];
+				if (key >= 0 && key < currentShortcutSlots.length) {
+					int slotIdx = currentShortcutSlots[key];
+					if (slotIdx >= 0 && slotIdx < class_sc.a[page].length) {
+						class_gd gd = class_sc.a[page][slotIdx];
+						if (gd != null && gd.a == 1) { // Là chiêu thức
+							byte skillId = gd.b();
+							if (skillId >= 0 && skillId < class_hw.aS.length && class_hw.aS[skillId] > 0) {
+								if (player.aq != null && player.at != null && skillId < player.aq.length && skillId < player.at.length) {
+									if (now - player.aq[skillId] > player.at[skillId]) {
+										try {
+											int mpCost = class_qz.b(skillId, (int) class_hw.aS[skillId]);
+											if (player.bz < mpCost) {
+												continue; // Không đủ mana, xét chiêu kế tiếp
+											}
+										} catch (Exception e) {}
+
+										// Chiêu hợp lệ, đã hồi xong và đủ mana: Kích hoạt DUY NHẤT chiêu này!
+										class_acv.c[1] = false;
+										class_acv.c[3] = false;
+										class_acv.c[5] = false;
+										class_acv.c[key] = true;
+										return;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// Nếu tất cả các chiêu đặc biệt đều đang hồi chiêu hoặc hết mana: Đánh thường (ô số 1)
+		class_acv.c[3] = false;
+		class_acv.c[5] = false;
+		class_acv.c[1] = true;
+	}
+
+	// Trạng thái tuần tra và duy trì auto
+	public static int slot5Range = -1;
+	public static boolean autoCombatKeepActive = false;
 	private static long lastChaseTime = 0;
-	private static int patrolStep = 0;
 	private static boolean lastAuState = false;
+
+	// Cơ chế chống kẹt đánh quái (anti-stuck)
+	private static short lastAttackMobId = -1;
+	private static int lastMobHp = -1;
+	private static long mobAttackStartTime = 0;
+	private static final java.util.Hashtable ignoredMobs = new java.util.Hashtable();
 
 	// Trạng thái tự động nhặt vật phẩm ưu tiên số 1
 	private static long lastItemMoveTime = 0;
@@ -195,17 +478,8 @@ public class ModController {
 	private static int lastPlayerY = -1;
 	private static final java.util.Hashtable ignoredItems = new java.util.Hashtable();
 
-	public static final int MAX_TARGET_DISTANCE = 140; // Khoảng cách tối đa để bám đuổi target (pixel)
-	public static final int MAX_ROAM_RADIUS = 200;      // Bán kính tối đa của bãi train (pixel)
-	public static final int PATROL_RADIUS = 75;         // Bán kính tuần tra quanh tâm bãi khi hết quái
-
 	/**
-	 * Quét tìm vật phẩm rơi trên mặt đất (class_ba) gần nhất trong phạm vi bãi train.
-	 * Bỏ qua các vật phẩm:
-	 * - Đã hết hạn hoặc đã nhặt (cE == true)
-	 * - Tạm thời bị bỏ qua (kẹt / hành trang đầy / vật phẩm của người khác)
-	 * - Trang bị khi hành trang đã đầy
-	 * - Tiền khi túi tiền đã vượt giới hạn
+	 * Quét tìm vật phẩm rơi trên mặt đất (class_ba) gần nhất TRONG PHẠM VI KHOANH VÙNG BÃI TRAIN (kèm LOOT_BUFFER).
 	 */
 	private static class_ba findNearestDroppedItem(class_abj gameScreen, int originX, int originY, class_hw player) {
 		Vector entityList = gameScreen.l;
@@ -242,16 +516,15 @@ public class ModController {
 					continue;
 				}
 
-				// Khoảng cách từ vật phẩm tới tâm bãi train & tới người chơi
-				int distToOrigin = class_yg.a((int) item.cK, (int) item.cL, originX, originY);
-				int distToPlayer = class_yg.a((int) item.cK, (int) item.cL, (int) player.cK, (int) player.cL);
+				// Vật phẩm BẮT BUỘC phải nằm trong phạm vi mở rộng của bãi train (kèm LOOT_BUFFER)
+				if (!isInsideLootZone((int) item.cK, (int) item.cL)) {
+					continue;
+				}
 
-				// Vật phẩm phải nằm trong phạm vi bãi train
-				if (distToOrigin <= MAX_ROAM_RADIUS && distToPlayer <= MAX_ROAM_RADIUS + 60) {
-					if (distToPlayer < minDistance) {
-						minDistance = distToPlayer;
-						nearest = item;
-					}
+				int distToPlayer = class_yg.a((int) item.cK, (int) item.cL, (int) player.cK, (int) player.cL);
+				if (distToPlayer <= (MAX_TARGET_DISTANCE + LOOT_BUFFER) && distToPlayer < minDistance) {
+					minDistance = distToPlayer;
+					nearest = item;
 				}
 			}
 		}
@@ -259,13 +532,17 @@ public class ModController {
 	}
 
 	/**
-	 * Xử lý quét quái mở rộng, đuổi theo mục tiêu và tuần tra di chuyển quanh bãi khi bãi trống quái.
+	 * Xử lý quét quái khoanh vùng 4 góc, áp sát tấn công, nhặt đồ và điều tiết về trung tâm.
 	 * Được gọi mỗi frame từ class_abj.b().
 	 */
 	public static void handleAutoCombatRoaming() {
 		try {
-			if (!class_abj.au) {
+			if (!isAutoRunning()) {
 				lastAuState = false;
+				autoAnchorMapId = -1;
+				autoAnchorX = -1;
+				autoAnchorY = -1;
+				isRegulating = false;
 				return;
 			}
 			class_abj gameScreen = class_acv.s;
@@ -273,54 +550,77 @@ public class ModController {
 				return;
 			}
 			class_hw player = gameScreen.q;
-			// Nếu nhân vật đã chết (cV == 3) hoặc đang bị khóa
-			if (player.cV == 3 || player.dc) {
+			// Nếu nhân vật đã chết (cV == 3) hoặc đang bị khóa (dc) hoặc đang bị choáng/khống chế (cW)
+			if (player.cV == 3 || player.dc || player.cW) {
 				return;
 			}
 
-			// Khi vừa mới bật Auto (chuyển trạng thái từ false -> true):
-			// Thiết lập tâm bãi train NGAY TẠI vị trí hiện tại của nhân vật
-			if (!lastAuState || (player.ag == 0 && player.ah == 0)) {
-				player.ag = player.cK;
-				player.ah = player.cL;
+			// Nếu người chơi đang chủ động tương tác/chọn NPC: Tuyệt đối không can thiệp, không chuyển target
+			if (gameScreen.r != null && isNpc(gameScreen.r)) {
+				return;
+			}
+
+			// Khi vừa mới bật Auto hoặc khi chuyển sang map mới:
+			// KHÓA CHẶT TÂM BÃI TRAIN (ANCHOR) DUY NHẤT 1 LẦN NGAY TẠI TỌA ĐỘ BẮT ĐẦU!
+			if (autoAnchorX == -1 || autoAnchorMapId != gameScreen.aG) {
+				autoAnchorMapId = gameScreen.aG;
+				autoAnchorX = player.cK;
+				autoAnchorY = player.cL;
+				player.ag = autoAnchorX;
+				player.ah = autoAnchorY;
+				lastAttackMobId = -1;
+				lastMobHp = -1;
+				mobAttackStartTime = 0;
+				isRegulating = false;
 			}
 			lastAuState = true;
 
-			int originX = player.ag;
-			int originY = player.ah;
+			int originX = autoAnchorX;
+			int originY = autoAnchorY;
+			long now = System.currentTimeMillis();
 
-			// Kiểm tra nếu nhân vật đã tiến quá xa khỏi tâm bãi train
-			int distPlayerToOrigin = class_yg.a((int) player.cK, (int) player.cL, originX, originY);
-			if (distPlayerToOrigin > MAX_ROAM_RADIUS) {
-				// Bỏ target và quay trở lại tâm bãi train
-				gameScreen.r = null;
-				((class_sc) player).s = null;
-				gameScreen.movePlayer(originX, originY);
-				return;
+			// =========================================================================
+			// A. NẾU ĐANG TRONG TRẠNG THÁI ĐIỀU TIẾT VỀ TRUNG TÂM:
+			// "Nếu đã vào trạng thái điều tiết trở lại rồi thì không target thêm thứ gì cho đến khi trở lại xong xuôi."
+			// =========================================================================
+			if (isRegulating) {
+				if (gameScreen.r != null && !isNpc(gameScreen.r)) {
+					gameScreen.r = null; // Tuyệt đối không target quái vật khi đang điều tiết
+				}
+				int distToCenter = class_yg.a((int) player.cK, (int) player.cL, originX, originY);
+				// Khi đã bước vào lại an toàn bên trong bãi train (hoặc cự ly tới tâm <= 60px): Hoàn thành điều tiết!
+				// Không ghim cứng nhân vật vào 1 điểm sát sạt 20px làm mất nhịp farm tự nhiên.
+				if (distToCenter <= 60 || isInsideZone((int) player.cK, (int) player.cL)) {
+					isRegulating = false;
+					((class_sc) player).s = null;
+				} else {
+					// Vẫn đang trên đường về tâm bãi
+					if (((class_sc) player).s == null || now - lastRegulateMoveTime >= 400) {
+						lastRegulateMoveTime = now;
+						gameScreen.movePlayer(originX, originY);
+					}
+					return; // Dừng xử lý, chỉ tập trung chạy về tâm
+				}
 			}
 
 			// =========================================================================
-			// 0. ƯU TIÊN SỐ 1: TỰ ĐỘNG NHẶT VẬT PHẨM TRÊN ĐẤT (class_ba)
-			// Khi bật AutoPickup, vật phẩm là ưu tiên tối cao số 1:
-			// Quét và tiến hành di chuyển đến nhặt trước khi đánh bất kỳ quái nào.
+			// B. KHI KHÔNG TRONG TRẠNG THÁI ĐIỀU TIẾT:
+			// 0. ƯU TIÊN SỐ 1: TỰ ĐỘNG NHẶT VẬT PHẨM TRONG VÙNG BÃI TRAIN (KÈM VÙNG ĐỆM LOOT)
+			// (Không bỏ lỡ giữa chừng đồ ngon khi đi nhặt)
 			// =========================================================================
 			if (globalConfig.isAutoPickup) {
 				class_ba nearestItem = findNearestDroppedItem(gameScreen, originX, originY, player);
 				if (nearestItem != null) {
-					// Khóa mục tiêu vào vật phẩm
 					gameScreen.r = nearestItem;
 					int distToItem = class_yg.a((int) player.cK, (int) player.cL, (int) nearestItem.cK, (int) nearestItem.cL);
-					long now = System.currentTimeMillis();
 
 					if (distToItem > 35) {
-						// Ở xa hơn tầm nhặt (> 35px): Tiến hành di chuyển áp sát vật phẩm
 						if (((class_sc) player).s == null || now - lastItemMoveTime >= 500) {
 							lastItemMoveTime = now;
-							// Kiểm tra phát hiện kẹt đường khi đi nhặt vật phẩm
 							if (nearestItem.cG == lastMoveItemId) {
 								if (player.cK == lastPlayerX && player.cL == lastPlayerY) {
 									moveStuckCount++;
-									if (moveStuckCount >= 5) {
+									if (moveStuckCount >= 8) {
 										ignoredItems.put(new Short(nearestItem.cG), new Long(now + 15000L));
 										gameScreen.r = null;
 										moveStuckCount = 0;
@@ -339,16 +639,14 @@ public class ModController {
 							gameScreen.movePlayer((int) nearestItem.cK, (int) nearestItem.cL);
 						}
 					} else {
-						// Đã trong cự ly nhặt (<= 35px): Dừng di chuyển, hướng về vật phẩm và gửi gói tin nhặt đồ
 						((class_sc) player).s = null;
 						player.D = class_yg.b((class_vh) player, (class_vh) nearestItem);
 						if (now - lastPickupTime >= 300) {
 							lastPickupTime = now;
 							if (nearestItem.cG == lastAttemptItemId) {
 								pickupAttempts++;
-								if (pickupAttempts > 6) {
-									// Thử 6 lần không nhặt được (đồ người khác hoặc lỗi) -> tạm bỏ qua 15s
-									ignoredItems.put(new Short(nearestItem.cG), new Long(now + 15000L));
+								if (pickupAttempts > 10) {
+									ignoredItems.put(new Short(nearestItem.cG), new Long(now + 10000L));
 									gameScreen.r = null;
 									pickupAttempts = 0;
 									lastAttemptItemId = -1;
@@ -361,10 +659,8 @@ public class ModController {
 							gameScreen.D.a(nearestItem.cF, nearestItem.cG);
 						}
 					}
-					// Dừng tại đây: TUYỆT ĐỐI KHÔNG tấn công quái hay tuần tra khi có vật phẩm cần nhặt
-					return;
+					return; // Đang nhặt đồ, hoàn tất nhặt đồ trước
 				} else {
-					// Đã nhặt xong hoặc không có vật phẩm nào trong phạm vi
 					if (gameScreen.r instanceof class_ba) {
 						gameScreen.r = null;
 						((class_sc) player).s = null;
@@ -372,60 +668,88 @@ public class ModController {
 				}
 			}
 
-			// Xác định tầm đánh phù hợp:
-			// 1. Ưu tiên lấy từ tầm chiêu ô số 5 trích xuất được từ client
-			// 2. Nếu không có hoặc tầm chiêu <= 40px, dùng cự ly chuẩn hợp lý (cận chiến 52px, đánh xa 90px)
-			// Giúp nhân vật giữ cự ly đẹp mắt, không bao giờ chạy dí sát rạt vào người quái.
-			int attackRange;
-			if (slot5Range > 40) {
-				// Trừ hao 8px để chắc chắn chạm quái nhưng không bị áp sát rạt
-				attackRange = slot5Range - 8;
-			} else {
-				attackRange = (player.aO == 2 || player.aO == 3) ? 90 : 52;
-			}
+			// =========================================================================
+			// C. KIỂM TRA MỤC TIÊU QUÁI VẬT HIỆN TẠI (ĐANG ĐÁNH DỞ)
+			// (Tránh việc người chơi đang đánh quái mà bỏ lỡ giữa chừng)
+			// =========================================================================
+			boolean isRanged = (player.aO == 2 || player.aO == 4);
+			int attackRange = isRanged ? 70 : 25;
 
-			// 1. Kiểm tra mục tiêu hiện tại
 			class_vh currentTarget = gameScreen.r;
 			if (currentTarget != null) {
 				if (currentTarget instanceof class_ba) {
-					// Đang nhặt đồ rơi -> không can thiệp
 					return;
 				}
 				if (currentTarget.cF == 1 && currentTarget instanceof class_bb) {
 					class_bb mob = (class_bb) currentTarget;
 					int distToMob = class_yg.a((int) player.cK, (int) player.cL, (int) mob.cK, (int) mob.cL);
-					int distMobToOrigin = class_yg.a((int) mob.cK, (int) mob.cL, originX, originY);
 
-					// BỎ TARGET NẾU:
-					// - Quái đã chết (cV == 5 hoặc máu <= 0)
-					// - Hoặc TIẾN QUÁ XA MỤC TIÊU TARGET (distToMob > MAX_TARGET_DISTANCE)
-					// - Hoặc quái chạy ra ngoài bán kính bãi train (distMobToOrigin > MAX_ROAM_RADIUS)
-					if (mob.cV == 5 || mob.v <= 0 || distToMob > MAX_TARGET_DISTANCE || distMobToOrigin > MAX_ROAM_RADIUS) {
+					// NẾU QUÁI ĐÃ RA NGOÀI 4 GÓC HOẶC ĐÃ CHẾT HOẶC QUÁ XA:
+					// Hủy target ngay lập tức để không bao giờ đuổi theo quái ra khỏi bãi!
+					if (!isInsideZone((int) mob.cK, (int) mob.cL) || mob.cV == 5 || mob.v <= 0 || distToMob > MAX_TARGET_DISTANCE) {
 						gameScreen.r = null;
 						currentTarget = null;
-						((class_sc) player).s = null; // Hủy bước chạy đuổi theo quái
+						((class_sc) player).s = null;
+						lastAttackMobId = -1;
 					} else {
-						// Quái còn sống và trong tầm cho phép: Kiểm tra cự ly tấn công
+						// Quái còn sống và nằm trong 4 góc: tiếp tục đánh nốt con quái này
+						if (mob.cG == lastAttackMobId) {
+							if (mob.v < lastMobHp) {
+								lastMobHp = mob.v;
+								mobAttackStartTime = now;
+							} else if (now - mobAttackStartTime >= 3500L) {
+								if (distToMob > 18) {
+									gameScreen.movePlayer((int) mob.cK, (int) mob.cL);
+								}
+								if (now - mobAttackStartTime >= 4500L) {
+									ignoredMobs.put(new Short(mob.cG), new Long(now + 8000L));
+									gameScreen.r = null;
+									currentTarget = null;
+									((class_sc) player).s = null;
+									lastAttackMobId = -1;
+									return;
+								}
+							}
+						} else {
+							lastAttackMobId = mob.cG;
+							lastMobHp = mob.v;
+							mobAttackStartTime = now;
+						}
+
 						if (distToMob > attackRange) {
-							// Ở XA HƠN TẦM ĐÁNH -> TỰ ĐỘNG DI CHUYỂN ÁP SÁT QUÁI
-							long now = System.currentTimeMillis();
-							if (((class_sc) player).s == null || now - lastChaseTime >= 600) {
+							if (((class_sc) player).s == null || now - lastChaseTime >= 500) {
 								lastChaseTime = now;
 								gameScreen.movePlayer((int) mob.cK, (int) mob.cL);
 							}
 						} else {
-							// ĐÃ VÀO TẦM ĐÁNH -> DỪNG CHẠY VÀ KÍCH HOẠT PHÍM ĐÁNH
 							((class_sc) player).s = null;
-							class_acv.c[1] = true;
-							class_acv.c[3] = true;
-							class_acv.c[5] = true;
+							triggerAutoAttack(gameScreen);
 						}
-						return;
+						return; // Đang đánh dở quái, không ngắt quãng giữa chừng
 					}
 				}
 			}
 
-			// 2. Nếu chưa có target hợp lệ: Quét tìm quái còn sống gần nhất trong bán kính cho phép
+			// =========================================================================
+			// D. HOẠT ĐỘNG ĐIỀU TIẾT VỀ TRUNG TÂM (LÀM SAU CÙNG)
+			// Sau khi không còn nhặt đồ dở và không còn đánh quái dở:
+			// Nếu người chơi đang ở ngoài phạm vi 4 góc -> Kích hoạt điều tiết về tâm bãi!
+			// =========================================================================
+			if (!isInsideZone((int) player.cK, (int) player.cL)) {
+				isRegulating = true;
+				if (gameScreen.r != null && !isNpc(gameScreen.r)) {
+					gameScreen.r = null;
+				}
+				((class_sc) player).s = null;
+				lastAttackMobId = -1;
+				lastRegulateMoveTime = now;
+				gameScreen.movePlayer(originX, originY);
+				return;
+			}
+
+			// =========================================================================
+			// E. NGƯỜI CHƠI ĐANG Ở TRONG 4 GÓC: QUÉT TÌM QUÁI MỚI TRONG 4 GÓC
+			// =========================================================================
 			Vector entityList = gameScreen.l;
 			if (entityList != null) {
 				class_bb nearestMob = null;
@@ -436,88 +760,86 @@ public class ModController {
 					Object obj = entityList.elementAt(i);
 					if (obj instanceof class_bb) {
 						class_bb mob = (class_bb) obj;
-						// Bỏ qua quái đã chết
 						if (mob.cV == 5 || mob.v <= 0) {
 							continue;
 						}
-						// Khoảng cách từ quái tới tâm bãi train & tới người chơi
-						int distToOrigin = class_yg.a((int) mob.cK, (int) mob.cL, originX, originY);
-						int distToPlayer = class_yg.a((int) mob.cK, (int) mob.cL, (int) player.cK, (int) player.cL);
-
-						// Chỉ chọn quái nếu nằm trong bán kính bãi VÀ trong tầm khoảng cách cho phép
-						if (distToOrigin <= MAX_ROAM_RADIUS && distToPlayer <= MAX_TARGET_DISTANCE) {
-							if (distToPlayer < minDistance) {
-								minDistance = distToPlayer;
-								nearestMob = mob;
+						Long expire = (Long) ignoredMobs.get(new Short(mob.cG));
+						if (expire != null) {
+							if (now < expire.longValue()) {
+								continue;
+							} else {
+								ignoredMobs.remove(new Short(mob.cG));
 							}
+						}
+
+						// BẮT BUỘC QUÁI PHẢI NẰM TRONG VÙNG 4 GÓC CỦA BÃI TRAIN
+						if (!isInsideZone((int) mob.cK, (int) mob.cL)) {
+							continue;
+						}
+
+						int distToPlayer = class_yg.a((int) mob.cK, (int) mob.cL, (int) player.cK, (int) player.cL);
+						if (distToPlayer <= MAX_TARGET_DISTANCE && distToPlayer < minDistance) {
+							minDistance = distToPlayer;
+							nearestMob = mob;
 						}
 					}
 				}
 
 				if (nearestMob != null) {
-					// Tìm thấy quái trong bãi -> Khóa mục tiêu ngay lập tức
 					gameScreen.r = nearestMob;
+					lastAttackMobId = nearestMob.cG;
+					lastMobHp = nearestMob.v;
+					mobAttackStartTime = now;
 					int distToMob = class_yg.a((int) player.cK, (int) player.cL, (int) nearestMob.cK, (int) nearestMob.cL);
 					if (distToMob > attackRange) {
-						// Áp sát quái
-						lastChaseTime = System.currentTimeMillis();
+						lastChaseTime = now;
 						gameScreen.movePlayer((int) nearestMob.cK, (int) nearestMob.cL);
 					} else {
-						// Đã trong tầm đánh
 						((class_sc) player).s = null;
-						class_acv.c[1] = true;
-						class_acv.c[3] = true;
-						class_acv.c[5] = true;
+						triggerAutoAttack(gameScreen);
 					}
 					return;
 				}
 			}
 
-			// 3. NẾU KHÔNG CÓ QUÁI NÀO TRONG BÃI (BÃI TRỐNG):
-			// Di chuyển tuần tra vòng quanh tâm bãi train
-			long now = System.currentTimeMillis();
-			// Nếu nhân vật đang di chuyển theo đường đi (((class_sc) player).s != null) thì để đi tiếp
-			if (((class_sc) player).s != null) {
-				return;
-			}
+			// =========================================================================
+			// F. BÃI TRỐNG (KHÔNG CÓ QUÁI):
+			// Nếu nhân vật vẫn đang ở bên trong vùng bãi train -> DI CHUYỂN QUA LẠI TUẦN TRA TÌM QUÁI
+			// Giữ logic an toàn trong bán kính khoanh vùng (PATROL_RADIUS), không đi ra ngoài bãi.
+			// =========================================================================
+			if (isInsideZone((int) player.cK, (int) player.cL)) {
+				// Nếu nhân vật đang bước đi tuần tra thì cứ để đi tiếp
+				if (((class_sc) player).s != null) {
+					// Đang di chuyển tìm quái
+				} else {
+					// Đã đến điểm trước đó hoặc đang đứng chờ: Đợi delay rồi chọn điểm tuần tra mới
+					if (now - lastPatrolTime >= nextPatrolDelay) {
+						lastPatrolTime = now;
+						nextPatrolDelay = 2200 + (int)(Math.random() * 1500); // 2.2s - 3.7s
 
-			// Cách mỗi 2.5 giây đổi điểm tuần tra 1 lần
-			if (now - lastPatrolTime >= 2500) {
-				lastPatrolTime = now;
-				patrolStep = (patrolStep + 1) % 6;
+						// Chọn tọa độ tuần tra ngẫu nhiên quanh tâm bãi train (bán kính an toàn)
+						int offsetX = (int)(Math.random() * (PATROL_RADIUS_X * 2 + 1)) - PATROL_RADIUS_X;
+						int offsetY = (int)(Math.random() * (PATROL_RADIUS_Y * 2 + 1)) - PATROL_RADIUS_Y;
+						int targetX = originX + offsetX;
+						int targetY = originY + offsetY;
 
-				// 6 điểm tuần tra hình lục giác xung quanh tâm bãi
-				int destX = originX;
-				int destY = originY;
-				switch (patrolStep) {
-					case 0: // Phải
-						destX = originX + PATROL_RADIUS;
-						destY = originY;
-						break;
-					case 1: // Dưới - Phải
-						destX = originX + PATROL_RADIUS / 2;
-						destY = originY + PATROL_RADIUS;
-						break;
-					case 2: // Dưới - Trái
-						destX = originX - PATROL_RADIUS / 2;
-						destY = originY + PATROL_RADIUS;
-						break;
-					case 3: // Trái
-						destX = originX - PATROL_RADIUS;
-						destY = originY;
-						break;
-					case 4: // Trên - Trái
-						destX = originX - PATROL_RADIUS / 2;
-						destY = originY - PATROL_RADIUS;
-						break;
-					case 5: // Trên - Phải
-						destX = originX + PATROL_RADIUS / 2;
-						destY = originY - PATROL_RADIUS;
-						break;
+						// Đảm bảo tuyệt đối điểm tuần tra nằm trong bãi
+						if (isInsideZone(targetX, targetY)) {
+							gameScreen.movePlayer(targetX, targetY);
+						}
+					}
 				}
-
-				// Ra lệnh cho nhân vật di chuyển tới điểm tuần tra bằng thuật toán pathfinding có sẵn
-				gameScreen.movePlayer(destX, destY);
+			} else {
+				// Đã lọt ra ngoài bãi -> điều hướng nhẹ nhàng về phía tâm
+				int distToCenter = class_yg.a((int) player.cK, (int) player.cL, originX, originY);
+				if (distToCenter > 60) {
+					if (((class_sc) player).s == null || now - lastRegulateMoveTime >= 600) {
+						lastRegulateMoveTime = now;
+						gameScreen.movePlayer(originX, originY);
+					}
+				} else {
+					((class_sc) player).s = null;
+				}
 			}
 		} catch (Exception e) {
 			// Bắt ngoại lệ an toàn, không bao giờ để crash game loop

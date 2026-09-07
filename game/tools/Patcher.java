@@ -20,16 +20,12 @@ import javassist.expr.*;
  */
 public class Patcher {
     public static void main(String[] args) throws Exception {
-        ClassPool pool = ClassPool.getDefault();
+        ClassPool pool = new ClassPool(true);
+        pool.appendClassPath("../libs/KPAH_225_remade.jar");
+        pool.appendClassPath("../wtk/lib/midpapi20.jar");
+        pool.appendClassPath("../wtk/lib/cldcapi11.jar");
+        pool.appendClassPath("../build/classes");
         pool.insertClassPath("_orig_classes");
-        pool.insertClassPath("tools/_orig_classes");
-        pool.insertClassPath("game/tools/_orig_classes");
-        pool.insertClassPath("/tmp/orig_abj_clean");           // class_abj gốc sạch
-        pool.insertClassPath("/tmp/orig_ba_clean");            // class_ba gốc sạch
-        pool.insertClassPath("../libs/KPAH_225_remade.jar");
-        pool.insertClassPath("../wtk/lib/midpapi20.jar");
-        pool.insertClassPath("../wtk/lib/cldcapi11.jar");
-        pool.insertClassPath("../build/classes");
 
         patchClassAbj(pool);
         patchClassBa(pool);
@@ -45,6 +41,7 @@ public class Patcher {
             CtMethod bTick = cc.getDeclaredMethod("b", new CtClass[0]);
             bTick.insertBefore(
                 "try {" +
+                "    classes.ModController.currentShortcutSlots = this.cp;" +
                 "    if (this.cp != null && this.cp.length > 5) {" +
                 "        int idx5 = this.cp[5];" +
                 "        if (classes.class_sc.a != null && classes.class_sc.a.length > 1 && classes.class_sc.a[1] != null && idx5 >= 0 && idx5 < classes.class_sc.a[1].length) {" +
@@ -62,15 +59,18 @@ public class Patcher {
             System.out.println("Warning: Could not patch b(): " + e.getMessage());
         }
 
-        // === Patch 1+2: hàm z() – ưu tiên item trong danh sách mục tiêu & mở rộng bán kính quét quái khi auto ===
+        // === Patch 1+2: hàm z() – ưu tiên item trong danh sách mục tiêu, mở rộng bán kính quét quái khi auto, và chặn tuyệt đối mục tiêu ngoài 4 góc hoặc khi đang điều tiết ===
         CtMethod zMethod = cc.getDeclaredMethod("z", new CtClass[0]);
         zMethod.insertBefore(
+            "if (classes.ModController.isRegulating) {" +
+            "    return null;" +
+            "}" +
             "if (au && classes.ModController.globalConfig.isAutoPickup && this.r != null && (this.r instanceof classes.class_ba)) {" +
             "    return this.r;" +
             "}" +
             "if (au) {" +
             "    for (int i = 0; i < 4; i++) {" +
-            "        cb[i][0] = -140; cb[i][1] = 140; cb[i][2] = -140; cb[i][3] = 140;" +
+            "        cb[i][0] = -(classes.ModController.ZONE_BOX_RADIUS_X + classes.ModController.LOOT_BUFFER); cb[i][1] = classes.ModController.ZONE_BOX_RADIUS_X + classes.ModController.LOOT_BUFFER; cb[i][2] = -(classes.ModController.ZONE_BOX_RADIUS_Y + classes.ModController.LOOT_BUFFER); cb[i][3] = classes.ModController.ZONE_BOX_RADIUS_Y + classes.ModController.LOOT_BUFFER;" +
             "    }" +
             "} else {" +
             "    for (int i = 0; i < 4; i++) {" +
@@ -80,11 +80,25 @@ public class Patcher {
         );
         zMethod.instrument(new ExprEditor() {
             public void edit(MethodCall mc) throws CannotCompileException {
-                // Patch e_() and b_(): buộc false cho class_ba khi AutoPickup bật
-                if (mc.getMethodName().equals("e_") || mc.getMethodName().equals("b_")) {
+                // Patch e_() and b_(): buộc false cho class_ba khi AutoPickup bật; và loại bỏ ngay mục tiêu ngoài 4 góc bãi train
+                if (mc.getMethodName().equals("e_")) {
                     mc.replace(
                         "if (classes.ModController.globalConfig.isAutoPickup && ($0 instanceof classes.class_ba)) {" +
                         "    $_ = false;" +
+                        "} else {" +
+                        "    $_ = $proceed($$);" +
+                        "}"
+                    );
+                } else if (mc.getMethodName().equals("b_")) {
+                    mc.replace(
+                        "if (au && !($0 instanceof classes.class_ba) && !classes.ModController.isInsideZone((int)((classes.class_vh)$0).cK, (int)((classes.class_vh)$0).cL)) {" +
+                        "    $_ = true;" +
+                        "} else if (classes.ModController.globalConfig.isAutoPickup && ($0 instanceof classes.class_ba)) {" +
+                        "    if (classes.ModController.isInsideLootZone((int)((classes.class_vh)$0).cK, (int)((classes.class_vh)$0).cL)) {" +
+                        "        $_ = false;" +
+                        "    } else {" +
+                        "        $_ = true;" +
+                        "    }" +
                         "} else {" +
                         "    $_ = $proceed($$);" +
                         "}"
@@ -99,23 +113,6 @@ public class Patcher {
             }
         });
 
-        // === Patch 3: dừng auto-attack khi r là item (class_ba) ===
-        // Tránh dùng skill đánh quái lên vật phẩm rơi trên đất và không xóa r = null để giữ target
-        try {
-            CtClass[] paramTypes = new CtClass[]{
-                pool.get("int"),
-                pool.get("int")
-            };
-            CtMethod dMethod = cc.getDeclaredMethod("d", paramTypes);
-            dMethod.insertBefore(
-                "if (this.r != null && this.r instanceof classes.class_ba) {" +
-                "    return;" +
-                "}"
-            );
-            System.out.println("Patch 3 (prevent skill on item) applied to method d(int,int).");
-        } catch (Exception e) {
-            System.out.println("Warning: Could not patch d(int,int): " + e.getMessage());
-        }
 
         // === Patch 5: cho phép đuổi theo quái vật khi bật auto đánh ===
         // Trong method b(class_vh, int) của class_abj:
@@ -149,12 +146,12 @@ public class Patcher {
             System.out.println("Warning: Could not patch b(class_vh,int): " + e.getMessage());
         }
 
-        // === Patch 6: Tắt auto & reset tọa độ khi người dùng click chuột/chạm đất di chuyển ===
+        // === Patch 6: Tắt auto & kiểm tra click NPC khi người dùng click chuột/chạm đất di chuyển ===
         try {
             CtClass[] mpParams = new CtClass[]{ CtClass.intType, CtClass.intType };
             CtMethod mpMethod = cc.getDeclaredMethod("movePlayer_", mpParams);
-            mpMethod.insertBefore("classes.ModController.onUserManualMove();");
-            System.out.println("Patch 6 (manual-move hook) applied to movePlayer_(int,int).");
+            mpMethod.insertBefore("classes.ModController.onUserManualClick($1, $2);");
+            System.out.println("Patch 6 (manual-click & move hook) applied to movePlayer_(int,int).");
         } catch (Exception e) {
             System.out.println("Warning: Could not patch movePlayer_: " + e.getMessage());
         }

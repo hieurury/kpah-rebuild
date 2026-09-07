@@ -79,7 +79,7 @@ public class BuffInfluencePlayer {
         isStunned = false;
         secondOfStunned = 0;
         lastTimeStunned = 0;
-        BuffService.instance.sendRemoveBuffInfluence(this.player, BuffConst.BUFF_STUN);
+        // Client KPAH tự quản lý thời gian hết choáng dựa vào cZ, không gửi BUFF_ATTACK (89) để tránh client bị re-stun lặp lại
     }
 
     public void dispose() {

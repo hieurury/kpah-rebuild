@@ -101,10 +101,10 @@ public class QuestService {
                 qd.setBeginnerQuestId(1);
                 qd.setBeginnerProgress(0);
                 player.getInventory().plusXu(3000);
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 0, 10)); // HP nhỏ
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 3, 10)); // MP nhỏ
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 1, 10)); // HP nhỏ
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 4, 10)); // MP nhỏ
                 sendQuestInfo(player);
-                Service.instance.sendLogOut(player.getSession(), "Làm tốt lắm! Con đã nhận được 3000 xu và thuốc. Hãy đến gặp Thợ Rèn để lên đồ nhé!");
+                Service.instance.sendLogOut(player.getSession(), "Làm tốt lắm! Con đã nhận được 3000 xu và bình máu/mana. Hãy đến gặp Thợ Rèn để lên đồ nhé!");
             } else {
                 sendQuestInfo(player);
                 Service.instance.sendLogOut(player.getSession(), "Con mới tiêu diệt được " + (qd.getBeginnerProgress() - 1) + "/100 con Nhím thôi. Hãy tiếp tục cố gắng!");
@@ -122,9 +122,10 @@ public class QuestService {
                 qd.setBeginnerProgress(0);
                 ItemEquip weapon = ItemService.instance.createNewItemEquipment(getWeaponLv6(player.getInfo().getClassPlayer()), player.getInfo().getClassPlayer());
                 InventoryService.instance.addItemBagEquipment(player, weapon);
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 18, 5)); // Pot 100% str
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, 2)); // Tinh Anh Đan
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 2)); // Bình KN Tinh Anh
                 sendQuestInfo(player);
-                Service.instance.sendLogOut(player.getSession(), "Đây là vũ khí cấp 6 và thuốc tăng sức mạnh cho ngươi. Hãy đến gặp Phú Ông nhé!");
+                Service.instance.sendLogOut(player.getSession(), "Đây là vũ khí cấp 6, Tinh Anh Đan và Bình kinh nghiệm cho ngươi. Hãy đến gặp Phú Ông nhé!");
             } else {
                 sendQuestInfo(player);
                 Service.instance.sendLogOut(player.getSession(), "Ngươi mới nhặt được " + (qd.getBeginnerProgress() - 1) + "/3 trang bị. Tiếp tục đi!");
@@ -238,16 +239,21 @@ public class QuestService {
                 MapService.instance.onSetXP(player, 100 * target);
                 player.getInventory().plusLuong(Util.nextInt(10, 20));
                 
-                // Materials
+                // Materials (Đá may mắn, Luyện kim dược, Đá thuộc tính)
                 int matCount = Util.nextInt(2, 4);
-                for (int i=0; i<matCount; i++) {
-                    short matId = (short) Util.nextInt(34, 39); // IDs for primary materials level 1-6
-                    InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(matId, 1));
+                for (int i = 0; i < matCount; i++) {
+                    short gemId = switch (Util.nextInt(1, 4)) {
+                        case 1 -> (short) 5; // Đá may mắn cấp 1
+                        case 2 -> (short) 8; // Luyện kim dược
+                        case 3 -> (short) 12; // Tăng 1 sức mạnh
+                        default -> (short) 15; // Tăng 1 sức khoẻ
+                    };
+                    InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(gemId, (short) 1));
                 }
                 
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 18, Util.nextInt(1, 3))); // 100% str
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 1, 20)); // med HP
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 4, 20)); // med MP
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, (short) Util.nextInt(1, 3))); // Tinh Anh Đan
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 1, 20)); // HP nhỏ
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 4, 20)); // MP nhỏ
             }
         }
     }

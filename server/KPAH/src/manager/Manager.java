@@ -259,16 +259,22 @@ public class Manager {
     }
 
     public static short randomItemEquipment(byte level, byte gender) {
-        for (byte l = level; l >= 1; l--) {
-            String key = l + "_" + gender;
-            if (ITEM_EQUIPMENT.containsKey(key)) {
-                List<Short> itemList = ITEM_EQUIPMENT.get(key);
-                if (itemList != null && !itemList.isEmpty()) {
-                    // Only drop normal equipment (colorItem = 0 or 1 maybe? We will let it drop anything in that list for now, 
-                    // though we should restrict high-tier colorItems if we want. For now just returning what is in the list).
-                    int randomIndex = Util.nextInt(0, itemList.size() - 1);
-                    return itemList.get(randomIndex);
+        byte searchLevel = (byte) Math.max(level, 4);
+        List<Short> candidates = new ArrayList<>();
+        for (byte l = searchLevel; l >= 1; l--) {
+            if (gender != 0) {
+                List<Short> genderList = ITEM_EQUIPMENT.get(l + "_" + gender);
+                if (genderList != null && !genderList.isEmpty()) {
+                    candidates.addAll(genderList);
                 }
+            }
+            List<Short> unisexList = ITEM_EQUIPMENT.get(l + "_0");
+            if (unisexList != null && !unisexList.isEmpty()) {
+                candidates.addAll(unisexList);
+            }
+            if (!candidates.isEmpty()) {
+                int randomIndex = Util.nextInt(0, candidates.size() - 1);
+                return candidates.get(randomIndex);
             }
         }
         return -1;
@@ -766,7 +772,17 @@ public class Manager {
                 ItemEquipTemplate itemTemplate = ItemEquipTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).classChar(rs.getByte("classChar")).idIcon(rs.getShort("idIcon")).type(rs.getByte("type")).style(rs.getByte("stype")).he(rs.getByte("he")).gender(rs.getByte("gender")).level(rs.getByte("level")).durable(rs.getShort("durable")).price(rs.getInt("price")).colorItem(rs.getByte("colorItem")).ndayLoan(rs.getShort("ndayLoan")).attribute(attribute).dxWear(dx).dyWear(dy).build();
                 ITEM_EQUIPMENTS.put(itemTemplate.getId(), itemTemplate);
                 if (itemTemplate.getColorItem() == 0 && itemTemplate.getNdayLoan() == 0) {
-                    Util.addItemToMap(ITEM_EQUIPMENT, itemTemplate.getLevel() + "_" + itemTemplate.getGender(), itemTemplate.getId());
+                    short id = itemTemplate.getId();
+                    // Loại bỏ đồ mặc định/vô dụng/cuốc khỏi danh sách rơi đồ của quái:
+                    // 1: Áo bà ba, 2: ở trần, 27: Quần bà ba, 28: Quần đùi, 53: Băng đô, 54: Khăn
+                    // 264-267, 507, 508: Áo sự kiện
+                    // type 13: Cuốc mỏ
+                    boolean isUselessDrop = (id == 1 || id == 2 || id == 27 || id == 28 || id == 53 || id == 54
+                            || id == 264 || id == 265 || id == 266 || id == 267 || id == 507 || id == 508
+                            || itemTemplate.getType() == 13);
+                    if (!isUselessDrop) {
+                        Util.addItemToMap(ITEM_EQUIPMENT, itemTemplate.getLevel() + "_" + itemTemplate.getGender(), itemTemplate.getId());
+                    }
                 }
             }
             rs.close();

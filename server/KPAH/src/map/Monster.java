@@ -56,12 +56,12 @@ public class Monster implements Cloneable {
         if (template == null) {
             return 100;
         }
-        return isElite ? template.getMaxHp() * 3 : template.getMaxHp();
+        return isElite ? (int) (template.getMaxHp() * 4.0) : template.getMaxHp();
     }
 
     public void rollElite() {
         if (!isKhoangSan() && !playerCanNotAttack() && !canNotAttackPlayer()) {
-            this.isElite = Util.isTrue(0.5, 100.0); // 0.5% xuất hiện tinh anh
+            this.isElite = Util.isTrue(1.0, 100.0); // Tỷ lệ xuất hiện tinh anh 1.0%
             if (this.isElite) {
                 this.hp = getMaxHp();
             }
@@ -97,11 +97,11 @@ public class Monster implements Cloneable {
                 if (!isXuyenGiap) {
                     int level = this.template.getLevel();
                     // 1. Giáp phòng thủ phẳng theo level quái
-                    int mobDef = level * 4;
+                    int mobDef = level * 2;
                     damage -= mobDef;
                     
-                    // 2. Kháng sát thương theo % (damage mitigation) để quái trâu hơn, chống dồn dame one-shot từ trang bị OP
-                    int resistPercent = Math.min(45, (int) (level * 1.2));
+                    // 2. Kháng sát thương theo % (damage mitigation)
+                    int resistPercent = Math.min(25, (int) (level * 0.7));
                     damage -= damage * resistPercent / 100;
                 }
             }
@@ -191,43 +191,55 @@ public class Monster implements Cloneable {
     }
 
     public int getDameAttack(Player pl) {
-        int level = this.template.getLevel();
-        // Cân bằng sát thương tương thích với chỉ số phòng thủ và HP người chơi từ lv 1 - 35
-        int minAtk = Math.max(12, 10 * level - 15);
-        int maxAtk = Math.max(20, 14 * level - 5);
-        int dameAtt = Util.nextInt(minAtk, maxAtk);
+        int mobLv = this.template.getLevel();
+        int plDef = (pl != null && pl.getPoint() != null) ? pl.getPoint().getDefend() : 0;
+
+        // 1. Sát thương cơ bản tự nhiên của quái theo level
+        int minAtk = Math.max(16, mobLv * 11 + 5);
+        int maxAtk = Math.max(24, mobLv * 14 + 15);
+        int baseAtk = Util.nextInt(minAtk, maxAtk);
+
+        // 2. Bonus cận chiến hoặc tinh anh
         if (isMelee()) {
-            dameAtt = (int) (dameAtt * 1.15); // Cận chiến 15% bonus dame
+            baseAtk = (int) (baseAtk * 1.1); // Cận chiến +10%
         }
         if (isElite) {
-            dameAtt = (int) (dameAtt * 1.30); // Tinh anh tăng 30% sát thương
+            baseAtk = (int) (baseAtk * 1.35); // Quái tinh anh +35% dame (vừa đủ mạnh, không gây sốc chết người chơi)
         }
-        if (dameAtt <= 0) {
-            dameAtt = 1;
+
+        // 3. Sát thương cào xước tối thiểu (min scratch damage) theo level quái
+        // Khi giáp người chơi rất cao, quái vẫn gây ra lượng sát thương nhỏ hợp lý (không bị về 1 dame vô lý)
+        int minScratch = Math.max(3, (int) (mobLv * 1.5 + 2));
+        if (isElite) {
+            minScratch = (int) (minScratch * 1.5);
         }
-        return dameAtt;
+
+        // 4. Đảm bảo người chơi nhận sát thương hợp lý khi trừ giáp trong Player.injured()
+        int finalDmg = plDef + Math.max(baseAtk - plDef, minScratch);
+
+        return Math.max(1, finalDmg);
     }
 
     @Synchronized
     public void calculatePowerPlus(@NonNull Player pl, int damage) throws IOException {
-        // Cố định exp theo level, giảm exp để tránh lên cấp quá nhanh, giữ chuẩn nhịp cày cuốc
+        // Tăng base EXP gấp 3-4 lần để người chơi farm thoải mái, chuẩn nhịp cày cuốc
         int level = this.template.getLevel();
         double baseExp;
         if (level <= 5) {
-            baseExp = level * 8.0;
+            baseExp = level * 65.0;
         } else if (level <= 10) {
-            baseExp = level * 12.0;
+            baseExp = level * 110.0;
         } else if (level <= 15) {
-            baseExp = level * level * 2.5;
+            baseExp = level * level * 18.0;
         } else if (level <= 20) {
-            baseExp = level * level * 4.0;
+            baseExp = level * level * 22.0;
         } else if (level <= 27) {
-            baseExp = level * level * 5.0;
+            baseExp = level * level * 28.0;
         } else {
-            baseExp = level * level * 6.0;
+            baseExp = level * level * 36.0;
         }
         if (baseExp <= 0) {
-            baseExp = 5.0;
+            baseExp = 65.0;
         }
         
         // Tránh damage quá lớn vượt quá máu tối đa làm sai lệch
@@ -382,10 +394,27 @@ public class Monster implements Cloneable {
             }
         }
 
-        // 5. Rương tinh anh (100% quái tinh anh rớt 1-2 rương tinh anh)
+        // 5. Rương tinh anh (100% quái tinh anh rớt đúng 1 rương)
         if (isElite) {
-            short chestQty = (short) Util.nextInt(1, 2);
+            short chestQty = 1;
             its.add(ItemService.instance.createNewItemMap((short) 106, chestQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+
+            // 6. Bình kinh nghiệm (tỷ lệ 20% rơi từ quái tinh anh)
+            if (Util.isTrue(20.0, 100.0)) {
+                short idPotionExp;
+                if (level <= 9) {
+                    idPotionExp = 108; // Sơ cấp: 3.500 EXP
+                } else if (level <= 19) {
+                    idPotionExp = 109; // Trung cấp: 25.000 EXP
+                } else if (level <= 29) {
+                    idPotionExp = 110; // Cao cấp: 90.000 EXP
+                } else {
+                    idPotionExp = 111; // Siêu cấp: 220.000 EXP
+                }
+                short scatterX = (short) (destX + Util.nextInt(-15, 15));
+                short scatterY = (short) (destY + Util.nextInt(-15, 15));
+                its.add(ItemService.instance.createNewItemMap(idPotionExp, (short) 1, Const.CATEGORY_POTION, scatterX, scatterY, plAttack.getIdPlayer(), zone));
+            }
         }
         
         if (isKhoangSan()) {
@@ -415,11 +444,13 @@ public class Monster implements Cloneable {
         if (!isDie() && !this.buffInfluence.isStunned() && Util.canDoWithTime(lastTimeAttackPlayer, nextAttackDelay)) {
             this.lastTimeAttackPlayer = System.currentTimeMillis();
             
-            // Randomize next attack delay based on monster type
-            if (isMelee()) {
-                this.nextAttackDelay = Util.nextInt(500, 3000);
+            // Randomize next attack delay based on monster type (Tinh anh vừa phải để treo máy chịu được)
+            if (isElite) {
+                this.nextAttackDelay = Util.nextInt(1200, 2000);
+            } else if (isMelee()) {
+                this.nextAttackDelay = Util.nextInt(1800, 3200);
             } else {
-                this.nextAttackDelay = Util.nextInt(500, 5000);
+                this.nextAttackDelay = Util.nextInt(2500, 4500);
             }
             
             getPlayerCanAttack();
@@ -445,20 +476,40 @@ public class Monster implements Cloneable {
                         }
                         
                         // Đợi một khoảng nhỏ để animation di chuyển (nếu có)
-                        Thread.sleep(300);
+                        Thread.sleep(250);
                         
-                        if (playerTarget != null && !playerTarget.isDie()) {
-                            if (isMelee()) {
-                                MonsterService.instance.sendMeleeHit(this, playerTarget);
-                            } else {
-                                MonsterService.instance.sendMonsterAttack(this, playerTarget);
+                        // Danh sách mục tiêu: luôn có primaryTarget, nếu là Tinh Anh thì tấn công tối đa 3 người chơi cùng lúc
+                        Player primaryTarget = playerTarget;
+                        if (primaryTarget == null || primaryTarget.isDie()) {
+                            return;
+                        }
+                        List<Player> targetList = new ArrayList<>();
+                        targetList.add(primaryTarget);
+                        if (isElite && zone != null && zone.getPlayers() != null) {
+                            for (Player otherPl : zone.getPlayers()) {
+                                if (targetList.size() >= 3) {
+                                    break;
+                                }
+                                if (otherPl != null && otherPl.getIdPlayer() != primaryTarget.getIdPlayer() && !otherPl.isDie() && isPlayerAttackable(otherPl)) {
+                                    targetList.add(otherPl);
+                                }
                             }
-                            // Kỹ năng đặc biệt của Quái Tinh Anh
-                            if (isElite && playerTarget != null && !playerTarget.isDie()) {
-                                if (Util.isTrue(20, 100)) {
-                                    playerTarget.getBuffInfluence().addBuffStunned((short) 2);
-                                } else if (Util.isTrue(25, 100)) {
-                                    playerTarget.getBuffInfluence().addBuffPoisoned((short) 5, (short) (template.getLevel() * 4));
+                        }
+
+                        for (Player target : targetList) {
+                            if (target != null && !target.isDie()) {
+                                if (isMelee()) {
+                                    MonsterService.instance.sendMeleeHit(Monster.this, target);
+                                } else {
+                                    MonsterService.instance.sendMonsterAttack(Monster.this, target);
+                                }
+                                // Kỹ năng đặc biệt của Quái Tinh Anh
+                                if (isElite) {
+                                    if (Util.isTrue(20, 100)) {
+                                        target.getBuffInfluence().addBuffStunned((short) 2);
+                                    } else if (Util.isTrue(25, 100)) {
+                                        target.getBuffInfluence().addBuffPoisoned((short) 5, (short) (template.getLevel() * 4));
+                                    }
                                 }
                             }
                         }

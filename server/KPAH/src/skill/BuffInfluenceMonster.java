@@ -91,7 +91,7 @@ public class BuffInfluenceMonster {
         }
         if (isStunned) {
             removeBuffStunned();
-            BuffService.instance.sendRemoveBuffInfluence(mob, BuffConst.BUFF_STUN);
+            // Client KPAH tự quản lý thời gian hết choáng dựa vào cZ, không gửi BUFF_ATTACK (89) để tránh client bị re-stun lặp lại
         }
     }
 

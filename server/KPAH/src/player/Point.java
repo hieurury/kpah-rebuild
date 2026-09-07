@@ -248,6 +248,52 @@ public class Point {
 
     private void setExpDonate() {
         expDonate += InventoryService.instance.sumAttributeValueForId(player, (byte) 111);
+        if (player != null && player.hasBuffGioVang()) {
+            expDonate += player.getPercentBuffGioVang();
+        }
+    }
+
+    public void resetPotentialPoints() {
+        byte clazz = player.getInfo().getClassPlayer();
+        int level = player.getInfo().getLevel();
+        int levelBonus = Math.max(0, level - 1);
+        short defaultStr = 20, defaultAgi = 20, defaultSpi = 10, defaultHea = 20, defaultLuck = 10;
+        switch (clazz) {
+            case Const.KIEM_KHACH -> {
+                defaultStr = 25; defaultAgi = 20; defaultSpi = 10; defaultHea = 25; defaultLuck = 10;
+            }
+            case Const.CHIEN_BINH -> {
+                defaultStr = 30; defaultAgi = 20; defaultSpi = 10; defaultHea = 20; defaultLuck = 10;
+            }
+            case Const.PHAP_SU -> {
+                defaultStr = 10; defaultAgi = 25; defaultSpi = 35; defaultHea = 10; defaultLuck = 10;
+            }
+            case Const.DAU_SI -> {
+                defaultStr = 20; defaultAgi = 30; defaultSpi = 10; defaultHea = 20; defaultLuck = 10;
+            }
+            case Const.CUNG_THU -> {
+                defaultStr = 20; defaultAgi = 30; defaultSpi = 15; defaultHea = 15; defaultLuck = 10;
+            }
+        }
+        this.strength = (short) (defaultStr + levelBonus);
+        this.agility = (short) (defaultAgi + levelBonus);
+        this.spirit = (short) (defaultSpi + levelBonus);
+        this.health = (short) (defaultHea + levelBonus);
+        this.luck = (short) (defaultLuck + levelBonus);
+        this.basePoint = (short) (levelBonus * 5);
+        initPoint();
+    }
+
+    public void resetSkillPoints() {
+        int level = player.getInfo().getLevel();
+        byte[] levelSkills = player.getSkill().getLevelSkill();
+        for (int i = 0; i < levelSkills.length; i++) {
+            if (levelSkills[i] > 0) {
+                levelSkills[i] = (i == 0 ? (byte) 1 : (byte) 0);
+            }
+        }
+        this.skillPoint = (short) Math.max(0, level - 1);
+        initPoint();
     }
 
     private void setPercentPlusHp() {
@@ -500,6 +546,12 @@ public class Point {
         setDodge();
         setCrit();
         setBaoKich();
+        if (player != null && player.hasBuffTinhAnh()) {
+            this.attack += (int) (this.attack * 0.2);
+            this.defend += (int) (this.defend * 0.2);
+            this.defendMagic += (int) (this.defendMagic * 0.2);
+            this.hpMax += (int) (this.hpMax * 0.2);
+        }
         setHp();
         setMp();
     }
