@@ -61,7 +61,7 @@ public class Monster implements Cloneable {
 
     public void rollElite() {
         if (!isKhoangSan() && !playerCanNotAttack() && !canNotAttackPlayer()) {
-            this.isElite = Util.isTrue(1.0, 100.0); // Tỷ lệ xuất hiện tinh anh 1.0%
+            this.isElite = Util.isTrue(0.5, 100.0); // Tỷ lệ xuất hiện tinh anh trả về 0.5%
             if (this.isElite) {
                 this.hp = getMaxHp();
             }
@@ -308,14 +308,24 @@ public class Monster implements Cloneable {
         short destY = (short) (y + (plAttack.getLocation().getY() - y) / 2 + Util.nextInt(-20, 20));
 
         int level = this.template.getLevel();
-        double rateMultiplier = isElite ? 2.5 : 1.0; // Tỷ lệ rớt tăng 150% (x2.5)
-        int qtyMultiplier = isElite ? 2 : 1;        // Số lượng vật phẩm gấp 2 lần
+        // Tỷ lệ và số lượng quái tinh anh lấy lv35 làm trần cao nhất, cấp thấp hơn giảm dần theo cấp quái
+        double lvRatio = Math.min(1.0, (double) Math.max(1, level) / 35.0);
+        double rateMultiplier = isElite ? (1.0 + 1.5 * lvRatio) : 1.0; // Tối đa x2.5 ở lv35, giảm dần theo cấp
 
         // 1. Potion drop (25% cho lv <= 15, 30% cho lv 16-35)
         double potionRate = Math.min(100.0, (level <= 15 ? 25.0 : 30.0) * rateMultiplier);
         if (Util.isTrue(potionRate, 100.0)) {
             short idItemPotion;
-            short quantity = (short) (Util.nextInt(1, 2) * qtyMultiplier);
+            short quantity;
+            if (isElite) {
+                // Trần lv35: 2 - 4 bình. Cấp thấp hơn giảm dần về 1 - 2 bình
+                int minPot = 1 + (Util.isTrue(lvRatio * 100.0, 100.0) ? 1 : 0);
+                int maxPot = 2 + (int) Math.round(2.0 * lvRatio);
+                if (minPot > maxPot) minPot = maxPot;
+                quantity = (short) Util.nextInt(minPot, maxPot);
+            } else {
+                quantity = (short) Util.nextInt(1, 2);
+            }
             if (level <= 15) {
                 // Quái lv 1-15: 60% HP nhỏ (1), 40% MP nhỏ (4)
                 idItemPotion = Util.isTrue(60, 100) ? (short) 1 : (short) 4;
@@ -348,7 +358,9 @@ public class Monster implements Cloneable {
                 quantity = (short) Util.nextInt(level * 80, level * 220);
             }
             if (quantity <= 0) quantity = 50;
-            quantity = (short) (quantity * qtyMultiplier);
+            // Trần lv35: gấp 2 lần vàng, cấp thấp hơn giảm dần theo cấp quái
+            double goldEliteMultiplier = isElite ? (1.0 + 1.0 * lvRatio) : 1.0;
+            quantity = (short) Math.max(10, Math.round(quantity * goldEliteMultiplier));
             its.add(ItemService.instance.createNewItemMap((short) 0, quantity, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
         }
         
@@ -361,10 +373,13 @@ public class Monster implements Cloneable {
                 its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
             }
             if (isElite) {
-                // Tinh anh rơi thêm cơ hội món trang bị thứ 2
-                short extraEquip = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
-                if (extraEquip != -1) {
-                    its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                // Tinh anh cơ hội rơi thêm món trang bị thứ 2: trần 100% ở lv35, cấp thấp giảm dần
+                double extraEquipChance = Math.min(100.0, lvRatio * 100.0);
+                if (Util.isTrue(extraEquipChance, 100.0)) {
+                    short extraEquip = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
+                    if (extraEquip != -1) {
+                        its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    }
                 }
             }
         }
@@ -373,7 +388,12 @@ public class Monster implements Cloneable {
         if (level >= 10 && level <= 35) {
             double gemRate = Math.min(100.0, (level <= 15 ? 2.0 : (level <= 25 ? 4.0 : 5.0)) * rateMultiplier);
             if (Util.isTrue(gemRate, 100.0)) {
-                short gemQty = (short) (1 * qtyMultiplier);
+                // Trần lv35: 2 viên; cấp càng thấp giảm dần về 1 viên
+                short gemQty = 1;
+                if (isElite) {
+                    double bonusGemRate = Math.min(100.0, ((double) (level - 10) / 25.0) * 100.0);
+                    gemQty = (short) (1 + (Util.isTrue(bonusGemRate, 100.0) ? 1 : 0));
+                }
                 if (level <= 25) {
                     // Lv 10-25: 50% Đá may mắn cấp 1 (5), 50% Luyện kim dược (8)
                     short gemId = Util.isTrue(50, 100) ? (short) 5 : (short) 8;
@@ -394,13 +414,17 @@ public class Monster implements Cloneable {
             }
         }
 
-        // 5. Rương tinh anh (100% quái tinh anh rớt đúng 1 rương)
+        // 5. Rương tinh anh: Trần lv35 là 100% rơi 1 rương, cấp thấp hơn tỷ lệ giảm dần theo cấp quái
         if (isElite) {
-            short chestQty = 1;
-            its.add(ItemService.instance.createNewItemMap((short) 106, chestQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+            double chestChance = Math.min(100.0, 30.0 + 70.0 * lvRatio);
+            if (Util.isTrue(chestChance, 100.0)) {
+                short chestQty = 1;
+                its.add(ItemService.instance.createNewItemMap((short) 106, chestQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+            }
 
-            // 6. Bình kinh nghiệm (tỷ lệ 20% rơi từ quái tinh anh)
-            if (Util.isTrue(20.0, 100.0)) {
+            // 6. Bình kinh nghiệm: Trần lv35 là 20%, cấp thấp hơn giảm dần theo cấp quái
+            double expPotionChance = Math.min(20.0, 5.0 + 15.0 * lvRatio);
+            if (Util.isTrue(expPotionChance, 100.0)) {
                 short idPotionExp;
                 if (level <= 9) {
                     idPotionExp = 108; // Sơ cấp: 3.500 EXP

@@ -992,3 +992,50 @@
 
 **Kết quả:** ✅ Thành công
 
+---
+
+## [2026-09-07 15:00] — Điều Chỉnh Cân Bằng Game: Trả Tỷ Lệ Quái Tinh Anh Về 0.5% & Điều Tiết Lượng/Số Lượng Rớt Đồ Theo Cấp Quái (Trần Cấp 35)
+
+**Yêu cầu:**
+1. Trả tỷ lệ xuất hiện quái tinh anh về 0.5% (từ 1.0%).
+2. Quái tinh anh tùy theo cấp độ quái sẽ cho lượng vật phẩm và số lượng vật phẩm ít lại, lấy số lượng/tỷ lệ hiện tại làm trần cao nhất cho quái lv35, các loại cấp thấp hơn giảm dần theo cấp quái.
+
+**Giải pháp đã triển khai:**
+1. **Trả tỷ lệ xuất hiện quái tinh anh về 0.5%:**
+   - `server/KPAH/src/map/Monster.java`:
+     - Trong phương thức `rollElite()`: Thay đổi `Util.isTrue(1.0, 100.0)` thành `Util.isTrue(0.5, 100.0)`.
+2. **Điều tiết lượng vật phẩm và số lượng rớt đồ theo cấp quái (lấy lv35 làm trần tối đa):**
+   - `server/KPAH/src/map/Monster.java`:
+     - Thiết lập tỷ lệ cấp độ: `double lvRatio = Math.min(1.0, (double) Math.max(1, level) / 35.0)`.
+     - **Tỷ lệ rớt đồ tổng thể (`rateMultiplier`):**
+       - Trần lv35: x2.5 (+150%).
+       - Quái cấp thấp: `1.0 + 1.5 * lvRatio` (Lv1 chỉ tăng nhẹ x1.04, Lv15 tăng x1.64, Lv25 tăng x2.07).
+     - **Số lượng bình máu / bình mana (`potion`):**
+       - Quái thường: 1 - 2 bình.
+       - Quái tinh anh trần lv35: 2 - 4 bình.
+       - Quái tinh anh cấp thấp: Giảm dần số lượng theo `minPot = 1..2` và `maxPot = 2..4` dựa vào `lvRatio`.
+     - **Số lượng Vàng (`gold`):**
+       - Trần lv35: x2.0 lượng vàng rớt.
+       - Quái tinh anh cấp thấp: Nhân hệ số `1.0 + 1.0 * lvRatio` (Lv1: x1.03 vàng, Lv15: x1.43 vàng, Lv25: x1.71 vàng).
+     - **Cơ hội rơi thêm món trang bị thứ 2 (`extra equipment`):**
+       - Trần lv35: 100% cơ hội rơi thêm món trang bị thứ 2 (nếu dòng rớt trang bị kích hoạt).
+       - Quái tinh anh cấp thấp: Tỷ lệ rơi trang bị thứ 2 giảm dần theo `lvRatio * 100.0` (Lv1: ~2.8%, Lv15: ~42.8%, Lv25: ~71.4%).
+     - **Số lượng đá / nguyên liệu (`gems`):**
+       - Quái thường: 1 viên (quái từ lv10 trở lên).
+       - Quái tinh anh trần lv35: 2 viên.
+       - Quái tinh anh cấp thấp: 1 viên ở lv10, cơ hội nhận thêm viên thứ 2 tăng dần từ lv11 đến lv35 theo tỷ lệ `(level - 10) / 25.0 * 100%`.
+     - **Rương Tinh Anh (Vật phẩm ID 106):**
+       - Quái tinh anh trần lv35: 100% rơi 1 rương.
+       - Quái tinh anh cấp thấp: Tỷ lệ rơi rương giảm dần theo `30.0 + 70.0 * lvRatio` (Lv1: ~32%, Lv15: ~60%, Lv25: ~80%, Lv35: 100%).
+     - **Bình kinh nghiệm (EXP Potion ID 108-111):**
+       - Quái tinh anh trần lv35: 20% rơi 1 bình.
+       - Quái tinh anh cấp thấp: Tỷ lệ rơi giảm dần theo `5.0 + 15.0 * lvRatio` (Lv1: ~5.4%, Lv15: ~11.4%, Lv25: ~15.7%, Lv35: 20%).
+
+**Backup:**
+- `server/KPAH/src/map/_backup/Monster.java.bak.20260907_1457`
+
+**Kết quả:** ✅ Thành công
+- Server Java 21 biên dịch thành công không lỗi.
+- Đã khởi động lại server daemon (`task-2867`), server đang hoạt động bình thường trên cổng 19129.
+
+
