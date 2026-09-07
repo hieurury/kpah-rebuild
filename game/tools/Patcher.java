@@ -21,6 +21,9 @@ import javassist.expr.*;
 public class Patcher {
     public static void main(String[] args) throws Exception {
         ClassPool pool = ClassPool.getDefault();
+        pool.insertClassPath("_orig_classes");
+        pool.insertClassPath("tools/_orig_classes");
+        pool.insertClassPath("game/tools/_orig_classes");
         pool.insertClassPath("/tmp/orig_abj_clean");           // class_abj gốc sạch
         pool.insertClassPath("/tmp/orig_ba_clean");            // class_ba gốc sạch
         pool.insertClassPath("../libs/KPAH_225_remade.jar");
@@ -37,8 +40,44 @@ public class Patcher {
     private static void patchClassAbj(ClassPool pool) throws Exception {
         CtClass cc = pool.get("classes.class_abj");
 
-        // === Patch 1+2: hàm z() – ưu tiên item trong danh sách mục tiêu ===
+        // === Patch 0: Trích xuất tầm chiêu ô số 5 & Chèn ModController.update() vào vòng lặp game tick class_abj.b() ===
+        try {
+            CtMethod bTick = cc.getDeclaredMethod("b", new CtClass[0]);
+            bTick.insertBefore(
+                "try {" +
+                "    if (this.cp != null && this.cp.length > 5) {" +
+                "        int idx5 = this.cp[5];" +
+                "        if (classes.class_sc.a != null && classes.class_sc.a.length > 1 && classes.class_sc.a[1] != null && idx5 >= 0 && idx5 < classes.class_sc.a[1].length) {" +
+                "            classes.class_gd gd = classes.class_sc.a[1][idx5];" +
+                "            if (gd != null) {" +
+                "                classes.ModController.slot5Range = (int)classes.class_qz.a((byte)gd.b());" +
+                "            }" +
+                "        }" +
+                "    }" +
+                "} catch (Exception e) {}" +
+                "classes.ModController.update();"
+            );
+            System.out.println("Patch 0 (game-tick & slot5 range extraction) applied to method b().");
+        } catch (Exception e) {
+            System.out.println("Warning: Could not patch b(): " + e.getMessage());
+        }
+
+        // === Patch 1+2: hàm z() – ưu tiên item trong danh sách mục tiêu & mở rộng bán kính quét quái khi auto ===
         CtMethod zMethod = cc.getDeclaredMethod("z", new CtClass[0]);
+        zMethod.insertBefore(
+            "if (au && classes.ModController.globalConfig.isAutoPickup && this.r != null && (this.r instanceof classes.class_ba)) {" +
+            "    return this.r;" +
+            "}" +
+            "if (au) {" +
+            "    for (int i = 0; i < 4; i++) {" +
+            "        cb[i][0] = -140; cb[i][1] = 140; cb[i][2] = -140; cb[i][3] = 140;" +
+            "    }" +
+            "} else {" +
+            "    for (int i = 0; i < 4; i++) {" +
+            "        cb[i][0] = -90; cb[i][1] = 90; cb[i][2] = -90; cb[i][3] = 90;" +
+            "    }" +
+            "}"
+        );
         zMethod.instrument(new ExprEditor() {
             public void edit(MethodCall mc) throws CannotCompileException {
                 // Patch e_() and b_(): buộc false cho class_ba khi AutoPickup bật
@@ -61,23 +100,7 @@ public class Patcher {
         });
 
         // === Patch 3: dừng auto-attack khi r là item (class_ba) ===
-        // Tìm hàm thực thi auto logic (main loop) – method dùng class_acv.c[this.cl]
-        // Đây là method A() (private void A()) gọi auto-attack action
-        // Thay vì patch bytecode phức tạp, ta dùng insertBefore trên hàm b() để
-        // kiểm tra và skip attack khi target là item
-        //
-        // Cách tiếp cận: chặn lời gọi class_acv.c[this.cl] = true
-        // bằng cách patch method setAutoAttack() trong ModController
-        // và chèn vào trước khi gán class_acv.c
-        //
-        // Thực tế đơn giản hơn: patch method a(boolean) để khi r là class_ba
-        // không gọi auto-attack mà thay vào đó đi nhặt
-        //
-        // Ta patch tại điểm gán class_acv.c[this.cl] = true trong A()
-        // bằng cách inject ModController.shouldAutoAttack() check
-        //
-        // Patch 3: Khi auto, nếu r là item thì không dùng skill (gây lỗi đánh không khí/lan quái)
-        // mà ép gửi luôn gói tin nhặt đồ (Vacuum Loot) và xóa target hiện tại để auto chuyển sang mục tiêu khác.
+        // Tránh dùng skill đánh quái lên vật phẩm rơi trên đất và không xóa r = null để giữ target
         try {
             CtClass[] paramTypes = new CtClass[]{
                 pool.get("int"),
@@ -85,17 +108,55 @@ public class Patcher {
             };
             CtMethod dMethod = cc.getDeclaredMethod("d", paramTypes);
             dMethod.insertBefore(
-                "if (classes.ModController.globalConfig.isAutoPickup && " +
-                "    this.r != null && " +
-                "    this.r instanceof classes.class_ba) {" +
-                "    this.D.a((byte)((classes.class_ba)this.r).cF, this.r.cG);" +
-                "    this.r = null;" +
+                "if (this.r != null && this.r instanceof classes.class_ba) {" +
                 "    return;" +
                 "}"
             );
-            System.out.println("Patch 3 (vacuum-loot) applied to method d(int,int).");
+            System.out.println("Patch 3 (prevent skill on item) applied to method d(int,int).");
         } catch (Exception e) {
             System.out.println("Warning: Could not patch d(int,int): " + e.getMessage());
+        }
+
+        // === Patch 5: cho phép đuổi theo quái vật khi bật auto đánh ===
+        // Trong method b(class_vh, int) của class_abj:
+        // Bytecode gốc:
+        // if (au && ao == 1 && this.r != null && this.r.cY) { n = 1; }
+        // 1. Thay field ao thành 1 để không phụ thuộc vào Chế độ thường/Đánh quái trong menu cài đặt.
+        // 2. Thay field cY thành ModController.shouldChase($0) để quái vật (cF == 1) cũng kích hoạt n = 1.
+        try {
+            CtClass[] bParamTypes = new CtClass[]{
+                pool.get("classes.class_vh"),
+                pool.get("int")
+            };
+            CtMethod bMethod = cc.getDeclaredMethod("b", bParamTypes);
+            bMethod.instrument(new ExprEditor() {
+                public void edit(FieldAccess fa) throws CannotCompileException {
+                    if (fa.getFieldName().equals("ao")) {
+                        fa.replace("$_ = 1;");
+                    } else if (fa.getFieldName().equals("cY")) {
+                        fa.replace("$_ = classes.ModController.shouldChase($0);");
+                    }
+                }
+                public void edit(MethodCall mc) throws CannotCompileException {
+                    if (mc.getMethodName().equals("movePlayer")) {
+                        // Vô hiệu hóa lệnh kéo ngược về ag, ah của client gốc để ModController quản lý thông minh
+                        mc.replace("/* disabled original 120px pullback */ ;");
+                    }
+                }
+            });
+            System.out.println("Patch 5 (target-chase) applied to method b(class_vh,int).");
+        } catch (Exception e) {
+            System.out.println("Warning: Could not patch b(class_vh,int): " + e.getMessage());
+        }
+
+        // === Patch 6: Tắt auto & reset tọa độ khi người dùng click chuột/chạm đất di chuyển ===
+        try {
+            CtClass[] mpParams = new CtClass[]{ CtClass.intType, CtClass.intType };
+            CtMethod mpMethod = cc.getDeclaredMethod("movePlayer_", mpParams);
+            mpMethod.insertBefore("classes.ModController.onUserManualMove();");
+            System.out.println("Patch 6 (manual-move hook) applied to movePlayer_(int,int).");
+        } catch (Exception e) {
+            System.out.println("Warning: Could not patch movePlayer_: " + e.getMessage());
         }
 
         cc.writeFile("patched_classes");

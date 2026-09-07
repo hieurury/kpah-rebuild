@@ -117,7 +117,7 @@ public class MonsterService {
         msg.writer().writeInt(monster.getHp());
         // NOTE: horse byte is NOT sent for monsters (category=2).
         // Client only reads horse when category=1 (player).
-        msg.writer().writeByte(-1);         // effect
+        msg.writer().writeByte((byte) (monster.isElite() ? 100 : -1)); // effect (100 = Elite)
         msg.writer().writeBoolean(true);    // smooth
         MapService.instance.sendAllPlayerInMap(monster, msg);
     }
@@ -140,7 +140,7 @@ public class MonsterService {
         msg.writer().writeInt(monster.getHp());
         // NOTE: horse byte is NOT sent for monsters (category=2).
         // Client only reads horse when category=1 (player).
-        msg.writer().writeByte(-1);         // effect
+        msg.writer().writeByte((byte) (monster.isElite() ? 100 : -1)); // effect (100 = Elite)
         msg.writer().writeBoolean(false);   // smooth=false → instant jump
         MapService.instance.sendAllPlayerInMap(monster, msg);
     }
@@ -186,7 +186,7 @@ public class MonsterService {
         msg.writer().writeInt(monster.getHp());
         // NOTE: horse byte is NOT sent for monsters (category=2).
         // Client only reads horse when category=1 (player).
-        msg.writer().writeByte(-1);         // effect
+        msg.writer().writeByte((byte) (monster.isElite() ? 100 : -1)); // effect (100 = Elite)
         msg.writer().writeBoolean(true);    // smooth
         pl.getSession().sendMessage(msg);
     }
@@ -201,8 +201,8 @@ public class MonsterService {
                 m.writer().writeShort(monster.getY());
                 m.writer().writeInt(monster.getHp());
                 m.writer().writeByte(monster.getTemplate().getLevel());
-                m.writer().writeByte(monster.getTemplate().getType());
-                m.writer().writeInt(monster.getTemplate().getMaxHp());
+                m.writer().writeByte((byte) (monster.isElite() ? 100 : monster.getTemplate().getType()));
+                m.writer().writeInt(monster.getMaxHp());
                 m.writer().writeInt(Settings.TIME_LIVE_MOB);
                 pl.getSession().sendMessage(m);
             }

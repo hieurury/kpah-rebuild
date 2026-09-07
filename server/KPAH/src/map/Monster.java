@@ -49,6 +49,26 @@ public class Monster implements Cloneable {
     private long nextMoveDelay = 3000;
     @Builder.Default
     private long nextAttackDelay = 2000;
+    @Builder.Default
+    private boolean isElite = false;
+
+    public int getMaxHp() {
+        if (template == null) {
+            return 100;
+        }
+        return isElite ? template.getMaxHp() * 3 : template.getMaxHp();
+    }
+
+    public void rollElite() {
+        if (!isKhoangSan() && !playerCanNotAttack() && !canNotAttackPlayer()) {
+            this.isElite = Util.isTrue(0.5, 100.0); // 0.5% xuất hiện tinh anh
+            if (this.isElite) {
+                this.hp = getMaxHp();
+            }
+        } else {
+            this.isElite = false;
+        }
+    }
 
 
     public boolean isDie() {
@@ -179,6 +199,9 @@ public class Monster implements Cloneable {
         if (isMelee()) {
             dameAtt = (int) (dameAtt * 1.15); // Cận chiến 15% bonus dame
         }
+        if (isElite) {
+            dameAtt = (int) (dameAtt * 1.30); // Tinh anh tăng 30% sát thương
+        }
         if (dameAtt <= 0) {
             dameAtt = 1;
         }
@@ -208,12 +231,17 @@ public class Monster implements Cloneable {
         }
         
         // Tránh damage quá lớn vượt quá máu tối đa làm sai lệch
-        double effectiveDamage = Math.min(damage, this.template.getMaxHp());
-        double percentage = effectiveDamage / (double) this.template.getMaxHp();
+        double effectiveDamage = Math.min(damage, this.getMaxHp());
+        double percentage = effectiveDamage / (double) this.getMaxHp();
         
         int tnPl = (int) (baseExp * percentage);
         if (tnPl <= 0) {
             tnPl = 1;
+        }
+
+        // Quái tinh anh cho kinh nghiệm gấp 10 lần
+        if (isElite) {
+            tnPl *= 10;
         }
 
         // Áp dụng % thưởng từ người chơi (thú cưỡi, sự kiện, item, etc.)
@@ -268,12 +296,14 @@ public class Monster implements Cloneable {
         short destY = (short) (y + (plAttack.getLocation().getY() - y) / 2 + Util.nextInt(-20, 20));
 
         int level = this.template.getLevel();
+        double rateMultiplier = isElite ? 2.5 : 1.0; // Tỷ lệ rớt tăng 150% (x2.5)
+        int qtyMultiplier = isElite ? 2 : 1;        // Số lượng vật phẩm gấp 2 lần
 
         // 1. Potion drop (25% cho lv <= 15, 30% cho lv 16-35)
-        double potionRate = level <= 15 ? 25.0 : 30.0;
+        double potionRate = Math.min(100.0, (level <= 15 ? 25.0 : 30.0) * rateMultiplier);
         if (Util.isTrue(potionRate, 100.0)) {
             short idItemPotion;
-            short quantity = (short) Util.nextInt(1, 2);
+            short quantity = (short) (Util.nextInt(1, 2) * qtyMultiplier);
             if (level <= 15) {
                 // Quái lv 1-15: 60% HP nhỏ (1), 40% MP nhỏ (4)
                 idItemPotion = Util.isTrue(60, 100) ? (short) 1 : (short) 4;
@@ -297,7 +327,7 @@ public class Monster implements Cloneable {
         }
         
         // 2. Gold drop (15% cho lv <= 15, 20% cho lv 16-35)
-        double goldRate = level <= 15 ? 15.0 : 20.0;
+        double goldRate = Math.min(100.0, (level <= 15 ? 15.0 : 20.0) * rateMultiplier);
         if (Util.isTrue(goldRate, 100.0)) {
             short quantity;
             if (level <= 15) {
@@ -306,41 +336,56 @@ public class Monster implements Cloneable {
                 quantity = (short) Util.nextInt(level * 80, level * 220);
             }
             if (quantity <= 0) quantity = 50;
+            quantity = (short) (quantity * qtyMultiplier);
             its.add(ItemService.instance.createNewItemMap((short) 0, quantity, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
         }
         
         // 3. Equipment drop (3% cho lv <= 15, 4% cho lv 16-35)
-        double equipRate = level <= 15 ? 3.0 : 4.0;
+        double equipRate = Math.min(100.0, (level <= 15 ? 3.0 : 4.0) * rateMultiplier);
         if (Util.isTrue(equipRate, 100.0)) {
             byte maxLevelEquip = (byte) level;
             short idItemEquipment = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
             if (idItemEquipment != -1) {
                 its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
             }
+            if (isElite) {
+                // Tinh anh rơi thêm cơ hội món trang bị thứ 2
+                short extraEquip = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
+                if (extraEquip != -1) {
+                    its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                }
+            }
         }
 
         // 4. Gems & Materials drop (Lv 10-15: 2%; Lv 16-25: 4%; Lv 26-35: 5%)
         if (level >= 10 && level <= 35) {
-            double gemRate = level <= 15 ? 2.0 : (level <= 25 ? 4.0 : 5.0);
+            double gemRate = Math.min(100.0, (level <= 15 ? 2.0 : (level <= 25 ? 4.0 : 5.0)) * rateMultiplier);
             if (Util.isTrue(gemRate, 100.0)) {
+                short gemQty = (short) (1 * qtyMultiplier);
                 if (level <= 25) {
                     // Lv 10-25: 50% Đá may mắn cấp 1 (5), 50% Luyện kim dược (8)
                     short gemId = Util.isTrue(50, 100) ? (short) 5 : (short) 8;
-                    its.add(ItemService.instance.createNewItemMap(gemId, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap(gemId, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
                 } else {
                     // Lv 26-35: 40% Đá may mắn cấp 1 (5), 40% Luyện kim dược (8), 15% Đá may mắn cấp 2 (6), 5% Vé quay số (69)
                     int rand = Util.nextInt(1, 100);
                     if (rand <= 40) {
-                        its.add(ItemService.instance.createNewItemMap((short) 5, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 5, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
                     } else if (rand <= 80) {
-                        its.add(ItemService.instance.createNewItemMap((short) 8, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 8, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
                     } else if (rand <= 95) {
-                        its.add(ItemService.instance.createNewItemMap((short) 6, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 6, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
                     } else {
-                        its.add(ItemService.instance.createNewItemMap((short) 69, (short) 1, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 69, gemQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
                     }
                 }
             }
+        }
+
+        // 5. Rương tinh anh (100% quái tinh anh rớt 1-2 rương tinh anh)
+        if (isElite) {
+            short chestQty = (short) Util.nextInt(1, 2);
+            its.add(ItemService.instance.createNewItemMap((short) 106, chestQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
         }
         
         if (isKhoangSan()) {
@@ -408,6 +453,14 @@ public class Monster implements Cloneable {
                             } else {
                                 MonsterService.instance.sendMonsterAttack(this, playerTarget);
                             }
+                            // Kỹ năng đặc biệt của Quái Tinh Anh
+                            if (isElite && playerTarget != null && !playerTarget.isDie()) {
+                                if (Util.isTrue(20, 100)) {
+                                    playerTarget.getBuffInfluence().addBuffStunned((short) 2);
+                                } else if (Util.isTrue(25, 100)) {
+                                    playerTarget.getBuffInfluence().addBuffPoisoned((short) 5, (short) (template.getLevel() * 4));
+                                }
+                            }
                         }
                         
                     } catch (Exception e) {
@@ -424,7 +477,8 @@ public class Monster implements Cloneable {
 
     public void update() throws IOException {
         if (this.isDie() && Util.canDoWithTime(lastTimeDie, Settings.TIME_LIVE_MOB)) {
-            this.hp = template.getMaxHp();
+            rollElite();
+            this.hp = getMaxHp();
             if (this.startX != -1) {
                 this.x = this.startX;
                 this.y = this.startY;

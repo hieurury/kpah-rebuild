@@ -34,6 +34,7 @@ public class Map implements IMap {
                 Monster newMob = Monster.builder().id(mob.getId()).x(mob.getX()).hp(mob.getHp()).y(mob.getY()).template(mob.getTemplate()).playerAttack(new ArrayList<>()).build();
                 newMob.setBuffInfluence(BuffInfluenceMonster.builder().build());
                 newMob.getBuffInfluence().setMob(newMob);
+                newMob.rollElite();
                 return newMob;
             }).collect(Collectors.toList());
             List<Player> playerDefault = mapData.getNpcsActor().stream().map(npc -> {
@@ -59,6 +60,7 @@ public class Map implements IMap {
                         Monster newMob = Monster.builder().id(mob.getId()).x(mob.getX()).hp(mob.getHp()).y(mob.getY()).template(mob.getTemplate()).playerAttack(new ArrayList<>()).build();
                         newMob.setBuffInfluence(BuffInfluenceMonster.builder().build());
                         newMob.getBuffInfluence().setMob(newMob);
+                        newMob.rollElite();
                         return newMob;
                     }).collect(Collectors.toList());
                     List<Player> playerDefault = mapData.getNpcsActor().stream().map(npc -> {

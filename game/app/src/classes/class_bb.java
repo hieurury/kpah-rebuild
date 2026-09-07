@@ -36,6 +36,7 @@ import javax.microedition.lcdui.Graphics;
 public class class_bb
 extends class_ap {
     public boolean a = false;
+    public boolean isElite = false;
     public class_ap b;
     public static final byte[][][] c;
     public class_mo d;
@@ -165,7 +166,16 @@ extends class_ap {
         if (class_yi.T[this.l] == null) {
             return "";
         }
+        if (this.isElite) {
+            return "[Tinh Anh] " + class_yi.T[this.l].l;
+        }
         return class_yi.T[this.l].l;
+    }
+
+    public void m(int n) {
+        if (n == 100) {
+            this.isElite = true;
+        }
     }
 
     public final void a(short s) {
@@ -218,7 +228,49 @@ extends class_ap {
                     }
                 }
                 graphics.drawImage(class_yi.j, ((class_vh)this).cK + by2, ((class_vh)this).cL + by3, 3);
+                
+                // Hiệu ứng vòng sáng hào quang dưới chân quái Tinh Anh
+                if (this.isElite) {
+                    int posX = ((class_vh)this).cK + by2;
+                    int posY = ((class_vh)this).cL + by3;
+                    long time = System.currentTimeMillis();
+                    int pulse = (int) ((time / 120L) % 6);
+                    int rX = 18 + pulse;
+                    int rY = 8 + (pulse >> 1);
+                    // Vòng ngoài màu cam vàng
+                    graphics.setColor(0xFFA500);
+                    graphics.drawArc(posX - rX, posY - rY, rX << 1, rY << 1, 0, 360);
+                    // Vòng trong màu vàng tươi
+                    graphics.setColor(0xFFFF00);
+                    graphics.drawArc(posX - rX + 2, posY - rY + 1, (rX - 2) << 1, (rY - 1) << 1, 0, 360);
+                    // Các tia hào quang xoay quanh chân
+                    int angle = (int) ((time / 25L) % 360);
+                    graphics.setColor(0xFF4500);
+                    graphics.drawArc(posX - rX - 2, posY - rY - 1, (rX + 2) << 1, (rY + 1) << 1, angle, 45);
+                    graphics.drawArc(posX - rX - 2, posY - rY - 1, (rX + 2) << 1, (rY + 1) << 1, (angle + 180) % 360, 45);
+                }
+
+                // Hiệu ứng kích thước to hơn và hào quang xung quanh quái Tinh Anh
+                if (this.isElite) {
+                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B - 1, ((class_vh)this).cL + this.C + this.H + this.x, 0, 0, (int)by);
+                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B + 1, ((class_vh)this).cL + this.C + this.H + this.x, 0, 0, (int)by);
+                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B, ((class_vh)this).cL + this.C + this.H + this.x - 1, 0, 0, (int)by);
+                    class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B, ((class_vh)this).cL + this.C + this.H + this.x + 1, 0, 0, (int)by);
+                }
                 class_yi.T[this.l].a(graphics, ((class_vh)this).cK + this.B, ((class_vh)this).cL + this.C + this.H + this.x, 0, 0, (int)by);
+
+                // Hạt lấp lánh (sparkles) bay quanh quái Tinh Anh
+                if (this.isElite) {
+                    int sX = ((class_vh)this).cK;
+                    int sY = ((class_vh)this).cL;
+                    long t = System.currentTimeMillis();
+                    for (int pIdx = 0; pIdx < 4; pIdx++) {
+                        int pOffX = (int) (((t / 40L + pIdx * 90) % 60) - 30);
+                        int pOffY = (int) (-((t / 25L + pIdx * 25) % 35));
+                        graphics.setColor(pIdx % 2 == 0 ? 0xFFFF00 : 0xFFA500);
+                        graphics.fillRect(sX + pOffX, sY + pOffY, 2, 2);
+                    }
+                }
             }
             int n = 0;
             while (n < ((class_vh)this).de.size()) {
@@ -234,6 +286,20 @@ extends class_ap {
             }
         }
         this.b(graphics, ((class_vh)this).cK, ((class_vh)this).cL, false);
+
+        // Huy hiệu danh hiệu [Tinh Anh] nổi bật trên đầu quái
+        if (this.isElite) {
+            int tagX = ((class_vh)this).cK;
+            int tagY = ((class_vh)this).cL - ((class_vh)this).cM - 14;
+            graphics.setColor(0x000000);
+            graphics.fillRect(tagX - 26, tagY - 1, 52, 11);
+            graphics.setColor(0xFFD700);
+            graphics.drawRect(tagX - 26, tagY - 1, 52, 11);
+            if (class_d.a != null) {
+                class_d.a.a(graphics, "Tinh Anh", tagX, tagY, 2);
+            }
+        }
+
         super.a(graphics);
     }
 
@@ -576,7 +642,12 @@ extends class_ap {
         }
         this.ag = class_ap.V.nextInt(10) + 6;
         this.t = this.v = class_by2.e;
-        this.P = class_by2.i;
+        if (class_by2.i == 100) {
+            this.isElite = true;
+            this.P = 0;
+        } else {
+            this.P = class_by2.i;
+        }
         ((class_vh)this).cV = 0;
         this.i = 0;
         this.j = 0;
