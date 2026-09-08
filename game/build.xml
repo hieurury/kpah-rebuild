@@ -61,8 +61,8 @@
             <!-- Replace server settings in class_yv.java -->
             <replace file="build/src_@{target-name}/classes/class_yv.java" encoding="UTF-8">
                 <replacefilter token='class_yv.b = new String[] { "Dị giới" };' value='class_yv.b = new String[] { "@{server-name}" };'/>
-                <replacefilter token='class_yv.e = new String[] { "practicing-achieve.tun.ply.gg" };' value='class_yv.e = new String[] { "@{server-host}" };'/>
-                <replacefilter token='class_yv.f = new int[] { 50758 };' value='class_yv.f = new int[] { @{server-port} };'/>
+                <replacefilter token='class_yv.e = new String[] { "practicing-unusable.tun.ply.gg" };' value='class_yv.e = new String[] { "@{server-host}" };'/>
+                <replacefilter token='class_yv.f = new int[] { 32289 };' value='class_yv.f = new int[] { @{server-port} };'/>
             </replace>
 
             <!-- Compile -->
@@ -113,8 +113,8 @@
     <target name="dist-prod">
         <build-client target-name="KPAH_PROD"
                       server-name="Dị giới"
-                      server-host="practicing-achieve.tun.ply.gg"
-                      server-port="50758"/>
+                      server-host="practicing-unusable.tun.ply.gg"
+                      server-port="32289"/>
     </target>
 
     <target name="dist-local">

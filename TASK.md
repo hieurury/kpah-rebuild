@@ -1242,3 +1242,19 @@
 - Hướng dẫn người dùng xóa tunnel cũ và tạo tunnel loại **`Terraria`** (hoặc `Custom TCP`) trên Playit dashboard để truyền tải luồng Raw TCP không qua bộ lọc game-specific.
 
 **Kết quả:** ✅ Đã xác định chính xác 100% nguyên nhân và hướng dẫn cấu hình lại tunnel.
+
+---
+
+## [2026-09-08 11:58] — Cập Nhật Client Production Trỏ Về Tunnel Raw TCP `practicing-unusable.tun.ply.gg:32289`
+
+**Yêu cầu:** Cập nhật cấu hình server host và port mới từ tunnel Terraria (Raw TCP) vào mã nguồn client và biên dịch lại gói `KPAH_PROD.jar`.
+
+**Mức độ rủi ro:** Thấp
+
+**Files thay đổi:**
+- `game/app/src/classes/class_yv.java` — Đổi host thành `practicing-unusable.tun.ply.gg` và port thành `32289`.
+- `game/build.xml` — Cập nhật replacefilter và target `dist-prod` với host `practicing-unusable.tun.ply.gg` và port `32289`.
+
+**Kết quả:** ✅ Thành công
+- Đã build thành công `game/build/dist/KPAH_PROD.jar` (1,173,572 bytes) và `KPAH_PROD.jad`.
+- Đã khởi chạy lại MicroEmulator trên máy tính để người dùng kiểm tra kết nối đăng nhập.

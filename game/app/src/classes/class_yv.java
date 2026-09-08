@@ -38,8 +38,8 @@ public final class class_yv extends class_aae {
 
 	static {
 		class_yv.b = new String[] { "Dị giới" };
-		class_yv.e = new String[] { "practicing-achieve.tun.ply.gg" };
-		class_yv.f = new int[] { 50758 };
+		class_yv.e = new String[] { "practicing-unusable.tun.ply.gg" };
+		class_yv.f = new int[] { 32289 };
 		class_yv.g = new byte[] { 0 };
 	}
 
