@@ -39,5 +39,5 @@ fi
 
 # 3. Khởi động KPAH Game Server
 echo ">> [3/3] Khởi động KPAH Server (Port 19129)..."
-java --enable-preview -cp "lib/*:dist/KPAH.jar" server.Server
+java -Djava.net.preferIPv4Stack=true --enable-preview -cp "lib/*:dist/KPAH.jar" server.Server
 
