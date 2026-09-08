@@ -560,9 +560,23 @@ public class Monster implements Cloneable {
             if (this.startX != -1) {
                 this.x = this.startX;
                 this.y = this.startY;
-                MonsterService.instance.sendMonsterMove(this);
             }
+            // Xoa mob khoi otherMobInside cua tat ca player trong zone
+            // -> buoc updateMobInside() gui lai MONSTER_INFO moi voi trang thai isElite dung
+            // Fix bug: sau khi quai tinh anh chet, con moi spawn khong phai tinh anh
+            // nhung client van thay hinh tinh anh vi khong nhan MONSTER_INFO cap nhat
+            if (this.zone != null) {
+                final short mobId = this.id;
+                for (player.Player pl : this.zone.getPlayers()) {
+                    if (pl != null) {
+                        pl.getOtherMobInside().removeIf(m -> m == mobId);
+                    }
+                }
+            }
+            // Gui packet move de client biet quai xuat hien lai
+            MonsterService.instance.sendMonsterMove(this);
         }
+
         buffInfluence.update();
         if (!canNotAttackPlayer()) {
             attackPlayer();

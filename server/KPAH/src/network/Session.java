@@ -93,6 +93,8 @@ public class Session implements ISession {
     public void initThreadSession() {
         this.tSender = ((this.sender != null) ? this.sender.setSocket(this.socket) : (this.sender = new Sender(this, this.socket)));
         this.tCollector = ((this.collector != null) ? this.collector.setSocket(this.socket) : (this.collector = new Collector(this, this.socket)));
+        // Wire collector với sender để collector có thể update lastTimeActivity khi nhận tin từ client
+        this.collector.setSender(this.sender);
     }
 
     @Override
@@ -163,11 +165,11 @@ public class Session implements ISession {
             try {
                 while (connected) {
                     if (player == null || !player.getSundry().isInGame()) {
-                        if (Util.canDoWithTime(sender.lastTimeCollectMessage, Settings.MILISECOND_WAIT_KICK_SESSION)) {
+                        if (Util.canDoWithTime(sender.lastTimeActivity, Settings.MILISECOND_WAIT_KICK_SESSION)) {
                             this.disconnect();
                         }
                     } else if (player.getSundry().isInGame()) {
-                        if (Util.canDoWithTime(sender.lastTimeCollectMessage, Settings.MILISECOND_WAIT_KICK_PLAYER)) {
+                        if (Util.canDoWithTime(sender.lastTimeActivity, Settings.MILISECOND_WAIT_KICK_PLAYER)) {
                             this.disconnect();
                         }
                     }

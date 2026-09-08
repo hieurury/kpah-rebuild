@@ -1289,3 +1289,34 @@
 
 **Kết quả:** ✅ Thành công
 - Đã đóng gói thành công `KPAH_PROD.jar` và cập nhật các launcher server.
+
+## [2026-09-08 19:32] — Fix items, auto disconnect, HP quái, elite respawn bug
+
+**Yêu cầu:**
+1. Thống nhất hình ảnh rương tinh anh (1 hình duy nhất cho bậc 1-4)
+2. Hiện mô tả vật phẩm: Tinh Anh Đan (id 107) và Bình KN (id 108) đang trống
+3. Fix auto disconnect khi treo máy
+4. Tăng x2 HP quái thường
+5. Fix bug quái mới spawn sau khi quái tinh anh chết vẫn mang hình tinh anh
+
+**Files thay đổi:**
+- `server/kpah.sql` — (1) idImage 161,162: 67→68 | (2) name+name2+idImage cho id 107,108,109,110,111 | (3) HP quái thường (id 1-35, 40-45, 50,55,57,60,62,63,65,68,71,74,76,80) nhân x2
+- `server/KPAH/src/network/Sender.java` — Đổi tên `lastTimeCollectMessage` → `lastTimeActivity`
+- `server/KPAH/src/network/Collector.java` — Thêm `setSender()` và update `lastTimeActivity` khi nhận tin từ client (fix disconnect root cause)
+- `server/KPAH/src/network/Session.java` — Wire collector với sender; cập nhật tham chiếu field mới
+- `server/KPAH/src/map/Monster.java` — Khi quái respawn: xóa mob khỏi `otherMobInside` của tất cả player trong zone → buộc gửi lại MONSTER_INFO mới với isElite đúng
+
+**Kết quả:** ✅ Thành công — Build passed (1 warning cũ không liên quan)
+
+**Root cause disconnect:** `lastTimeCollectMessage` chỉ track khi server GỬI tin, không phải khi client GỬI. Khi auto farm mà server không gửi event nào (quái không có, đứng chờ...) → bộ đếm không reset → kick sau 10 phút. Fix: track cả thời gian nhận từ client.
+
+**Root cause elite respawn bug:** `MONSTER_INFO` chỉ được gửi khi mob lần đầu vào tầm nhìn (không có trong `otherMobInside`). Sau khi quái chết, id vẫn còn trong list → khi respawn không gửi lại MONSTER_INFO → client dùng template cũ (có thể là elite). Fix: xóa mob id khỏi otherMobInside của tất cả player khi respawn.
+
+**Backup:** 
+- `_backup/kpah.sql.bak.*`
+- `server/KPAH/src/map/_backup/Monster.java.bak.*`
+- `server/KPAH/src/network/_backup/Sender.java.bak.*`
+- `server/KPAH/src/network/_backup/Collector.java.bak.*`
+- `server/KPAH/src/network/_backup/Session.java.bak.*`
+
+---

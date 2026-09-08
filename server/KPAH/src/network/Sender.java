@@ -25,7 +25,7 @@ public final class Sender implements Runnable {
     private DataOutputStream dos;
     @NonNull
     private IMessageSendCollect sendCollect;
-    public long lastTimeCollectMessage = System.currentTimeMillis();
+    public long lastTimeActivity = System.currentTimeMillis();
 
     public Sender(@NonNull ISession session, @NonNull Socket socket) {
         try {
@@ -52,7 +52,7 @@ public final class Sender implements Runnable {
                     Message message = messages.poll(5, TimeUnit.SECONDS);
                     if (message != null) {
                         this.doSendMessage(message);
-                        lastTimeCollectMessage = System.currentTimeMillis();
+                        lastTimeActivity = System.currentTimeMillis();
                         message.cleanup();
                     }
                 }

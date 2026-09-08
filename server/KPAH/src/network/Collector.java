@@ -21,6 +21,7 @@ public final class Collector implements Runnable {
     private IMessageSendCollect collect;
     @NonNull
     private MessageHandler messageHandler;
+    private Sender sender; // Reference để update lastTimeActivity khi nhận tin từ client
 
     public Collector(@NonNull ISession session, @NonNull Socket socket) {
         try {
@@ -38,12 +39,20 @@ public final class Collector implements Runnable {
         return this;
     }
 
+    public void setSender(Sender sender) {
+        this.sender = sender;
+    }
 
     @Override
     public void run() {
         try {
             while (this.session.isConnected()) {
                 final Message msg = this.collect.readMessage(this.session, this.dis);
+                // Cập nhật thời gian activity mỗi khi nhận được tin từ client
+                // → fix bug: trước đây chỉ track khi GỬI, auto farm không gửi gì từ server → bị kick
+                if (sender != null) {
+                    sender.lastTimeActivity = System.currentTimeMillis();
+                }
                 if (msg.command == CommandMessage.REQUEST_KEY) {
                     this.session.sendKey();
                 } else {
