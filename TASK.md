@@ -1160,3 +1160,40 @@
   - `KPAH_PROD.jar` (1,173,576 bytes) & `KPAH_PROD.jad` (trỏ `practicing-achieve.tun.ply.gg:50758`, server "Dị giới").
   - `KPAH_MOD.jar` (1,173,553 bytes) & `KPAH_MOD.jad` (trỏ `127.0.0.1:19129`, server "Localhost").
 - Đã xác thực bytecode `classes/class_yv.class` bên trong `KPAH_PROD.jar` chứa chính xác chuỗi `practicing-achieve.tun.ply.gg` và hằng số port `50758`.
+
+---
+
+## [2026-09-08 11:08] — Chạy Thử Bản Game Production trên Giả Lập MicroEmulator
+
+**Yêu cầu:** Khởi chạy bản game `KPAH_PROD.jar` trực tiếp trên máy tính để kiểm tra kết nối qua tunnel Playit.gg.
+
+**Mức độ rủi ro:** Thấp
+
+**Hành động:**
+- Khởi chạy MicroEmulator với `game/build/dist/KPAH_PROD.jar` bằng Java 8.
+- Ghi nhận console khởi động thành công:
+  ```text
+  ket noi socket://practicing-achieve.tun.ply.gg:50758
+  send cmd=-1
+  send cmd=1
+  ```
+
+**Kết quả:** ✅ Thành công (Cửa sổ game giả lập MicroEmulator đã mở trên màn hình và kết nối thành công tới tunnel production).
+
+---
+
+## [2026-09-08 11:28] — Khắc Phục Lỗi Playit Daemon Tự Thoát Trong start.sh
+
+**Yêu cầu:** Giải thích lý do Playit không duy trì kết nối khi chạy `start.sh` và hoàn thiện `start.sh`, `stop.sh` để tự động xử lý trọn gói socket kẹt và kiểm tra trạng thái sống của `playitd`.
+
+**Mức độ rủi ro:** Thấp
+
+**Files thay đổi:**
+- `server/KPAH/start.sh` — Bổ sung `rm -f "$PREFIX/tmp/playit.sock"`, thêm chuyển hướng `< /dev/null`, và thêm bước kiểm tra thực tế tiến trình `playitd` kèm in log lỗi từ `~/playit.log` nếu khởi động thất bại.
+- `server/KPAH/stop.sh` — Bổ sung dọn dẹp file `$PREFIX/tmp/playit.sock` khi dừng server.
+
+**Backup:**
+- `server/KPAH/_backup/start.sh.bak.20260908_1127`
+- `server/KPAH/_backup/stop.sh.bak.20260908_1127`
+
+**Kết quả:** ✅ Đã cập nhật script, commit git `595352d`.
