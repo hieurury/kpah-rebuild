@@ -19,8 +19,8 @@
     <property name="wtk.home" value="wtk"/>
     <property name="microemu.jar" value="tools/emulator.jar"/>
     <property name="libs.dir" value="libs"/>
-    <!--    app name, you can rename it-->
-    <property name="app.name" value="KPAH_MOD"/>
+    <!--    app name, default production-->
+    <property name="app.name" value="KPAH_PROD"/>
 
     <property environment="env"/>
     <!--    lib classpath-->
@@ -42,44 +42,89 @@
         <delete dir="build"/>
     </target>
 
-    <target name="compile" depends="clean">
-        <mkdir dir="build/classes"/>
-        <javac srcdir="app/src" destdir="build/classes" includeantruntime="false">
-            <bootclasspath>
-                <path refid="external.libs"/>
-            </bootclasspath>
-            <classpath refid="external.libs"/>
-        </javac>
+    <macrodef name="build-client">
+        <attribute name="target-name"/>
+        <attribute name="server-name"/>
+        <attribute name="server-host"/>
+        <attribute name="server-port"/>
+        <sequential>
+            <echo message="=== Building @{target-name} [@{server-name} -> @{server-host}:@{server-port}] ==="/>
+            <delete dir="build/src_@{target-name}"/>
+            <delete dir="build/classes_@{target-name}"/>
+            <delete dir="build/bin_@{target-name}"/>
+
+            <mkdir dir="build/src_@{target-name}"/>
+            <copy todir="build/src_@{target-name}">
+                <fileset dir="app/src"/>
+            </copy>
+
+            <!-- Replace server settings in class_yv.java -->
+            <replace file="build/src_@{target-name}/classes/class_yv.java" encoding="UTF-8">
+                <replacefilter token='class_yv.b = new String[] { "Dị giới" };' value='class_yv.b = new String[] { "@{server-name}" };'/>
+                <replacefilter token='class_yv.e = new String[] { "practicing-achieve.tun.ply.gg" };' value='class_yv.e = new String[] { "@{server-host}" };'/>
+                <replacefilter token='class_yv.f = new int[] { 50758 };' value='class_yv.f = new int[] { @{server-port} };'/>
+            </replace>
+
+            <!-- Compile -->
+            <mkdir dir="build/classes_@{target-name}"/>
+            <javac srcdir="build/src_@{target-name}" destdir="build/classes_@{target-name}" includeantruntime="false" encoding="UTF-8">
+                <bootclasspath>
+                    <path refid="external.libs"/>
+                </bootclasspath>
+                <classpath refid="external.libs"/>
+            </javac>
+
+            <!-- Preverify & Package -->
+            <mkdir dir="build/bin_@{target-name}"/>
+            <mkdir dir="build/dist"/>
+            <jar destfile="build/bin_@{target-name}/preverified.jar" manifest="app/res/META-INF/MANIFEST.MF" duplicate="preserve">
+                <zipgroupfileset dir="${libs.dir}" includes="*.jar" erroronmissingdir="false"/>
+                <fileset dir="build/classes_@{target-name}"/>
+                <fileset dir="res" excludes="META-INF/MANIFEST.MF" erroronmissingdir="false"/>
+            </jar>
+
+            <!-- ProGuard -->
+            <java jar="tools/proguard.jar" fork="true">
+                <arg line="-injars build/bin_@{target-name}/preverified.jar"/>
+                <arg line="-outjars build/dist/@{target-name}.jar"/>
+                <arg line="-libraryjars ${cp.string}"/>
+                <arg line="-ignorewarnings"/>
+                <arg line="-dontusemixedcaseclassnames"/>
+                <arg line="-dontshrink"/>
+                <arg line="-dontoptimize"/>
+                <arg line="-dontobfuscate"/>
+                <arg line="-microedition"/>
+            </java>
+
+            <!-- Generate JAD with exact MIDlet-Jar-Size and MIDlet-Jar-URL -->
+            <length file="build/dist/@{target-name}.jar" property="current.jar.size.@{target-name}"/>
+            <copy file="app/res/META-INF/MANIFEST.MF" tofile="build/dist/@{target-name}.jad" overwrite="true"/>
+            <concat destfile="build/dist/@{target-name}.jad" append="true">MIDlet-Jar-Size: ${current.jar.size.@{target-name}}&#10;MIDlet-Jar-URL: @{target-name}.jar&#10;</concat>
+
+            <!-- Cleanup intermediate -->
+            <delete dir="build/src_@{target-name}"/>
+            <delete dir="build/classes_@{target-name}"/>
+            <delete dir="build/bin_@{target-name}"/>
+            <delete dir="out"/>
+            <echo message="=== Successfully built @{target-name}.jar (${current.jar.size.@{target-name}} bytes) and @{target-name}.jad ==="/>
+        </sequential>
+    </macrodef>
+
+    <target name="dist-prod">
+        <build-client target-name="KPAH_PROD"
+                      server-name="Dị giới"
+                      server-host="practicing-achieve.tun.ply.gg"
+                      server-port="50758"/>
     </target>
 
-    <target name="dist" depends="compile">
-        <mkdir dir="build/bin"/>
-        <jar destfile="build/bin/preverifed.jar" manifest="app/res/META-INF/MANIFEST.MF" duplicate="preserve">
-            <zipgroupfileset dir="${libs.dir}" includes="*.jar" erroronmissingdir="false"/>
-            <fileset dir="build/classes"/>
-            <fileset dir="res" excludes="META-INF/MANIFEST.MF" erroronmissingdir="false"/>
-        </jar>
-
-        <!--preverify with -->
-        <java jar="tools/proguard.jar" fork="true">
-            <arg line="-injars"/>
-            <arg line="build/bin/preverifed.jar"/>
-            <arg line="-outjars"/>
-            <arg line="build/dist/${app.name}.jar"/>
-            <arg line="-libraryjars"/>
-            <arg line="${cp.string}"/>
-            <arg line="-ignorewarnings"/>
-            <arg line="-dontusemixedcaseclassnames"/>
-            <arg line="-dontshrink"/>
-            <arg line="-dontoptimize"/>
-            <arg line="-dontobfuscate"/>
-            <arg line="-microedition"/>
-        </java>
-
-        <delete dir="build/bin"/>
-        <delete dir="out"/>
-
+    <target name="dist-local">
+        <build-client target-name="KPAH_MOD"
+                      server-name="Localhost"
+                      server-host="127.0.0.1"
+                      server-port="19129"/>
     </target>
+
+    <target name="dist" depends="clean, dist-prod, dist-local"/>
 
     <!--    obfuscate jar with proguard-->
     <target name="obfuscate">
@@ -127,11 +172,17 @@
     </target>
 
     <!--    Run midlet with microemulator-->
-    <target name="run" depends="dist">
+    <target name="run" depends="dist-prod">
         <java jar="${microemu.jar}" fork="true">
             <jvmarg value="-noverify"/>
             <arg value="build/dist/${app.name}.jar"/>
         </java>
     </target>
-    <!--    Cre Tran Duc Huy-->
+
+    <target name="run-local" depends="dist-local">
+        <java jar="${microemu.jar}" fork="true">
+            <jvmarg value="-noverify"/>
+            <arg value="build/dist/KPAH_MOD.jar"/>
+        </java>
+    </target>
 </project>

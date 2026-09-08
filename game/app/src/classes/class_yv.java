@@ -31,15 +31,15 @@ public final class class_yv extends class_aae {
 	public static int a;
 	static String[] b;
 	public static String[] e;
-	public static short[] f;
+	public static int[] f;
 	public static byte[] g;
 	private boolean t;
 	private int u;
 
 	static {
-		class_yv.b = new String[] { "Localhost" };
-		class_yv.e = new String[] { "127.0.0.1" };
-		class_yv.f = new short[] { 19129 };
+		class_yv.b = new String[] { "Dị giới" };
+		class_yv.e = new String[] { "practicing-achieve.tun.ply.gg" };
+		class_yv.f = new int[] { 50758 };
 		class_yv.g = new byte[] { 0 };
 	}
 
@@ -68,12 +68,12 @@ public final class class_yv extends class_aae {
 				final byte byte1;
 				class_yv.b = new String[byte1 = dataInputStream.readByte()];
 				class_yv.e = new String[byte1];
-				class_yv.f = new short[byte1];
+				class_yv.f = new int[byte1];
 				class_yv.g = new byte[byte1];
 				for (byte b = 0; b < byte1; ++b) {
 					class_yv.b[b] = dataInputStream.readUTF();
 					class_yv.e[b] = dataInputStream.readUTF();
-					class_yv.f[b] = dataInputStream.readShort();
+					class_yv.f[b] = (dataInputStream.readShort() & 0xFFFF);
 					class_yv.g[b] = dataInputStream.readByte();
 				}
 				dataInputStream.close();
@@ -150,13 +150,13 @@ public final class class_yv extends class_aae {
 		final String[] a2;
 		class_yv.b = new String[(a2 = class_d.a(a, ",")).length];
 		class_yv.e = new String[a2.length];
-		class_yv.f = new short[a2.length];
+		class_yv.f = new int[a2.length];
 		class_yv.g = new byte[a2.length];
 		for (int i = 0; i < a2.length; ++i) {
 			final String[] a3 = class_d.a(a2[i], ":");
 			class_yv.b[i] = a3[0];
 			class_yv.e[i] = a3[1];
-			class_yv.f[i] = Short.parseShort(a3[2].trim());
+			class_yv.f[i] = Integer.parseInt(a3[2].trim());
 			class_yv.g[i] = Byte.parseByte(a3[3].trim());
 		}
 		saveServer();
@@ -172,13 +172,13 @@ public final class class_yv extends class_aae {
 		final String[] a2;
 		class_yv.b = new String[(a2 = class_d.a(a, ",")).length];
 		class_yv.e = new String[a2.length];
-		class_yv.f = new short[a2.length];
+		class_yv.f = new int[a2.length];
 		class_yv.g = new byte[a2.length];
 		for (int i = 0; i < a2.length; ++i) {
 			final String[] a3 = class_d.a(a2[i], ":");
 			class_yv.b[i] = a3[0];
 			class_yv.e[i] = a3[1];
-			class_yv.f[i] = Short.parseShort(a3[2].trim());
+			class_yv.f[i] = Integer.parseInt(a3[2].trim());
 			class_yv.g[i] = Byte.parseByte(a3[3].trim());
 		}
 		final ByteArrayOutputStream out = new ByteArrayOutputStream();

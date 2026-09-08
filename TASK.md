@@ -1085,5 +1085,78 @@
 - Server Java 21 biên dịch không lỗi (`BUILD SUCCESSFUL`).
 - Đã khởi động lại server daemon (`task-3077`), tải đủ 163 Potion Template và đang lắng nghe cổng 19129.
 
+---
 
+## [2026-09-07 18:20] — Tạo Bản Build Production Tách Biệt Server "Dị giới" (Tailscale Funnel) & Chuẩn Hóa JAD
 
+**Yêu cầu:**
+1. Tạo thêm 1 bản game production kết nối tới server thật công khai qua Tailscale Funnel tách biệt với bản test localhost:
+   - Host: `kpah-server.tailba565a.ts.net`, Port: `443`.
+   - Tên hiển thị server: `Dị giới`.
+2. Xác nhận vị trí hardcode host/port trong client và sửa mảng kết nối trong `classes/class_yv.java`.
+3. Tách biệt 2 bản build độc lập trong `build.xml`:
+   - Bản Production: `KPAH_PROD.jar` và `KPAH_PROD.jad` (kết nối `kpah-server.tailba565a.ts.net:443`, hiển thị "Dị giới").
+   - Bản Test Localhost: `KPAH_MOD.jar` và `KPAH_MOD.jad` (kết nối `127.0.0.1:19129`, hiển thị "Localhost").
+4. Tạo tự động file descriptor `.jad` cho J2ME với 2 trường bắt buộc khớp chính xác kích thước byte:
+   - `MIDlet-Jar-Size`: kích thước byte thực tế của file jar.
+   - `MIDlet-Jar-URL`: tên file jar tương ứng.
+5. Kiểm tra chạy thử bằng MicroEmulator (`tools/emulator.jar`) xác nhận kết nối chuẩn.
+
+**Files thay đổi:**
+- `game/app/src/classes/class_yv.java`:
+  - Cập nhật thông tin server mặc định trong static initializer sang `b = {"Dị giới"}`, `e = {"kpah-server.tailba565a.ts.net"}`, `f = {443}`.
+- `game/build.xml`:
+  - Thêm `macrodef name="build-client"` hỗ trợ build có cấu hình riêng cho từng môi trường (tự động patch `class_yv.java` cho target tương ứng, biên dịch với UTF-8, đóng gói preverified jar, chạy ProGuard, và tự động sinh `.jad` kèm `MIDlet-Jar-Size` và `MIDlet-Jar-URL`).
+  - Thêm các target: `dist-prod`, `dist-local`, `dist` (build cả hai), `run` (chạy bản production), `run-local` (chạy bản local test).
+
+**Backup:**
+- `game/app/src/classes/_backup/class_yv.java.bak.20260907_1813`
+- `game/_backup/build.xml.bak.20260907_1816`
+
+**Kết quả:** ✅ Thành công
+- Đã build thành công cả 2 gói client trong `game/build/dist/`:
+  - `KPAH_PROD.jar` (1,173,556 bytes) & `KPAH_PROD.jad` (MIDlet-Jar-Size: 1173556, trỏ `kpah-server.tailba565a.ts.net:443`, server "Dị giới").
+  - `KPAH_MOD.jar` (1,173,535 bytes) & `KPAH_MOD.jad` (MIDlet-Jar-Size: 1173535, trỏ `127.0.0.1:19129`, server "Localhost").
+- Kiểm tra MicroEmulator cho `KPAH_PROD.jar`:
+  - Ghi nhận console: `ket noi socket://kpah-server.tailba565a.ts.net:443`, gửi lệnh handshake `cmd=-1` và `cmd=1` thành công.
+- Kiểm tra MicroEmulator cho `KPAH_MOD.jar`:
+  - Ghi nhận console: `ket noi socket://127.0.0.1:19129`, kết nối localhost thành công.
+
+---
+
+## [2026-09-08 10:40] — Kết nối Playit.gg Agent cho Server Production trên Termux
+
+**Yêu cầu:** Giải quyết lỗi kết nối agent Playit trên Termux (bị chặn do lỗi phân giải DNS khi chạy `playit-cli`). Cung cấp Secret Key và lệnh kết nối cho Termux.
+
+**Mức độ rủi ro:** Thấp
+
+**Hành động:**
+- Khởi tạo phiên claim từ máy chủ Linux và xác thực qua tài khoản web của user (`https://playit.gg/claim/6b871b576e`).
+- Lấy thành công Secret Key từ Playit.gg: `76d1359294b8f50ee87953958b07de6a1194b6c569bc0a4d7c64636eaf967a65`.
+- Cung cấp script tự động ghi file `~/.config/playit_gg/playit.toml` và chạy daemon `playitd` trên Termux.
+
+**Kết quả:** ✅ Thành công (Agent đã kết nối và đăng ký thành công vào hệ thống Playit: `AgentRegistered { session_id: 22789, account_id: 2699796, agent_id: 6806186 }`).
+**Ghi chú:** Agent đã online, user đang tiến hành tạo tunnel Minecraft Java trỏ về port 19129 trên dashboard Playit.
+
+---
+
+## [2026-09-08 11:00] — Cấu hình Server & Build Client Production (Playit Tunnel)
+
+**Yêu cầu:** Cấu hình lại server production và build gói JAR production của game để chơi thử qua tunnel Playit.gg (`practicing-achieve.tun.ply.gg:50758`).
+
+**Mức độ rủi ro:** Trung bình
+
+**Files thay đổi:**
+- `server/KPAH/dist/KPAH.jar` — Biên dịch lại file JAR server qua `ant jar`.
+- `game/app/src/classes/class_yv.java` — Chuyển kiểu dữ liệu `class_yv.f` từ `short[]` sang `int[]` để khắc phục lỗi tràn số âm khi port vượt quá 32767 (`50758` bị ép thành `-14778` gây crash socket); cập nhật host mặc định `practicing-achieve.tun.ply.gg` và port `50758`.
+- `game/build.xml` — Cập nhật macro replace filter và target `dist-prod` trỏ về `practicing-achieve.tun.ply.gg:50758`.
+
+**Backup:**
+- `game/app/src/classes/_backup/class_yv.java.bak.20260908_1057`
+- `game/_backup/build.xml.bak.20260908_1057`
+
+**Kết quả:** ✅ Thành công
+- Đã build thành công cả 2 gói client trong `game/build/dist/`:
+  - `KPAH_PROD.jar` (1,173,576 bytes) & `KPAH_PROD.jad` (trỏ `practicing-achieve.tun.ply.gg:50758`, server "Dị giới").
+  - `KPAH_MOD.jar` (1,173,553 bytes) & `KPAH_MOD.jad` (trỏ `127.0.0.1:19129`, server "Localhost").
+- Đã xác thực bytecode `classes/class_yv.class` bên trong `KPAH_PROD.jar` chứa chính xác chuỗi `practicing-achieve.tun.ply.gg` và hằng số port `50758`.
