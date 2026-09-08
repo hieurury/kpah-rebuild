@@ -1443,3 +1443,37 @@
 - Rương Tinh Anh hiển thị chuẩn xác hình chiếc rương báu vật viền vàng thay vì đồng xu.
 
 ---
+
+## [2026-09-08 22:44] — Khắc phục triệt để lỗi văng client đồng loạt (Opcode -23 NPE & Opcode -66)
+
+**Yêu cầu:** Điều tra và sửa lỗi vừa xảy ra khi client bị văng ra kèm log: `Lỗi Message Handler [Opcode: -23] - java.lang.NullPointerException: itemGem is marked non-null but is null` và cảnh báo spam `CMD Function Not Found: -66`.
+
+**Nguyên nhân gốc rễ:**
+- Trong bản mod client ([ModController.java](file:///home/hieurury/Programs/mod_game/kpah/kpah_mod_chill/game/app/src/classes/ModController.java)), có hàm tự động `doAutoGame()` chạy ngầm định kỳ mỗi 180 giây (3 phút):
+  1. Gửi lệnh chăm sóc cây thần nông trại (opcode `-66` - `CMD_FRUIT`).
+  2. Gửi hàng loạt lệnh vứt đá rác (opcode `-23` - `DELL_GEM_ITEM` từ đá 159 $\rightarrow$ 226).
+- Khi nhân vật không có viên đá tương ứng trong túi, `InventoryService.findItemGem()` trả về `null`.
+- Server gọi `removeItemGem(player, null)`. Do method này khai báo `@NonNull ItemGem itemGem`, thư viện Lombok tự động ném ra `NullPointerException: itemGem is marked non-null but is null`.
+- Exception này khiến Collector ngắt kết nối session người chơi: `DISCONNECT -> PACKET_ERROR`.
+- Cứ mỗi 3 phút, tất cả client bật auto đều quét dọn rác và bị server đá văng đồng loạt!
+
+**Mức độ rủi ro:** Cao (ảnh hưởng trực tiếp đến độ ổn định kết nối toàn server)
+
+**Files thay đổi:**
+- `server/KPAH/src/services/InventoryService.java`:
+  - Bỏ `@NonNull` cho tham số item và thêm kiểm tra an toàn `if (item == null) return;` ở tất cả các method: `removeItemBodyEquipment`, `removeItemBoxEquipment`, `removeItemSoldEquipment`, `removeItemBagEquipment`, `removeItemAnimal`, `removeItemPotion`, `removeItemGem`, `removeItemGemLock`.
+- `server/KPAH/src/network/MessageHandler.java`:
+  - Thêm kiểm tra null trước khi gọi xóa item ở các case `DELL_GEM_ITEM` và `DELL_POTION`.
+  - Bổ sung case `CommandMessage.CMD_FRUIT` (opcode `-66`) bỏ qua an toàn để không còn spam cảnh báo `CMD Function Not Found: -66`.
+- `server/KPAH/dist/KPAH.jar`: Biên dịch lại toàn bộ server sạch sẽ với Ant Java 21 (`BUILD SUCCESSFUL`).
+
+**Backup:**
+- `server/KPAH/src/services/_backup/InventoryService.java.bak.20260908_2241`
+- `server/KPAH/src/network/_backup/MessageHandler.java.bak.20260908_2241`
+
+**Kết quả:** ✅ Thành công
+- Build Ant Java 21: `BUILD SUCCESSFUL`.
+- Triệt tiêu 100% lỗi crash session do vứt đá/item null từ auto client.
+- Sạch log opcode `-66`.
+
+---

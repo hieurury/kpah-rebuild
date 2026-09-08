@@ -123,22 +123,26 @@ public class InventoryService {
     }
 
     @Synchronized
-    public void removeItemBodyEquipment(@NonNull Player player, @NonNull ItemEquip item) {
+    public void removeItemBodyEquipment(@NonNull Player player, ItemEquip item) {
+        if (item == null) return;
         player.getInventory().getItemBody().remove(item);
     }
 
     @Synchronized
-    public void removeItemBoxEquipment(@NonNull Player player, @NonNull ItemEquip item) {
+    public void removeItemBoxEquipment(@NonNull Player player, ItemEquip item) {
+        if (item == null) return;
         player.getInventory().getItemBox().remove(item);
     }
 
     @Synchronized
-    public void removeItemSoldEquipment(@NonNull Player player, @NonNull ItemEquip item) {
+    public void removeItemSoldEquipment(@NonNull Player player, ItemEquip item) {
+        if (item == null) return;
         player.getInventory().getItemSold().remove(item);
     }
 
     @Synchronized
-    public void removeItemBagEquipment(@NonNull Player player, @NonNull ItemEquip item) {
+    public void removeItemBagEquipment(@NonNull Player player, ItemEquip item) {
+        if (item == null) return;
         player.getInventory().getItemBag().remove(item);
         player.getSundry().removeDepositeItemEquip(item);
     }
@@ -164,7 +168,8 @@ public class InventoryService {
     }
 
     @Synchronized
-    public void removeItemAnimal(@NonNull Player player, @NonNull ItemAnimal itemAnimal) {
+    public void removeItemAnimal(@NonNull Player player, ItemAnimal itemAnimal) {
+        if (itemAnimal == null) return;
         if (itemAnimal.getTemplate().getType() == 0) {
             player.getInventory().getItemAnimal().remove(itemAnimal);
         } else {
@@ -181,7 +186,8 @@ public class InventoryService {
     }
 
     @Synchronized
-    public void removeItemPotion(@NonNull Player player, @NonNull ItemPotion itemPotion) {
+    public void removeItemPotion(@NonNull Player player, ItemPotion itemPotion) {
+        if (itemPotion == null) return;
         player.getInventory().getItemPotion().remove(itemPotion);
     }
 
@@ -198,7 +204,8 @@ public class InventoryService {
     }
 
     @Synchronized
-    public void removeItemGem(@NonNull Player player, @NonNull ItemGem itemGem) {
+    public void removeItemGem(@NonNull Player player, ItemGem itemGem) {
+        if (itemGem == null) return;
         player.getInventory().getItemGem().remove(itemGem);
         player.getSundry().removeDepositeItemGem(itemGem);
     }
@@ -224,7 +231,8 @@ public class InventoryService {
     }
 
     @Synchronized
-    public void removeItemGemLock(@NonNull Player player, @NonNull ItemGem itemGem) {
+    public void removeItemGemLock(@NonNull Player player, ItemGem itemGem) {
+        if (itemGem == null) return;
         player.getInventory().getItemGemLock().remove(itemGem);
     }
 

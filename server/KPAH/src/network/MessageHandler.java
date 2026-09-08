@@ -8,6 +8,8 @@ import player.Player;
 import daos.PlayerDAO;
 import interfaces.ISession;
 import item.ItemBuyNpc;
+import item.ItemGem;
+import item.ItemPotion;
 import lombok.NonNull;
 import services.BuffService;
 import services.ChatService;
@@ -314,14 +316,24 @@ public class MessageHandler {
                         if (typeGem == Const.DROP_GEM_ITEM) {
                             boolean isLockItem = msg.reader().readByte() == 1;
                             if (isLockItem) {
-                                InventoryService.instance.removeItemGemLock(player, InventoryService.instance.findItemGemLock(player, idGem));
-                                InventoryService.instance.sendItemGemLock(player);
+                                ItemGem gemLock = InventoryService.instance.findItemGemLock(player, idGem);
+                                if (gemLock != null) {
+                                    InventoryService.instance.removeItemGemLock(player, gemLock);
+                                    InventoryService.instance.sendItemGemLock(player);
+                                }
                                 return;
                             }
-                            InventoryService.instance.removeItemGem(player, InventoryService.instance.findItemGem(player, idGem));
-                            InventoryService.instance.sendItemGem(player);
+                            ItemGem gem = InventoryService.instance.findItemGem(player, idGem);
+                            if (gem != null) {
+                                InventoryService.instance.removeItemGem(player, gem);
+                                InventoryService.instance.sendItemGem(player);
+                            }
                         }
                     }
+                }
+                case CommandMessage.CMD_FRUIT -> {
+                    // Client mod auto cham soc cay than nong trai (opcode -66)
+                    // Bo qua an toan de khong spam log CMD Function Not Found
                 }
                 case CommandMessage.UP_TO_BOARD -> {
                     if (player != null) {
@@ -371,8 +383,11 @@ public class MessageHandler {
                 case CommandMessage.DELL_POTION -> {
                     if (player != null) {
                         short potionType = msg.reader().readShort();
-                        InventoryService.instance.removeItemPotion(player, InventoryService.instance.findItemPotion(player, (byte) potionType));
-                        InventoryService.instance.sendItemPotion(player);
+                        ItemPotion pot = InventoryService.instance.findItemPotion(player, (byte) potionType);
+                        if (pot != null) {
+                            InventoryService.instance.removeItemPotion(player, pot);
+                            InventoryService.instance.sendItemPotion(player);
+                        }
                     }
                 }
                 case CommandMessage.BUY_GEM_ITEM_FROM_NPC -> {
