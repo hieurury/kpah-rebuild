@@ -1224,3 +1224,21 @@
 - Ghi nhận console game đã kết nối tới `practicing-achieve.tun.ply.gg:50758` và gửi lệnh khởi tạo `cmd=-1`, `cmd=1`.
 
 **Kết quả:** ✅ Thành công (Cửa sổ game đã mở trên màn hình máy tính).
+
+---
+
+## [2026-09-08 11:51] — Phân Tích Cơ Chế Lọc Gói Tin Của Playit Tunnel & Chuyển Sang Raw TCP
+
+**Yêu cầu:** Xác định chính xác nguyên nhân Playit không chuyển tiếp gói tin từ game KPAH về Server trên Termux dù agent và server đều online.
+
+**Mức độ rủi ro:** Thấp
+
+**Phát hiện kỹ thuật:**
+- Tunnel loại `Minecraft Java` của Playit.gg hoạt động như một Layer-7 Reverse Proxy, yêu cầu gói tin bắt tay (Handshake packet) đúng chuẩn Minecraft chứa hostname để định tuyến.
+- Khi gửi thử gói tin Minecraft Handshake qua Python script tới `practicing-achieve.tun.ply.gg:50758`: Playit lập tức chuyển tiếp vào điện thoại và KPAH server nhận được ngay.
+- Khi client KPAH gửi dữ liệu binary riêng (`cmd=-1`, opcode `-40`): Playit lọc bỏ và không kích hoạt sự kiện `NewClient` về agent Termux (`~/playit.log` không có log kết nối).
+
+**Giải pháp:**
+- Hướng dẫn người dùng xóa tunnel cũ và tạo tunnel loại **`Terraria`** (hoặc `Custom TCP`) trên Playit dashboard để truyền tải luồng Raw TCP không qua bộ lọc game-specific.
+
+**Kết quả:** ✅ Đã xác định chính xác 100% nguyên nhân và hướng dẫn cấu hình lại tunnel.
