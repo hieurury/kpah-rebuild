@@ -157,6 +157,7 @@ extends class_ap {
         this.k = 0;
         this.j = 0;
         this.i = 0;
+        this.isElite = false;
     }
 
     public final String a_() {
@@ -175,6 +176,8 @@ extends class_ap {
     public void m(int n) {
         if (n == 100) {
             this.isElite = true;
+        } else {
+            this.isElite = false;
         }
     }
 
@@ -341,6 +344,7 @@ extends class_ap {
 
     public void a(int n, int n2) {
         ((class_vh)this).cV = (byte)5;
+        this.isElite = false;
         this.i = 0;
         this.j = (short)n;
         this.k = (short)n2;
@@ -460,6 +464,7 @@ extends class_ap {
                 this.k = 0;
                 this.j = 0;
                 this.i = 0;
+                this.isElite = false;
                 ((class_vh)this).cK = this.g = ((class_vh)this).cO;
                 ((class_vh)this).cL = this.h = ((class_vh)this).cP;
                 this.v = this.w;
@@ -653,6 +658,7 @@ extends class_ap {
             this.isElite = true;
             this.P = 0;
         } else {
+            this.isElite = false;
             this.P = class_by2.i;
         }
         ((class_vh)this).cV = 0;

@@ -1320,3 +1320,38 @@
 - `server/KPAH/src/network/_backup/Session.java.bak.*`
 
 ---
+
+## [2026-09-08 20:16] — Fix triệt để bug quái thường tái sử dụng hình ảnh quái tinh anh
+
+**Yêu cầu:** Sửa triệt để vấn đề quái tinh anh sau khi chết, quái thường mới spawn ra tại vị trí đó vẫn bị mang hình ảnh, hào quang, danh hiệu của quái tinh anh.
+
+**Nguyên nhân gốc rễ (2 tầng Client & Server):**
+1. **Client (`game/app/src/classes/class_bb.java`):**
+   - Biến `isElite` trong client trước đây chỉ được gán `= true` ở 2 chỗ (`m(100)` và `a(class_by)` khi `class_by2.i == 100`). **Hoàn toàn không có bất kỳ dòng nào gán `isElite = false`** trong toàn bộ client!
+   - Khi quái chết (`cV = 5`) hoặc respawn (`case 8` timer đếm xong) hoặc nhận info quái thường (`class_by2.i != 100`), `isElite` vẫn giữ nguyên giá trị `true`.
+   - Client pool/tái sử dụng instance `class_bb` cho quái trên map → quái vĩnh viễn bị gán cờ tinh anh cho đến khi đổi map/thoát game.
+2. **Server (`server/KPAH/src/map/Monster.java`):**
+   - Khi quái respawn, server trước đó chỉ xóa mob khỏi `otherMobInside` của player và gửi `MOVE_CHAR`.
+   - `updateMobInside` chỉ được gọi khi player di chuyển (`onMove`). Nếu player đứng im treo máy auto đánh quái thì `MONSTER_INFO` không bao giờ được gửi lại.
+   - Khi nhận `MOVE_CHAR`, client chỉ cập nhật toạ độ chứ không cập nhật effect/loại quái.
+
+**Files thay đổi:**
+- `game/app/src/classes/class_bb.java`:
+  - Trong `m(int n)`: Gán `this.isElite = (n == 100)` (reset `false` nếu `n != 100`).
+  - Trong `a(class_by)`: Thêm `this.isElite = false` trong nhánh `else` khi `class_by2.i != 100`.
+  - Trong `a(int n, int n2)` (xử lý chết): Gán `this.isElite = false` ngay khi quái ngã xuống.
+  - Trong `case 8` (respawn local): Gán `this.isElite = false`.
+  - Trong constructor / reset: Gán `this.isElite = false`.
+- `server/KPAH/src/map/Monster.java`:
+  - Khi quái respawn trong `update()`: Gửi trực tiếp `sendMonsterInfo` đến tất cả player trong tầm nhìn và thêm vào `otherMobInside` (ngay cả khi player đứng yên treo máy), kèm theo packet `sendMonsterMove`.
+- Đã build lại thành công:
+  - Client: `game/build/dist/KPAH_PROD.jar` và `KPAH_MOD.jar`
+  - Server: `server/KPAH/dist/KPAH.jar`
+
+**Backup:**
+- `game/app/src/classes/_backup/class_bb.java.bak.20260908_2013`
+- `server/KPAH/src/map/_backup/Monster.java.bak.20260908_2014`
+
+**Kết quả:** ✅ Thành công — Đã giải quyết triệt để ở cả client và server, build passed.
+
+---

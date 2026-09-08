@@ -561,15 +561,17 @@ public class Monster implements Cloneable {
                 this.x = this.startX;
                 this.y = this.startY;
             }
-            // Xoa mob khoi otherMobInside cua tat ca player trong zone
-            // -> buoc updateMobInside() gui lai MONSTER_INFO moi voi trang thai isElite dung
-            // Fix bug: sau khi quai tinh anh chet, con moi spawn khong phai tinh anh
-            // nhung client van thay hinh tinh anh vi khong nhan MONSTER_INFO cap nhat
+            // Gui truc tiep MONSTER_INFO cap nhat cho tat ca player trong tam nhin
+            // de client cap nhat dung trang thai tinh anh / quai thuong (ke ca khi player dung im auto)
             if (this.zone != null) {
-                final short mobId = this.id;
                 for (player.Player pl : this.zone.getPlayers()) {
-                    if (pl != null) {
-                        pl.getOtherMobInside().removeIf(m -> m == mobId);
+                    if (pl != null && pl.getSession() != null && !pl.isDie()) {
+                        if (Util.getDistance(pl, this) < pl.getSession().getDistanceLoad()) {
+                            pl.getOtherMobInside().add(this.id);
+                            MonsterService.instance.sendMonsterInfo(pl, this.id);
+                        } else {
+                            pl.getOtherMobInside().removeIf(m -> m == this.id);
+                        }
                     }
                 }
             }
