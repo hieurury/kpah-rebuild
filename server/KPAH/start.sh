@@ -22,12 +22,17 @@ fi
 
 # 2. Đảm bảo Playit tunnel daemon đang chạy
 if ! pgrep -f "playitd" > /dev/null 2>&1; then
-    echo ">> [2/3] Playit tunnel chưa chạy, đang khởi động..."
+    echo ">> [2/3] Đang khởi động Playit tunnel..."
+    rm -f "$PREFIX/tmp/playit.sock"
     mkdir -p ~/.config/playit_gg
-    echo "76d1359294b8f50ee87953958b07de6a1194b6c569bc0a4d7c64636eaf967a65" > ~/.config/playit_gg/playit.toml
-    nohup playitd --socket-path "$PREFIX/tmp/playit.sock" --secret 76d1359294b8f50ee87953958b07de6a1194b6c569bc0a4d7c64636eaf967a65 > ~/playit.log 2>&1 &
-    sleep 2
-    echo ">> [2/3] Playit tunnel đã khởi chạy ngầm (practicing-achieve.tun.ply.gg:50758)."
+    nohup playitd --socket-path "$PREFIX/tmp/playit.sock" --secret 76d1359294b8f50ee87953958b07de6a1194b6c569bc0a4d7c64636eaf967a65 < /dev/null > ~/playit.log 2>&1 &
+    sleep 3
+    if pgrep -f "playitd" > /dev/null 2>&1; then
+        echo ">> [2/3] Playit tunnel đang hoạt động (practicing-achieve.tun.ply.gg:50758)."
+    else
+        echo ">> [CẢNH BÁO] Playit tunnel không khởi động được! Chi tiết lỗi (~/playit.log):"
+        cat ~/playit.log 2>/dev/null
+    fi
 else
     echo ">> [2/3] Playit tunnel đang chạy."
 fi
