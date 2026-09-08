@@ -34,7 +34,7 @@ public class MonsterService {
         MapService.instance.sendAllPlayerInMap(monster, msg);
     }
 
-    public void sendMonsterAttack(@NonNull Monster monster, @NonNull Player plTarget) throws IOException {
+    public int sendMonsterAttack(@NonNull Monster monster, @NonNull Player plTarget) throws IOException {
         int dameMob = monster.getDameAttack(plTarget);
         dameMob = BuffService.instance.onAttackPlayerHasBuff(monster, plTarget, dameMob);
         int damage = plTarget.injured(dameMob, false, ItemEquipConst.DAMAGE_PHYSIC, false);
@@ -44,6 +44,7 @@ public class MonsterService {
         msg.writer().writeInt(damage);
         msg.writer().writeInt(plTarget.getPoint().getHp());
         MapService.instance.sendAllPlayerInMap(monster, msg);
+        return damage;
     }
 
     @Synchronized
@@ -153,7 +154,7 @@ public class MonsterService {
      * This prevents the client from drawing a projectile.
      * Uses NEW_HP_MP to silently update the player's HP.
      */
-    public void sendMeleeHit(@NonNull Monster monster, @NonNull Player plTarget) throws IOException {
+    public int sendMeleeHit(@NonNull Monster monster, @NonNull Player plTarget) throws IOException {
         int dameMob = monster.getDameAttack(plTarget);
         dameMob = BuffService.instance.onAttackPlayerHasBuff(monster, plTarget, dameMob);
         int damage = plTarget.injured(dameMob, false, ItemEquipConst.DAMAGE_PHYSIC, false);
@@ -173,6 +174,20 @@ public class MonsterService {
         msgHp.writer().writeShort(plTarget.getPoint().getDefend());
         msgHp.writer().writeInt(plTarget.getPoint().getHp());
         MapService.instance.sendAllPlayerInMap(monster, msgHp);
+        return damage;
+    }
+
+    public void sendMonsterInfoToMap(@NonNull Monster monster) throws IOException {
+        if (monster.getZone() == null || monster.getZone().getPlayers() == null) {
+            return;
+        }
+        for (Player pl : monster.getZone().getPlayers()) {
+            if (pl != null && pl.getSession() != null && !pl.isDie()) {
+                if (Util.getDistance(pl, monster) < pl.getSession().getDistanceLoad()) {
+                    sendMonsterInfo(pl, monster.getId());
+                }
+            }
+        }
     }
 
     public void sendMonsterMove(@NonNull Player pl, @NonNull Monster monster) throws IOException {

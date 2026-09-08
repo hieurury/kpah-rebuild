@@ -6,6 +6,12 @@ echo "========================================="
 echo "   KPAH SERVER PRODUCTION LAUNCHER       "
 echo "========================================="
 
+# 0. Kích hoạt wake lock ngăn Android đưa CPU vào chế độ ngủ sâu khi tắt màn hình
+if command -v termux-wake-lock > /dev/null 2>&1; then
+    termux-wake-lock
+    echo ">> [0/3] Đã kích hoạt termux-wake-lock (chống ngủ sâu/ngắt mạng khi tắt màn hình)."
+fi
+
 # 1. Đảm bảo MariaDB đang chạy
 mysql -u root -pkpah -e "SELECT 1;" > /dev/null 2>&1
 if [ $? -ne 0 ]; then
@@ -37,5 +43,6 @@ fi
 
 # 3. Khởi động KPAH Game Server
 echo ">> [3/3] Khởi động KPAH Server (Port 19129)..."
-java -Djava.net.preferIPv4Stack=true --enable-preview -cp "lib/*:dist/KPAH.jar" server.Server
+java -Xms128m -Xmx512m -Djava.net.preferIPv4Stack=true --enable-preview -cp "lib/*:dist/KPAH.jar" server.Server
+
 

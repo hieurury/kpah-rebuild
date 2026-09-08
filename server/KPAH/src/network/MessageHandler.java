@@ -646,12 +646,14 @@ public class MessageHandler {
                 case CommandMessage.FINISH_PUT_ITEM_2_BAG, CommandMessage.CONFIG, CommandMessage.QUEST_CLAN -> {
                 }
                 default -> {
+                    utils.ServerLog.warn("CMD Function Not Found: %d (Session #%d)", msg.command, session.getID());
                     Printer.printRed("CMD Function Not Found: " + msg.command);
                 }
             }
         } catch (Exception e) {
-            Logger.logError("Lỗi Message Handler", e);
-            session.disconnect();
+            utils.ServerLog.error(String.format("Lỗi Message Handler [Session #%d | Opcode: %d]", session.getID(), (msg != null ? msg.command : -999)), e);
+            Logger.logError("Lỗi Message Handler (CMD: " + (msg != null ? msg.command : -999) + ")", e);
+            session.disconnect("PACKET_ERROR (CMD: " + (msg != null ? msg.command : -999) + " - " + e.getMessage() + ")");
         }
     }
 }

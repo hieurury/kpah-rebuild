@@ -39,12 +39,14 @@ public class LoginService {
                 if (session.getPlayer() == null) {
                     Player pl = session.findPlayer(selectId);
                     if (pl == null) {
-                        session.disconnect();
+                        utils.ServerLog.warn("Session #%d chọn nhân vật không tồn tại ID: %d", session.getID(), selectId);
+                        session.disconnect("CHAR_NOT_FOUND (Không tìm thấy nhân vật ID: " + selectId + ")");
                         return;
                     }
                     if (ClientManager.containsPlayers(pl)) {
-                        session.disconnect();
-                        pl.getSession().disconnect();
+                        utils.ServerLog.warn("Nhân vật '%s' (ID %d) đã online, ngắt kết nối phiên cũ và từ chối phiên mới", pl.getName(), selectId);
+                        session.disconnect("DUPLICATE_CHAR_LOGIN_REJECT");
+                        pl.getSession().disconnect("DUPLICATE_CHAR_LOGIN_KICK (Đăng nhập lại từ phiên khác)");
                         return;
                     }
                     if (pl.getSundry().getDayCanRestore() == -1) {
@@ -59,6 +61,7 @@ public class LoginService {
                         sendDataWhenLogin(pl);
                         ExecutorVirtualThread.submitThreadPlayer(pl.updatePlayer());
                         ChangeMapService.instance.changeMap(pl, pl.getLocation().getZone(), pl.getLocation().getX(), pl.getLocation().getY());
+                        utils.ServerLog.auth("Nhân vật '%s' (ID: %d, Cấp: %d) vào game thành công (Session #%d)", pl.getName(), pl.getIdPlayer(), pl.getInfo().getLevel(), session.getID());
                     }
                 }
             }

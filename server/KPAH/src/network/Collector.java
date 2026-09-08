@@ -46,10 +46,10 @@ public final class Collector implements Runnable {
     @Override
     public void run() {
         try {
+            String disconnectReason = "CLIENT_DISCONNECT";
             while (this.session.isConnected()) {
                 final Message msg = this.collect.readMessage(this.session, this.dis);
                 // Cập nhật thời gian activity mỗi khi nhận được tin từ client
-                // → fix bug: trước đây chỉ track khi GỬI, auto farm không gửi gì từ server → bị kick
                 if (sender != null) {
                     sender.lastTimeActivity = System.currentTimeMillis();
                 }
@@ -61,9 +61,17 @@ public final class Collector implements Runnable {
                 msg.cleanup();
                 TimeUnit.MILLISECONDS.sleep(5);
             }
+        } catch (java.io.EOFException eof) {
+            this.session.disconnect("CLIENT_CLOSED (Đầu nhận gặp EOF - Client đóng game hoặc đứt tunnel)");
+            return;
+        } catch (java.net.SocketException se) {
+            this.session.disconnect("SOCKET_RESET (Mất kết nối mạng: " + se.getMessage() + ")");
+            return;
         } catch (Exception ex) {
+            this.session.disconnect("READ_ERROR (" + ex.getClass().getSimpleName() + ": " + ex.getMessage() + ")");
+            return;
         }
-        this.session.disconnect();
+        this.session.disconnect("COLLECTOR_LOOP_END");
     }
 
     public void setCollect(@NonNull IMessageSendCollect collect) {

@@ -38,7 +38,11 @@ public interface ISession {
 
     void doSendMessage(final Message msg);
 
-    void disconnect();
+    default void disconnect() {
+        disconnect("Không rõ lý do");
+    }
+
+    void disconnect(String reason);
 
     void setZoomLevel(final Message msg);
 

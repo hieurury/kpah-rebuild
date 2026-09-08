@@ -27,7 +27,12 @@ import utils.Logger;
 import utils.Printer;
 import utils.Util;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import utils.ServerLog;
+
 public class Session implements ISession {
+
+    private static final AtomicInteger ID_GENERATOR = new AtomicInteger(1);
 
     private int id;
     private Socket socket;
@@ -50,7 +55,7 @@ public class Session implements ISession {
     public List<Player> listChar = new ArrayList<>();
 
     public Session(Socket sc) throws SocketException {
-        this.id = ClientManager.getClients().size();
+        this.id = ID_GENERATOR.getAndIncrement();
         this.socket = sc;
         this.socket.setKeepAlive(true);
         try {
@@ -141,10 +146,11 @@ public class Session implements ISession {
     }
 
     @Override
-    public void disconnect() {
+    public void disconnect(String reason) {
         if (this.connected) {
-            Printer.printPurple(String.format("Session Disconnected %s", this.getIP()));
             this.connected = false;
+            String charName = (this.player != null) ? this.player.getName() : null;
+            ServerLog.disconnect(this.id, this.username, charName, this.ip, reason);
             if (this.sender != null) {
                 this.sender.close();
             }
@@ -152,11 +158,18 @@ public class Session implements ISession {
                 this.collector.close();
             }
             try {
-                this.socket.close();
+                if (this.socket != null && !this.socket.isClosed()) {
+                    this.socket.close();
+                }
                 this.dispose();
             } catch (IOException | SQLException e) {
             }
         }
+    }
+
+    @Override
+    public void disconnect() {
+        disconnect("Không rõ lý do");
     }
 
     @Override
@@ -166,17 +179,17 @@ public class Session implements ISession {
                 while (connected) {
                     if (player == null || !player.getSundry().isInGame()) {
                         if (Util.canDoWithTime(sender.lastTimeActivity, Settings.MILISECOND_WAIT_KICK_SESSION)) {
-                            this.disconnect();
+                            this.disconnect("IDLE_SESSION_TIMEOUT (Chưa chọn nhân vật quá 60s)");
                         }
                     } else if (player.getSundry().isInGame()) {
                         if (Util.canDoWithTime(sender.lastTimeActivity, Settings.MILISECOND_WAIT_KICK_PLAYER)) {
-                            this.disconnect();
+                            this.disconnect("IDLE_PLAYER_TIMEOUT (Treo máy không hoạt động quá 10 phút)");
                         }
                     }
                     TimeUnit.SECONDS.sleep(1);
                 }
             } catch (Exception e) {
-                this.disconnect();
+                this.disconnect("SESSION_UPDATE_EXCEPTION: " + e.getMessage());
             }
         };
     }
@@ -245,6 +258,7 @@ public class Session implements ISession {
             msg.reader().readByte();
             ResultSetImpl rs = HikariCP.executeQuery("SELECT * FROM `users` WHERE `username` = ? and password= ? LIMIT 1;", username, pass);
             if (!rs.next()) {
+                ServerLog.auth("Đăng nhập thất bại: user '%s' từ IP %s (Sai tài khoản/mật khẩu)", username, this.ip);
                 Service.instance.sendLogOut(this, "Tài khoản hoặc mật khẩu không chính xác! Vui lòng thử lại!");
                 return;
             }
@@ -252,10 +266,11 @@ public class Session implements ISession {
             isAdmin = rs.getBoolean("isAdmin");
             Player playerCheck = ClientManager.getPlayerByUserID(userId);
             if (playerCheck != null) {
+                ServerLog.auth("Đăng nhập trùng lặp: user '%s' (ID %d) từ IP %s -> Ngắt phiên cũ", username, userId, this.ip);
                 Service.instance.sendLogOut(playerCheck.getSession(), "Mất kết nối.");
-                playerCheck.getSession().disconnect();
+                playerCheck.getSession().disconnect("DUPLICATE_LOGIN (Tài khoản được đăng nhập từ nơi khác)");
                 Service.instance.sendLogOut(this, "Tài khoản đang đăng nhập ở nơi khác!");
-                this.disconnect();
+                this.disconnect("DUPLICATE_LOGIN_REJECT (Tài khoản đang đăng nhập ở nơi khác)");
                 return;
             }
             emptyListChar(-1);
@@ -267,9 +282,12 @@ public class Session implements ISession {
                 }
             }
             rs.close();
+            ServerLog.auth("Đăng nhập thành công: user '%s' (ID %d) từ IP %s (%d nhân vật)", username, userId, this.ip, listChar.size());
             LoginService.instance.sendListChar(this);
         } catch (IOException | NumberFormatException | SQLException | JSONException e) {
+            ServerLog.error("Lỗi đăng nhập tài khoản " + username, e);
             Logger.logError("Lỗi Login", e);
+            this.disconnect("LOGIN_EXCEPTION: " + e.getMessage());
         }
     }
 

@@ -59,6 +59,9 @@ public final class Sender implements Runnable {
                 TimeUnit.MILLISECONDS.sleep(5);
             }
         } catch (Exception e) {
+            if (this.session != null && this.session.isConnected()) {
+                this.session.disconnect("SEND_ERROR (" + e.getClass().getSimpleName() + ": " + e.getMessage() + ")");
+            }
         }
     }
 

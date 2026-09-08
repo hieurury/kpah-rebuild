@@ -51,12 +51,25 @@ public class Monster implements Cloneable {
     private long nextAttackDelay = 2000;
     @Builder.Default
     private boolean isElite = false;
+    @Builder.Default
+    private long lastTimeBeingAttacked = 0;
+    @Builder.Default
+    private long lastTimeRegenHp = 0;
 
     public int getMaxHp() {
         if (template == null) {
             return 100;
         }
-        return isElite ? (int) (template.getMaxHp() * 4.0) : template.getMaxHp();
+        return isElite ? (int) (template.getMaxHp() * 8.0) : template.getMaxHp();
+    }
+
+    @Synchronized
+    public void healHp(int amount) throws IOException {
+        if (isDie() || amount <= 0) {
+            return;
+        }
+        this.hp = Math.min(getMaxHp(), this.hp + amount);
+        MonsterService.instance.sendMonsterInfoToMap(this);
     }
 
     public void rollElite() {
@@ -93,16 +106,21 @@ public class Monster implements Cloneable {
 
     public int injured(@NonNull Player plAtt, int damage, boolean isXuyenGiap, boolean isInjuredByEffect, boolean x2) throws IOException {
         if (!this.isDie()) {
+            this.lastTimeBeingAttacked = System.currentTimeMillis(); // Cập nhật thời điểm bị đánh
             if (!isKhoangSan()) {
                 if (!isXuyenGiap) {
                     int level = this.template.getLevel();
                     // 1. Giáp phòng thủ phẳng theo level quái
-                    int mobDef = level * 2;
+                    int mobDef = isElite ? level * 5 : level * 2;
                     damage -= mobDef;
                     
                     // 2. Kháng sát thương theo % (damage mitigation)
-                    int resistPercent = Math.min(25, (int) (level * 0.7));
+                    // Quái tinh anh kháng 40% - 60% sát thương (người chơi yếu đánh gần như không thấm)
+                    int resistPercent = isElite ? Math.min(60, 35 + (int) (level * 0.6)) : Math.min(25, (int) (level * 0.7));
                     damage -= damage * resistPercent / 100;
+                } else if (isElite) {
+                    // Kể cả bị xuyên giáp, quái tinh anh vẫn triệt tiêu 25% sát thương
+                    damage -= damage * 25 / 100;
                 }
             }
             if (damage <= 0) {
@@ -204,14 +222,23 @@ public class Monster implements Cloneable {
             baseAtk = (int) (baseAtk * 1.1); // Cận chiến +10%
         }
         if (isElite) {
-            baseAtk = (int) (baseAtk * 1.35); // Quái tinh anh +35% dame (vừa đủ mạnh, không gây sốc chết người chơi)
+            // Quái tinh anh tăng mạnh sát thương +80% (người chơi trang bị kém sẽ chịu không nổi)
+            baseAtk = (int) (baseAtk * 1.8);
+            // Trạng thái Cuồng Nộ (Frenzy): dưới 50% HP tăng thêm 25% sát thương
+            if (this.hp < getMaxHp() / 2) {
+                baseAtk = (int) (baseAtk * 1.25);
+            }
+            // 25% tỷ lệ Bạo Kích (Critical Hit) của Tinh Anh: x1.5 sát thương
+            if (Util.isTrue(25.0, 100.0)) {
+                baseAtk = (int) (baseAtk * 1.5);
+            }
         }
 
         // 3. Sát thương cào xước tối thiểu (min scratch damage) theo level quái
         // Khi giáp người chơi rất cao, quái vẫn gây ra lượng sát thương nhỏ hợp lý (không bị về 1 dame vô lý)
         int minScratch = Math.max(3, (int) (mobLv * 1.5 + 2));
         if (isElite) {
-            minScratch = (int) (minScratch * 1.5);
+            minScratch = Math.max(25, (int) (mobLv * 3.5 + 15));
         }
 
         // 4. Đảm bảo người chơi nhận sát thương hợp lý khi trừ giáp trong Player.injured()
@@ -471,9 +498,10 @@ public class Monster implements Cloneable {
         if (!isDie() && !this.buffInfluence.isStunned() && Util.canDoWithTime(lastTimeAttackPlayer, nextAttackDelay)) {
             this.lastTimeAttackPlayer = System.currentTimeMillis();
             
-            // Randomize next attack delay based on monster type (Tinh anh vừa phải để treo máy chịu được)
+            // Randomize next attack delay based on monster type
             if (isElite) {
-                this.nextAttackDelay = Util.nextInt(1200, 2000);
+                // Cuồng Nộ (Frenzy) khi máu < 50%: tốc độ đánh điên cuồng 800-1200ms, bình thường 1200-1800ms
+                this.nextAttackDelay = (this.hp < getMaxHp() / 2) ? Util.nextInt(800, 1200) : Util.nextInt(1200, 1800);
             } else if (isMelee()) {
                 this.nextAttackDelay = Util.nextInt(1800, 3200);
             } else {
@@ -525,17 +553,35 @@ public class Monster implements Cloneable {
 
                         for (Player target : targetList) {
                             if (target != null && !target.isDie()) {
+                                int damageDealt = 0;
                                 if (isMelee()) {
-                                    MonsterService.instance.sendMeleeHit(Monster.this, target);
+                                    damageDealt = MonsterService.instance.sendMeleeHit(Monster.this, target);
                                 } else {
-                                    MonsterService.instance.sendMonsterAttack(Monster.this, target);
+                                    damageDealt = MonsterService.instance.sendMonsterAttack(Monster.this, target);
                                 }
                                 // Kỹ năng đặc biệt của Quái Tinh Anh
                                 if (isElite) {
-                                    if (Util.isTrue(20, 100)) {
+                                    // 1. Hút máu (Lifesteal): hồi 25% sát thương gây ra
+                                    if (damageDealt > 0 && !Monster.this.isDie()) {
+                                        int healAmount = (int) (damageDealt * 0.25);
+                                        if (healAmount > 0) {
+                                            healHp(healAmount);
+                                        }
+                                    }
+                                    // 2. Kỹ năng khống chế & thiêu đốt
+                                    int randSkill = Util.nextInt(1, 100);
+                                    if (randSkill <= 25) {
+                                        // 25% Gây Choáng 2s (Stun)
                                         target.getBuffInfluence().addBuffStunned((short) 2);
-                                    } else if (Util.isTrue(25, 100)) {
-                                        target.getBuffInfluence().addBuffPoisoned((short) 5, (short) (template.getLevel() * 4));
+                                    } else if (randSkill <= 55) {
+                                        // 30% Gây Trúng Độc cực mạnh theo cấp độ quái (Poison)
+                                        target.getBuffInfluence().addBuffPoisoned((short) 5, (short) (template.getLevel() * 6));
+                                    } else if (randSkill <= 75) {
+                                        // 20% Thiêu đốt (Burn: trừ trực tiếp MP người chơi khiến khó dùng skill)
+                                        if (target.getPoint() != null) {
+                                            int burnMp = Math.max(50, template.getLevel() * 15);
+                                            target.getPoint().minusMp(burnMp);
+                                        }
                                     }
                                 }
                             }
@@ -582,6 +628,20 @@ public class Monster implements Cloneable {
         buffInfluence.update();
         if (!canNotAttackPlayer()) {
             attackPlayer();
+        }
+
+        // Cơ chế tự hồi phục khi không bị tấn công (Out-of-Combat HP Regen) của Quái Tinh Anh
+        if (isElite && !isDie() && this.hp < getMaxHp()) {
+            long now = System.currentTimeMillis();
+            // Nếu không bị người chơi tấn công trong 5 giây
+            if (now - lastTimeBeingAttacked >= 5000L) {
+                // Cứ mỗi 1.5 giây hồi phục 8% HP tối đa
+                if (Util.canDoWithTime(lastTimeRegenHp, 1500L)) {
+                    this.lastTimeRegenHp = now;
+                    int regenAmount = Math.max(15, (int) (getMaxHp() * 0.08));
+                    healHp(regenAmount);
+                }
+            }
         }
         
         // Wandering logic

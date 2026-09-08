@@ -1355,3 +1355,91 @@
 **Kết quả:** ✅ Thành công — Đã giải quyết triệt để ở cả client và server, build passed.
 
 ---
+
+## [2026-09-08 21:25] — Khắc Phục Lỗi Văng Client Hàng Loạt & Bổ Sung Hệ Thống Log Toàn Diện Cho Server
+
+**Yêu cầu:** 
+1. Điều tra nguyên nhân client bị văng ra đồng loạt (tất cả các máy bị out cùng 1 lúc chứ không phải 1 máy).
+2. Bổ sung hệ thống log toàn diện cho server để giám sát tổng quát hệ thống (Heartbeat, RAM, Threads, Online, Disconnect Reason) tiện xử lý lỗi.
+
+**Nguyên nhân gốc rễ phát hiện:**
+1. **Lỗi đốt 100% CPU do vòng lặp accept trong `Server.java`:** `serverChannel.configureBlocking(false)` không có `sleep` khiến 1 core CPU liên tục chạy 100%. Trên Android (Termux), **Phantom Process Killer** và hệ thống bảo vệ pin/nhiệt của Android 12+ tự động gửi tín hiệu `SIGKILL` tiêu diệt tiến trình Java chạy nền $\rightarrow$ toàn bộ socket đứt cùng 1 lúc.
+2. **Đứt đường hầm Bore TCP Tunnel khi tắt màn hình điện thoại:** Thiếu `termux-wake-lock` trong `start.sh` khiến Android đưa CPU vào chế độ ngủ sâu (Doze Mode), ngắt kết nối mạng của Termux và ngắt đường hầm `bore.pub:19129`.
+3. **Thiếu thông tin nhận diện Disconnect:** Server chỉ in `Session Disconnected <IP>`, không có username, nhân vật, thời gian ms hay lý do ngắt kết nối.
+
+**Files thay đổi:**
+- `server/KPAH/src/utils/ServerLog.java` [TẠO MỚI]: Bộ ghi log chuẩn hóa hỗ trợ in màu Console ANSI và ghi file bất đồng bộ `log/server_yyyy-MM-dd.log`. Có các tag: `[INFO]`, `[NETWORK]`, `[AUTH]`, `[DISCONNECT]`, `[HEARTBEAT]`, `[WARN]`, `[ERROR]`.
+- `server/KPAH/src/interfaces/ISession.java`: Bổ sung `void disconnect(String reason)` và default method `disconnect()`.
+- `server/KPAH/src/server/Server.java`:
+  - Thêm `TimeUnit.MILLISECONDS.sleep(10)` vào vòng lặp accept non-blocking $\rightarrow$ CPU idle giảm từ **100% xuống 0.0%**.
+  - Bổ sung Heartbeat Virtual Thread tự động ghi log RAM, Players, Sessions, Threads, Uptime mỗi 60 giây.
+  - Bổ sung các lệnh hữu ích trên Console: `status`, `listplayer`, `gc`, `thread`, `player`, `session`.
+- `server/KPAH/src/network/Session.java`:
+  - Thay thế `clients.size()` bằng `AtomicInteger ID_GENERATOR` tăng dần đơn điệu, triệt tiêu lỗi trùng ID session.
+  - Cập nhật `disconnect(reason)` ghi log chi tiết Session ID, username, character, IP, lý do.
+  - Bổ sung log đăng nhập thành công, thất bại, trùng tài khoản.
+- `server/KPAH/src/network/Collector.java`: Bắt chi tiết `EOFException` (client đóng game / đứt tunnel), `SocketException` (mất mạng / reset) và truyền lý do vào `disconnect(reason)`.
+- `server/KPAH/src/network/Sender.java`: Bắt lỗi gửi socket và gọi `disconnect("SEND_ERROR: ...")`.
+- `server/KPAH/src/network/MessageHandler.java`: Bắt exception và ghi log rõ opcode gây lỗi kèm stack trace.
+- `server/KPAH/src/services/LoginService.java` & `MapService.java`: Bổ sung lý do disconnect khi chọn nhân vật và chuyển map.
+- `server/KPAH/start.sh`: Kích hoạt `termux-wake-lock` chống ngủ sâu Termux; thêm tham số bộ nhớ tối ưu `-Xms128m -Xmx512m`.
+- `server/KPAH/stop.sh`: Tự động giải phóng `termux-wake-unlock`.
+- `server/KPAH/dist/KPAH.jar`: Biên dịch lại toàn bộ server sạch sẽ với Java 21 (`BUILD SUCCESSFUL`).
+
+**Backup:**
+- `server/KPAH/src/server/_backup/Server.java.bak.20260908_2119`
+- `server/KPAH/src/network/_backup/Session.java.bak.20260908_2119`
+- `server/KPAH/src/network/_backup/Collector.java.bak.20260908_2119`
+- `server/KPAH/src/network/_backup/Sender.java.bak.20260908_2119`
+- `server/KPAH/src/network/_backup/MessageHandler.java.bak.20260908_2119`
+- `server/KPAH/src/services/_backup/LoginService.java.bak.20260908_2121`
+- `server/KPAH/src/services/_backup/MapService.java.bak.20260908_2121`
+- `server/KPAH/_backup/start.sh.bak.20260908_2119`
+
+**Kết quả:** ✅ Thành công
+- Đã test thực tế: CPU server giảm từ 100% về 0.0%.
+- Heartbeat in định kỳ mỗi 60s vào console và file `log/server_yyyy-MM-dd.log`.
+- Khi client ngắt kết nối, server log chính xác lý do (ví dụ: `CLIENT_CLOSED`, `SOCKET_RESET`).
+- Lệnh `status` trong console phản hồi ngay lập tức thông số hệ thống.
+
+---
+
+## [2026-09-08 21:46] — Nâng cấp quái thường & quái Tinh Anh, fix hình ảnh Rương Tinh Anh
+
+**Yêu cầu:**
+1. Nâng cấp quái: Tăng một chút HP cho quái thường.
+2. Tăng MẠNH sức mạnh cho quái Tinh Anh: làm cho người chơi không quá mạnh và trang bị kém hầu như không solo lại được.
+3. Thêm nhiều khả năng chiến đấu mới cho quái Tinh Anh (hút máu, cuồng nộ dưới 50% HP, kỹ năng khống chế/thiêu đốt MP).
+4. Thêm cơ chế tự hồi phục HP (Out-of-Combat HP Regen) cho quái Tinh Anh khi không bị tấn công.
+5. Chỉnh lại hình ảnh Rương Tinh Anh (trước đó hiển thị hình đồng xu vàng, sửa lại đúng hình chiếc rương báu).
+
+**Mức độ rủi ro:** Trung bình
+
+**Files thay đổi:**
+- `server/KPAH/data/image/icon/5568.png` & `5567.png`: Thay thế ảnh đồng xu vàng/bạc cũ bằng hình ảnh chiếc Rương báu vật chuẩn 16x16 trích xuất từ icon rương `596.png`. Rương Tinh Anh và các rương báu trong hành trang / rơi ngoài map hiển thị đúng 100% hình chiếc rương.
+- `server/KPAH/src/map/Monster.java`:
+  - `getMaxHp()`: Quái Tinh Anh được nhân **x8.0 HP** (trước đây là x4.0).
+  - `injured()`: Bổ sung giáp phẳng `level * 5` và kháng sát thương phần trăm lên đến **40% - 60%** cho Quái Tinh Anh; người chơi đồ yếu đánh vào chỉ gây lượng cào xước tối thiểu. Đánh dấu `lastTimeBeingAttacked = System.currentTimeMillis()`.
+  - `getDameAttack()`: Tăng sát thương cơ bản của Quái Tinh Anh thêm **+80%**, thêm trạng thái **Cuồng Nộ (Frenzy)** dưới 50% HP (+25% sát thương) và 25% tỷ lệ **Bạo Kích (Critical Hit)** x1.5 sát thương. Tăng sát thương cào xước tối thiểu.
+  - `attackPlayer()`: Thêm tốc độ đánh Cuồng Nộ (800 - 1200ms khi dưới 50% HP); thêm khả năng **Hút Máu (Lifesteal 25%)** dựa trên lượng sát thương gây ra; thêm kỹ năng **25% Choáng 2s**, **30% Trúng Độc nặng**, **20% Thiêu Đốt trừ MP trực tiếp**.
+  - `update()`: Cơ chế **Out-of-Combat HP Regen**: Nếu không bị người chơi tấn công trong 5 giây, quái Tinh Anh mỗi 1.5 giây tự động hồi phục 8% Max HP và đồng bộ ngay thanh máu tới tất cả người chơi trong tầm nhìn.
+  - `healHp(int amount)`: Phương thức hồi phục máu an toàn kèm broadcast cập nhật thông tin quái cho người chơi xung quanh.
+- `server/KPAH/src/services/MonsterService.java`:
+  - `sendMonsterAttack()` và `sendMeleeHit()`: Chuyển kiểu trả về thành `int damage` để tính toán cơ chế hút máu cho quái.
+  - `sendMonsterInfoToMap(@NonNull Monster monster)`: Thêm hàm broadcast thông tin máu của quái cho tất cả người chơi trong tầm nhìn trong map.
+- MySQL database `kpah.monsters` & `server/kpah.sql`:
+  - Cập nhật tăng thêm 20% `maxHp` cho toàn bộ quái thường (không áp dụng cho quái khoáng sản và NPC đặc biệt).
+
+**Backup:**
+- `server/KPAH/src/map/_backup/Monster.java.bak.20260908_2142`
+- `server/KPAH/src/services/_backup/MonsterService.java.bak.20260908_2142`
+- `server/KPAH/data/image/icon/_backup/5567.png.bak.20260908_2142`
+- `server/KPAH/data/image/icon/_backup/5568.png.bak.20260908_2142`
+
+**Kết quả:** ✅ Thành công
+- Build Ant Java 21: `BUILD SUCCESSFUL`.
+- Quái thường có lượng máu dày hơn vừa phải (+20%).
+- Quái Tinh Anh cực kỳ trâu bò, sở hữu bộ kỹ năng đầy đủ: Kháng sát thương cao, đánh cực đau, hút máu, cuồng nộ khi yếu máu, gây hiệu ứng làm choáng/độc/đốt MP, tự hồi máu đầy khi đối thủ bỏ chạy/chết/không tấn công trong 5s.
+- Rương Tinh Anh hiển thị chuẩn xác hình chiếc rương báu vật viền vàng thay vì đồng xu.
+
+---

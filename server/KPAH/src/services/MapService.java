@@ -690,7 +690,9 @@ public class MapService {
             updatePlayerInside(pl, null);
         } else {
             if (toMap == 31) {
-                pl.getSession().disconnect();
+                if (pl.getSession() != null) {
+                    pl.getSession().disconnect("MAP_31_BLOCKED (Cố tình di chuyển vào map cấm 31)");
+                }
                 return;
             }
             if (pl.getLocation().getZone().getMap().getMapId() == 105) {
