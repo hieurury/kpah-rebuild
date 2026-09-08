@@ -1197,3 +1197,16 @@
 - `server/KPAH/_backup/stop.sh.bak.20260908_1127`
 
 **Kết quả:** ✅ Đã cập nhật script, commit git `595352d`.
+
+---
+
+## [2026-09-08 11:41] — Ép Cấu Hình IPv4 Cho Server KPAH Để Cố Định Localhost 127.0.0.1
+
+**Yêu cầu:** Giải quyết vấn đề kết nối `127.0.0.1` trên Termux để không phải đổi IP LAN thủ công khi chuyển mạng Wi-Fi/4G.
+
+**Mức độ rủi ro:** Thấp
+
+**Files thay đổi:**
+- `server/KPAH/start.sh` — Thêm cờ JVM `-Djava.net.preferIPv4Stack=true` khi khởi chạy KPAH Server, đảm bảo Server bind cổng IPv4 `0.0.0.0:19129` và chấp nhận kết nối loopback `127.0.0.1` từ Playit daemon.
+
+**Kết quả:** ✅ Đã cập nhật script, commit git `01708c3`.
