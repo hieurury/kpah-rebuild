@@ -1,0 +1,1 @@
+Vấn đề về tiến độ và lưu trữ, game bị mất tiến độ về số lượng xu và tài nguyên kiếm được, mỗi lần vào lại thì lượng xu hay exp kiếm được bị reset về trạng tháu cũ và việc nhặt xu gì đó cũng không cộng vào luôn, còn nhiều vấn đề về việc này lắm nhưng tôi không mô tả rõ được, cứ tự dò tìm theo hướng này và xem vấn đề đi.
