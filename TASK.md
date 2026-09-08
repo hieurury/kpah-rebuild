@@ -1210,3 +1210,17 @@
 - `server/KPAH/start.sh` — Thêm cờ JVM `-Djava.net.preferIPv4Stack=true` khi khởi chạy KPAH Server, đảm bảo Server bind cổng IPv4 `0.0.0.0:19129` và chấp nhận kết nối loopback `127.0.0.1` từ Playit daemon.
 
 **Kết quả:** ✅ Đã cập nhật script, commit git `01708c3`.
+
+---
+
+## [2026-09-08 11:44] — Khởi Chạy Bản Game Production KPAH_PROD.jar Để Kiểm Thử
+
+**Yêu cầu:** Mở game bản production (`KPAH_PROD.jar`) trên máy tính qua MicroEmulator để người dùng đăng nhập và kiểm tra kết nối với server Termux.
+
+**Mức độ rủi ro:** Thấp
+
+**Hành động:**
+- Khởi chạy MicroEmulator với `game/build/dist/KPAH_PROD.jar`.
+- Ghi nhận console game đã kết nối tới `practicing-achieve.tun.ply.gg:50758` và gửi lệnh khởi tạo `cmd=-1`, `cmd=1`.
+
+**Kết quả:** ✅ Thành công (Cửa sổ game đã mở trên màn hình máy tính).
