@@ -1258,3 +1258,34 @@
 **Kết quả:** ✅ Thành công
 - Đã build thành công `game/build/dist/KPAH_PROD.jar` (1,173,572 bytes) và `KPAH_PROD.jad`.
 - Đã khởi chạy lại MicroEmulator trên máy tính để người dùng kiểm tra kết nối đăng nhập.
+
+---
+
+## [2026-09-08 12:25] — Chuyển Sang Bore TCP Tunnel (bore.pub:19129) Giải Quyết Lỗi UDP & DNS Của Playit
+
+**Yêu cầu:** Giải quyết triệt để lỗi mất đồng bộ, rớt kênh UDP (`udp channel requires auth`) và lỗi DNS trên Termux khi dùng Playit.gg.
+
+**Mức độ rủi ro:** Trung bình
+
+**Phát hiện kỹ thuật:**
+- Playit.gg bắt buộc vận chuyển dữ liệu qua UDP trên các port cao (5512, 5525) thường bị các nhà mạng di động / router tại Việt Nam chặn hoặc drop, dẫn đến vòng lặp auth và client bị timeout.
+- Android Bionic libc không đọc `$PREFIX/etc/hosts`, khiến các ứng dụng viết bằng Rust (như `playit-cli`) gặp lỗi phân giải DNS `ConnectError('dns error')`.
+- Thay thế bằng **Bore** (Single binary musl tĩnh, Pure TCP, zero-config, không cần tài khoản):
+  - Cổng 19129 trên `bore.pub` hoàn toàn trống và đã kiểm tra bind thành công.
+  - Kết nối qua IPv4 `159.223.110.159` khắc phục hoàn toàn hiện tượng timeout IPv6.
+
+**Files thay đổi:**
+- `server/KPAH/start.sh` — Tích hợp tự động khởi chạy daemon Bore tunnel nền (`bore local 19129 --to 159.223.110.159 -p 19129`).
+- `server/KPAH/stop.sh` — Bổ sung dừng tiến trình `bore`.
+- `game/app/src/classes/class_yv.java` — Cập nhật cấu hình server mặc định: host `bore.pub`, port `19129`.
+- `game/build.xml` — Cập nhật macro và target `dist-prod` trỏ về `bore.pub:19129`.
+- `game/build/dist/KPAH_PROD.jar` — Biên dịch lại bản game production (1,173,558 bytes).
+
+**Backup:**
+- `server/KPAH/_backup/start.sh.bak.20260908_1224`
+- `server/KPAH/_backup/stop.sh.bak.20260908_1224`
+- `game/app/src/classes/_backup/class_yv.java.bak.20260908_1224`
+- `game/_backup/build.xml.bak.20260908_1224`
+
+**Kết quả:** ✅ Thành công
+- Đã đóng gói thành công `KPAH_PROD.jar` và cập nhật các launcher server.

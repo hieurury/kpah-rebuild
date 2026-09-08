@@ -3,8 +3,9 @@ echo "========================================="
 echo "   KPAH SERVER PRODUCTION STOPPER        "
 echo "========================================="
 
-echo ">> Đang dừng KPAH Server và Playit..."
+echo ">> Đang dừng KPAH Server và Bore/Playit..."
 pkill -9 -f "server.Server"
+pkill -9 -f bore
 pkill -9 -f playitd
 rm -f "$PREFIX/tmp/playit.sock"
 echo ">> Đã dừng thành công!"
