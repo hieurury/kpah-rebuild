@@ -33,5 +33,14 @@ final class class_vr implements IAction {
 			class_acv.s.q.as = System.currentTimeMillis();
 			class_acv.s.q.cR = ((byte) this.b);
 		}
+		this.a.r = false;
+		if (this.a.n != null && this.a.n.size() > 0) {
+			if (this.a.f >= this.a.n.size()) {
+				this.a.f = this.a.n.size() - 1;
+			}
+		} else {
+			this.a.f = 0;
+		}
+		this.a.n();
 	}
 }

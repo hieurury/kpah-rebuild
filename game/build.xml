@@ -19,8 +19,9 @@
     <property name="wtk.home" value="wtk"/>
     <property name="microemu.jar" value="tools/emulator.jar"/>
     <property name="libs.dir" value="libs"/>
-    <!--    app name, default production-->
-    <property name="app.name" value="KPAH_PROD"/>
+    <property name="version" value="1.0.0.1"/>
+    <!--    app name, default production with version-->
+    <property name="app.name" value="kpah_mod_v${version}"/>
 
     <property environment="env"/>
     <!--    lib classpath-->
@@ -111,17 +112,21 @@
     </macrodef>
 
     <target name="dist-prod">
-        <build-client target-name="KPAH_PROD"
+        <build-client target-name="kpah_mod_v${version}"
                       server-name="Dị giới"
                       server-host="bore.pub"
                       server-port="19129"/>
+        <copy file="build/dist/kpah_mod_v${version}.jar" tofile="build/dist/KPAH_PROD.jar" overwrite="true"/>
+        <copy file="build/dist/kpah_mod_v${version}.jad" tofile="build/dist/KPAH_PROD.jad" overwrite="true"/>
     </target>
 
     <target name="dist-local">
-        <build-client target-name="KPAH_MOD"
+        <build-client target-name="kpah_mod_v${version}_local"
                       server-name="Localhost"
                       server-host="127.0.0.1"
                       server-port="19129"/>
+        <copy file="build/dist/kpah_mod_v${version}_local.jar" tofile="build/dist/KPAH_MOD.jar" overwrite="true"/>
+        <copy file="build/dist/kpah_mod_v${version}_local.jad" tofile="build/dist/KPAH_MOD.jad" overwrite="true"/>
     </target>
 
     <target name="dist" depends="clean, dist-prod, dist-local"/>
@@ -182,7 +187,7 @@
     <target name="run-local" depends="dist-local">
         <java jar="${microemu.jar}" fork="true">
             <jvmarg value="-noverify"/>
-            <arg value="build/dist/KPAH_MOD.jar"/>
+            <arg value="build/dist/kpah_mod_v${version}_local.jar"/>
         </java>
     </target>
 </project>

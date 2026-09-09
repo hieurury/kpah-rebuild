@@ -1521,3 +1521,86 @@
 **Kết quả:** ✅ Thành công (Đã build passed, triệt tiêu lỗi crash khi đăng nhập với các vũ khí không có file ảnh riêng).
 
 ---
+
+## [2026-09-09 11:58] — Cập nhật hình ảnh Rương Tinh Anh, Khôi phục Menu NPC (Lâm Tướng Quân & Hắc Ngưu), và Sửa lỗi nhảy con trỏ khi dùng / bán đồ
+
+**Yêu cầu:**
+1. Hình ảnh rương tinh anh: Đổi từ hình xu vàng sang hình rương chuẩn, phân chia rương vàng và rương bạc cho 4 cấp rương tinh anh.
+2. NPC: Khôi phục "Học kỹ năng" tại Lâm tướng quân, menu "Sửa đồ" / "Luyện đồ" (đập đồ), nghiền bột, khảm, hợp thành tại Thợ rèn Hắc ngưu.
+3. Gameplay: Khi dùng 1 vật phẩm trong ô đồ hoặc bán đồ, con trỏ không bị nhảy/target lại lên thanh menu tab trên cùng mà giữ nguyên vị trí ở ô hiện tại, tránh khựng và giật lag thao tác.
+
+**Mức độ rủi ro:** Trung bình
+
+**Hành động & Phân tích nguyên nhân:**
+1. **Hình ảnh Rương Tinh Anh:**
+   - Trích xuất 2 frame rương kích thước 16x16 từ `server/KPAH/data/image/potion/potion.png` (frame 67 = Rương Vàng, frame 68 = Rương Bạc) dưới dạng ảnh RGBA chuẩn 8-bit/color.
+   - Lưu thành `server/KPAH/data/image/icon/5567.png` (Rương Vàng) và `5568.png` (Rương Bạc).
+   - Thiết lập trong cơ sở dữ liệu `potion_template`: Bậc 1 & Bậc 2 dùng `idImage = 68` (Rương Bạc), Bậc 3 & Bậc 4 dùng `idImage = 67` (Rương Vàng).
+2. **Menu NPC Lâm Tướng Quân & Thợ Rèn Hắc Ngưu:**
+   - *Nguyên nhân:* Trước đây trong `class_gn.java:19`, biến `d` bị gán cứng `= 1`, khiến `f_()` luôn trả về 1 cho mọi NPC và bypass toàn bộ menu tương tác nội bộ của client để gửi thẳng opcode 23 lên server.
+   - *Khắc phục:*
+     - Cập nhật `class_gn.java:f_()`: trả về `0` cho NPC 2 (Hắc Ngưu), 28 (Kiếm Sư) và 21 (Lâm Tướng Quân).
+     - Tạo `class_np.java`: Khi người chơi bấm "Nói chuyện" với Lâm tướng quân (NPC 21), tự động gọi `class_go.a().l((short)21)` gửi lên server để nhận/trả nhiệm vụ, đồng thời giữ nguyên chức năng "Học kỹ năng" mở bảng nâng skill gốc của game (`class_nn`).
+     - Với Thợ rèn Hắc Ngưu (NPC 2/28), client tự động hiển thị đầy đủ menu gốc: "Mua bán", "Nghiền bột", "Thêm dòng", "Luyện đồ" (đập đồ), "Luyện đồ tự động", "Cộng thuộc tính", "Khóa đồ thú", "Khóa trang bị", "Sửa đồ", "Đục lỗ", "Khảm", "Hợp thành".
+3. **Gameplay / Giữ nguyên vị trí con trỏ trong túi đồ:**
+   - *Nguyên nhân:* Khi dùng potion/item hoặc bán trang bị, server gửi packet cập nhật hành trang (`CHAR_INVENTORY` hoặc `ITEM_POTION`). Client khi nhận packet đã gọi `class_wc.b(0)` khiến `class_nu.d()` đặt `this.r = true` (nhảy lên menu tab bar) và `class_nu.a()` đặt `this.f = 0` (nhảy về ô 0).
+   - *Khắc phục:*
+     - Trong `game/app/src/classes/class_wc.java:b(int n)`: Lưu trạng thái `wasInGrid`, `oldSlot`, `oldW`, `oldPage` trước khi làm mới; nếu người chơi đang ở trong lưới ô đồ, tự động khôi phục `nu.r = false`, `class_nu.w = oldW`, `nu.W = oldPage`, clamp `nu.f` hợp lệ và gọi `nu.n()` để cập nhật action phím chọn.
+     - Trong `game/app/src/classes/class_vr.java`: Sau khi dùng item, giữ nguyên `this.a.r = false`, cập nhật `this.a.f` và gọi `this.a.n()`.
+     - Trong `server/KPAH/src/services/ShopService.java`: Loại bỏ lệnh `sendItemBag` dư thừa trong `onSellItem` vì gói tin `SELL_ITEM` (opcode 28) đã đồng bộ số lượng ở client mà không cần reload toàn bộ giỏ hàng.
+
+**Files thay đổi:**
+- `server/KPAH/data/image/icon/5567.png` — Icon Rương Tinh Anh Vàng (Bậc 3, 4)
+- `server/KPAH/data/image/icon/5568.png` — Icon Rương Tinh Anh Bạc (Bậc 1, 2)
+- `game/app/src/classes/class_gn.java` — Mở lại tương tác menu client cho NPC 2, 28, 21
+- `game/app/src/classes/class_np.java` — Xử lý đối thoại quest server cho Lâm Tướng Quân
+- `game/app/src/classes/class_wc.java` — Giữ nguyên vị trí con trỏ ô và grid focus trong `b()`
+- `game/app/src/classes/class_vr.java` — Giữ nguyên con trỏ khi dùng potion/item
+- `server/KPAH/src/services/ShopService.java` — Tối ưu hóa gửi gói tin bán trang bị
+
+**Backup:**
+- `game/app/src/classes/_backup/class_gn.java.bak.*`
+- `game/app/src/classes/_backup/class_wc.java.bak.*`
+- `game/app/src/classes/_backup/class_vr.java.bak.*`
+- `server/KPAH/src/services/_backup/ShopService.java.bak.*`
+
+**Kết quả:** ✅ Thành công
+- Đã biên dịch server `KPAH.jar` (`BUILD SUCCESSFUL`).
+- Đã biên dịch client `KPAH_PROD.jar` và `KPAH_MOD.jar` (`BUILD SUCCESSFUL`).
+- Dọn dẹp sạch sẽ các file tạm `_tmp/`.
+
+---
+
+## [2026-09-09 12:06] — Cấu hình Build Game Client Đặt Tên Kèm Phiên Bản Chuẩn (`kpah_mod_v1.0.0.1.jar`)
+
+**Yêu cầu:** Build file JAR của game với tên kèm số phiên bản theo chuẩn phiên bản chỉnh sửa (`kpah_mod_v1.0.0.1`).
+
+**Mức độ rủi ro:** Thấp
+
+**Hành động:**
+1. Cập nhật `game/app/res/META-INF/MANIFEST.MF`:
+   - Thiết lập `MIDlet-Version: 1.0.0.1`.
+2. Cập nhật `game/build.xml`:
+   - Thêm thuộc tính `<property name="version" value="1.0.0.1"/>` và đặt tên mặc định `${app.name}` theo `kpah_mod_v${version}`. Hỗ trợ ghi đè phiên bản qua command line `-Dversion=...`.
+   - Cập nhật target `dist-prod`: Tạo ra file `build/dist/kpah_mod_v${version}.jar` và `build/dist/kpah_mod_v${version}.jad` (đồng thời sao chép alias `KPAH_PROD.jar` để giữ tương thích ngược).
+   - Cập nhật target `dist-local`: Tạo ra `build/dist/kpah_mod_v${version}_local.jar` và `build/dist/kpah_mod_v${version}_local.jad` (kèm alias `KPAH_MOD.jar`).
+   - Cập nhật các target chạy giả lập `run` và `run-local` trỏ đúng vào các file jar có phiên bản mới.
+3. Tiến hành biên dịch bằng Java 8 Ant:
+   - `JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 ant dist-prod` $\rightarrow$ `kpah_mod_v1.0.0.1.jar` (1,173,896 bytes).
+   - `JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 ant dist-local` $\rightarrow$ `kpah_mod_v1.0.0.1_local.jar` (1,173,891 bytes).
+
+**Files thay đổi:**
+- `game/app/res/META-INF/MANIFEST.MF` — Cập nhật `MIDlet-Version: 1.0.0.1`
+- `game/build.xml` — Thêm cấu hình thuộc tính `version` và các target build có tên phiên bản chuẩn
+- `game/build/dist/kpah_mod_v1.0.0.1.jar` — File JAR bản Public có phiên bản
+- `game/build/dist/kpah_mod_v1.0.0.1.jad` — File JAD bản Public có phiên bản
+- `game/build/dist/kpah_mod_v1.0.0.1_local.jar` — File JAR bản Localhost có phiên bản
+- `game/build/dist/kpah_mod_v1.0.0.1_local.jad` — File JAD bản Localhost có phiên bản
+
+**Backup:**
+- `game/_backup/build.xml.bak.20260909_1205`
+- `game/_backup/MANIFEST.MF.bak.20260909_1205`
+
+**Kết quả:** ✅ Thành công (`BUILD SUCCESSFUL`)
+
+---

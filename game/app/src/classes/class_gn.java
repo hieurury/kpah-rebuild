@@ -160,6 +160,9 @@ extends class_vh {
     }
 
     public int f_() {
+        if (this.a == 2 || this.a == 28 || this.a == 21) {
+            return 0;
+        }
         return this.d;
     }
 

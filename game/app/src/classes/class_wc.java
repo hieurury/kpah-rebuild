@@ -559,10 +559,31 @@ public final class class_wc extends class_aae {
 	}
 
 	public static void b(final int n) {
-		class_nu.a().d();
-		class_nu.a().a(n, class_nu.a().q, class_nu.a().q ? class_nu.a().X : new byte[] { 0, 1, 2, 3, 4, 5, 6, 31 });
+		class_nu nu = class_nu.a();
+		boolean wasInGrid = (class_acv.q == nu && !nu.r);
+		int oldSlot = nu.f;
+		int oldW = class_nu.w;
+		int oldPage = nu.W;
+
+		nu.d();
+		nu.a(n, nu.q, nu.q ? nu.X : new byte[] { 0, 1, 2, 3, 4, 5, 6, 31 });
 		class_nu.O = (class_hw) class_acv.s.q;
-		class_nu.a().j();
+		nu.j();
+
+		if (wasInGrid) {
+			nu.r = false;
+			class_nu.w = oldW;
+			nu.W = oldPage;
+			if (nu.n != null && nu.n.size() > 0) {
+				if (oldSlot >= nu.n.size()) {
+					oldSlot = nu.n.size() - 1;
+				}
+				nu.f = oldSlot;
+			} else {
+				nu.f = 0;
+			}
+			nu.n();
+		}
 	}
 
 	public final void d() {

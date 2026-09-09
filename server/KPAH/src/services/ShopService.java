@@ -328,7 +328,6 @@ public class ShopService {
         int price = item.getTemplate().getPrice() / 5;
         player.getInventory().plusXu(price);
         sendSuccessSellItem(player, indexItem);
-        InventoryService.instance.sendItemBag(player);
     }
 
     private void sendSuccessBuyItemShop(@NonNull Player player) throws IOException {
