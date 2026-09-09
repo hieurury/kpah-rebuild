@@ -640,69 +640,6 @@ public class ModController {
 
 	private static long lastAutoSellTime = 0;
 
-	public static boolean hasTheMuaBan() {
-		try {
-			class_gz card = class_gz.a((short) 33);
-			return card != null && card.c > 0;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	public static boolean isShopOrBlacksmithNpcId(int npcId) {
-		switch (npcId) {
-			case 0:  // Dì út HP
-			case 1:  // Bà tám tạp hóa
-			case 2:  // Hắc ngưu (Thợ rèn)
-			case 3:  // Thiết bì (Thợ rèn)
-			case -8: // Thợ rèn thần bí
-			case 11: // Nhất giáp
-			case 12: // Nhị giáp
-			case 13: // Tam giáp
-			case 14: // Tứ giáp
-			case 15: // Ngũ giáp
-			case 16: // Nhất ngưu
-			case 17: // Nhị ngưu
-			case 18: // Tam ngưu
-			case 19: // Tứ ngưu
-			case 20: // Ngũ ngưu
-			case 24: // Bảo ngọc
-			case 27: // Giáp Sư
-			case 28: // Kiếm Sư
-			case 29: // Bội Châu
-				return true;
-			default:
-				return false;
-		}
-	}
-
-	public static boolean isNearShopOrBlacksmith(class_abj gameScreen, class_hw player) {
-		if (gameScreen == null || gameScreen.l == null || player == null) {
-			return false;
-		}
-		for (int i = 0; i < gameScreen.l.size(); i++) {
-			Object obj = gameScreen.l.elementAt(i);
-			if (obj instanceof class_gn) {
-				class_gn npc = (class_gn) obj;
-				if (isShopOrBlacksmithNpcId(npc.a)) {
-					int dist = class_yg.a((int) player.cK, (int) player.cL, (int) npc.cK, (int) npc.cL);
-					if (dist <= 100) {
-						return true;
-					}
-				}
-			} else if (obj instanceof class_vh) {
-				class_vh vh = (class_vh) obj;
-				if (isShopOrBlacksmithNpcId(vh.cG)) {
-					int dist = class_yg.a((int) player.cK, (int) player.cL, (int) vh.cK, (int) vh.cL);
-					if (dist <= 100) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
 	public static void handleAutoSellLowEquip() {
 		if (!globalConfig.isAutoSellLowEquip) {
 			return;
@@ -716,15 +653,6 @@ public class ModController {
 		class_hw player = gameScreen.q;
 		int playerLv = player.N; // Level nhân vật
 		if (playerLv <= 1) return;
-
-		// 2 ĐIỀU KIỆN TIÊN QUYẾT:
-		// 1. Phải đang đứng gần quầy Thợ Rèn hoặc nơi bán đồ (<= 100px)
-		// 2. HOẶC trong túi đồ phải có "Thẻ Mua Bán" (item id 33)
-		boolean hasCard = hasTheMuaBan();
-		boolean nearShop = isNearShopOrBlacksmith(gameScreen, player);
-		if (!hasCard && !nearShop) {
-			return;
-		}
 
 		Vector bag = class_hw.bu; // Danh sách trang bị trong hành trang
 		if (bag == null || bag.size() == 0) return;
@@ -750,8 +678,7 @@ public class ModController {
 				lastAutoSellTime = now;
 				class_go.a().f(ql.i);
 				String itemName = (tmpl != null && tmpl.a != null) ? tmpl.a : "Trang bị";
-				String methodStr = hasCard ? "Thẻ Mua Bán" : "Thợ Rèn";
-				class_acv.a("Tự bán đồ (" + methodStr + "): " + itemName + " (Lv " + equipLv + ")", false);
+				class_acv.a("Tự bán: " + itemName + " (Lv " + equipLv + ")", false);
 				return; // Bán 1 món mỗi 1.5s để server xử lý tuần tự an toàn
 			}
 		}

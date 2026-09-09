@@ -116,3 +116,36 @@
 - Hiện tại Phần 07 có: 4/10 task.
 
 ---
+
+## [2026-09-09 20:44] — Task #65: Tái cấu trúc HUD tinh gọn, sửa triệt để lỗi Font chữ KPAH, loại bỏ hoàn toàn Label vật phẩm rơi & gỡ bỏ cơ chế NPC cho tính năng Tự bán trang bị
+
+**Yêu cầu:**
+- Sửa lỗi hiển thị HUD và lỗi font chữ (vỡ chữ tiếng Việt, ký tự lạ `★`, `▼` không tương thích font bitmap KPAH).
+- Loại bỏ hoàn toàn nhãn (label) cho vật phẩm rơi trên mặt đất theo yêu cầu người dùng để khung cảnh game trong trẻo, không bị rối mắt.
+- Tái bố cục HUD: di chuyển thông tin Tọa độ map, Độ bền vũ khí và trạng thái Buff/Debuff sang góc trên bên phải (Top-Right, căn lề phải), không vẽ khung hộp đen to đùng che khuất màn hình hay đè lên Avatar/kinh nghiệm.
+- Khắc phục triệt để lỗi tính năng Tự bán trang bị cấp thấp: gỡ bỏ cơ chế ràng buộc đứng gần NPC bán đồ ở cả Client và Server (loại bỏ kiểm tra khoảng cách NPC gây lỗi do NPC tĩnh client-side không có entity trong Zone Server).
+
+**Files thay đổi:**
+- `game/app/src/classes/Paint.java`:
+  - Loại bỏ hoàn toàn phương thức `paintDroppedItems` và `getItemDisplayName`, không còn vẽ nhãn cho vật phẩm rơi trên mặt đất.
+  - Sửa lỗi font chữ: thay thế triệt để các font không hỗ trợ tiếng Việt (`class_d.g`, `class_d.f`) bằng hệ thống font bitmap chuẩn của game KPAH `class_d.j` (`class_d.j[0]` cho chữ trắng bóng mờ chuẩn tiếng Việt 100%, `class_d.j[2]` cho màu đỏ cảnh báo độ bền hỏng và debuff).
+  - Tái cấu trúc HUD sang góc trên bên phải (`class_acv.m - 5`, `anchor = 1`):
+    - Dòng 1: Tên map & Tọa độ `X:Y` (`y = 4`).
+    - Dòng 2: Độ bền vũ khí (`y = 17`), nhấp nháy đỏ khi hỏng $\le 0$.
+    - Dòng 3+: Danh sách Buff (`class_d.j[0]`) và Debuff (`class_d.j[2]`) kèm thời gian đếm ngược dạng text thanh mảnh, tự nhiên (`y = 30` trở xuống).
+    - Chỉ báo nhiệm vụ `[!]` / `[?]` trên đầu NPC nhiệm vụ dùng font chuẩn `class_d.j[0]`.
+- `game/app/src/classes/ModController.java`:
+  - `handleAutoSellLowEquip()`: Gỡ bỏ kiểm tra `isNearShopOrBlacksmith()` và `hasTheMuaBan()`. Chỉ cần người chơi bật `isAutoSellLowEquip` trong Menu "Cơ chế" là Client tự động duyệt túi trang bị `class_hw.bu`, áp dụng 4 lớp bảo vệ an toàn (chỉ bán đồ cấp thấp hơn bản thân, không bán đồ cường hóa, không bán đồ khảm ngọc/lỗ ngọc, không bán đồ thuê/hạn ngày, không bán đồ đang mặc) và gửi lệnh bán tuần tự 1.5s/món.
+- `server/KPAH/src/services/ShopService.java`:
+  - `onSellItem()`: Gỡ bỏ đoạn chặn `!hasTheMuaBan && !isNearShop`, khôi phục luồng bán đồ chuẩn gốc của Server, cho phép bán trang bị mượt mà không bị từ chối.
+  - Xóa bỏ các hàm thừa `isNearShopNpc` và `isShopOrBlacksmithNpc`.
+
+**Kết quả:** ✅ Thành công (Biên dịch Client `KPAH_PROD.jar`/`KPAH_MOD.jar` bằng Java 8; Biên dịch Server `KPAH.jar` bằng Java 21; Khởi động lại container `kpah-mysql` và khởi động lại Server daemon chạy ổn định lắng nghe cổng 19129).
+**Ghi chú:**
+- Backup files:
+  - `game/app/src/classes/_backup/Paint.java.bak.20260909_1638`
+  - `game/app/src/classes/_backup/ModController.java.bak.20260909_1638`
+  - `server/KPAH/src/services/_backup/ShopService.java.bak.20260909_1638`
+- Hiện tại Phần 07 có: 5/10 task.
+
+---
