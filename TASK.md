@@ -274,3 +274,31 @@
 
 ---
 
+## [2026-09-09 23:05] — Task #69: Tối ưu sức mạnh trang bị shop xu, nâng cấp quái tinh anh & hệ thống phần thưởng rương tinh anh (trang bị chế tạo có phẩm cấp, nguyên liệu sơ/cao cấp bậc 1-6)
+
+**Yêu cầu:**
+- Tăng sức mạnh trang bị mua bằng xu (thủ giáp và công vũ khí) và điều chỉnh nhẹ giá xu để người chơi mặc đồ xu có thể đánh quái cùng cấp hoặc hơn cấp mà không bị one-shot, treo máy ổn định. Khoan giảm sát thương quái, giữ nguyên sức mạnh quái tinh anh.
+- Bỏ hoàn toàn việc rơi trang bị thường trên đất từ quái tinh anh.
+- Quái tinh anh tập trung 2 phần thưởng chính: EXP khổng lồ và Rương tinh anh. Số lượng rương tinh anh rơi ra tùy thuộc vào cấp quái tinh anh.
+- Nâng cấp phần thưởng rương tinh anh theo bậc:
+  - Rương bậc thấp (Bậc 1 & 2, cấp < 20): Rơi gói Nguyên Liệu Sơ Cấp và Cao Cấp từ bậc 1 đến 6 (Vải, Sắt, Ngọc, Gỗ, Da mềm, Tơ lụa, Bạc, Thủy tinh, Gỗ sưa, Da cứng), đá ngũ hợp, lượng, xu, dược phẩm và bình KN.
+  - Rương bậc cao (Bậc 3 & 4, cấp 20+): Rơi 100% Trang Bị Chế Tạo Hoàn Mỹ cấp 20+ có phẩm cấp từ Ngũ phẩm đến Nhất phẩm (đa nghề nghiệp: Kiếm, Đao, Bút, Búa, Cung, Trang sức; có ngũ hành; có 1-5 dòng thuộc tính phụ ngẫu nhiên; khắc ấn Tinh Anh).
+
+**Files thay đổi:**
+- `server/KPAH/src/manager/Manager.java` — Thêm phương thức `applyShopEquipBuff(ItemEquipTemplate it)` tự động buff thủ vật/thủ ma (+40% đến +60%, cộng 10-30 điểm) cho giáp (áo, quần, nón, giày, găng), tăng công vũ khí (+30% đến +50%) và tăng nhẹ 25% giá bán xu khi nạp `item_equipment` vào RAM.
+- `server/KPAH/src/map/Monster.java` — Tăng thưởng EXP quái tinh anh lên gấp 60 lần (`tnPl *= 60`); bỏ rơi trang bị thường trên đất khi là quái tinh anh; điều chỉnh số lượng Rương Tinh Anh rớt theo cấp quái (Lv 1-9: 1 rương; Lv 10-19: 1-2 rương; Lv 20-29: 2-3 rương; Lv 30+: 3-4 rương) và 100% rớt bình KN tinh anh.
+- `server/KPAH/src/services/ItemService.java` — Bổ sung phương thức `createCraftedEquipment(byte tier, int playerLv, byte playerClass)` tạo trang bị chế tạo hoàn mỹ đa nghề nghiệp (ưu tiên class người chơi), cấp độ 20-39+, phẩm cấp phân bố từ Ngũ phẩm (45%) -> Tứ phẩm (28%) -> Tam phẩm (16%) -> Nhị phẩm (8%) -> Nhất phẩm (3%), ngũ hành Kim-Mộc-Thủy-Hỏa-Thổ, tăng chỉ số cơ bản theo phẩm cấp (+10% đến +80%) và tạo 1-5 dòng thuộc tính phụ (HP, MP, STR, AGI, INT, VIT, Crit, Dodge, Acc, Xuyên giáp, Giảm ST, EXP, X2 ST, Hấp thu).
+- `server/KPAH/src/services/UseItemService.java` — Tái cấu trúc hàm `openEliteChest`: Tăng mạnh Lượng và Xu theo bậc rương; rương bậc 1 & 2 trao thưởng gói nguyên liệu sơ cấp & cao cấp bậc 1..6 cùng đá ngũ hợp; rương bậc 3 & 4 trao thưởng nguyên liệu cao cấp cùng 100% trang bị chế tạo hoàn mỹ có phẩm cấp (kèm 25%-35% cơ hội nhận món thứ 2).
+- `server/update_buff_shop_equips.sql` — Script SQL đồng bộ giá bán trang bị shop xu cho MariaDB trên Termux.
+
+**Kết quả:** ✅ Thành công (Đã biên dịch hoàn tất `server/KPAH/dist/KPAH.jar` với Java 21, ant build clean jar thành công không có lỗi).
+**Ghi chú:**
+- Backup files:
+  - `server/KPAH/src/map/_backup/Monster.java.bak.20260909_2258`
+  - `server/KPAH/src/manager/_backup/Manager.java.bak.20260909_2258`
+  - `server/KPAH/src/services/_backup/ItemService.java.bak.20260909_2258`
+  - `server/KPAH/src/services/_backup/UseItemService.java.bak.20260909_2258`
+- Hiện tại Phần 07 có: 9/10 task.
+
+---
+

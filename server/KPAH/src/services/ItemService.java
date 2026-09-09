@@ -68,6 +68,166 @@ public class ItemService {
         return item;
     }
 
+    public ItemEquip createCraftedEquipment(byte tier, int playerLv, byte playerClass) {
+        // 1. Phân loại nghề nghiệp (ưu tiên 40% class người chơi, 60% random 4 class khác)
+        byte classChar;
+        if (Util.isTrue(40, 100) && playerClass >= Const.KIEM_KHACH && playerClass <= Const.CUNG_THU) {
+            classChar = playerClass;
+        } else {
+            classChar = (byte) Util.nextInt(Const.KIEM_KHACH, Const.CUNG_THU);
+        }
+
+        // 2. Phân loại cấp độ theo tier rương (Bậc 3: lv20-29; Bậc 4: lv30-39)
+        int minLv = (tier <= 3) ? 20 : 30;
+        int maxLv = (tier <= 3) ? 29 : 39;
+
+        // 3. Lựa chọn loại trang bị: 35% vũ khí, 45% phòng thủ, 20% trang sức
+        int randType = Util.nextInt(1, 100);
+        java.util.List<ItemEquipTemplate> candidates = new ArrayList<>();
+        for (ItemEquipTemplate it : Manager.ITEM_EQUIPMENTS.values()) {
+            if (it == null || it.getColorItem() != 0 || it.getNdayLoan() != 0) continue;
+            if (it.getLevel() < minLv || it.getLevel() > maxLv) continue;
+
+            if (randType <= 35) {
+                // Vũ khí phù hợp classChar
+                if (it.getType() >= 3 && it.getType() <= 7 && (it.getClassChar() == classChar || it.getClassChar() == -1)) {
+                    candidates.add(it);
+                }
+            } else if (randType <= 80) {
+                // Phòng thủ: Áo (0), Quần (1), Nón (2), Giày (10), Găng (11)
+                if (it.getType() == 0 || it.getType() == 1 || it.getType() == 2 || it.getType() == 10 || it.getType() == 11) {
+                    candidates.add(it);
+                }
+            } else {
+                // Trang sức: Nhẫn (8), Dây chuyền (9), Ngọc (12)
+                if (it.getType() == 8 || it.getType() == 9 || it.getType() == 12) {
+                    candidates.add(it);
+                }
+            }
+        }
+        if (candidates.isEmpty()) {
+            // Fallback: tìm bất kỳ trang bị nào thỏa level
+            for (ItemEquipTemplate it : Manager.ITEM_EQUIPMENTS.values()) {
+                if (it != null && it.getColorItem() == 0 && it.getNdayLoan() == 0 && it.getLevel() >= minLv && it.getLevel() <= maxLv) {
+                    candidates.add(it);
+                }
+            }
+        }
+        if (candidates.isEmpty()) return null;
+
+        ItemEquipTemplate template = candidates.get(Util.nextInt(0, candidates.size() - 1));
+
+        // 4. Phẩm cấp: Ngũ phẩm (45%) -> Tứ phẩm (28%) -> Tam phẩm (16%) -> Nhị phẩm (8%) -> Nhất phẩm (3%)
+        int randRank = Util.nextInt(1, 100);
+        byte rank;
+        byte colorName;
+        int bonusAttrCount;
+        double baseMultiplier;
+
+        if (randRank <= 3) {
+            rank = ItemEquipConst.NHAT_PHAM; // 1: Nhất phẩm (cực phẩm)
+            colorName = ItemEquipConst.YELLOW_COLOR; // Màu vàng hoàn mỹ
+            bonusAttrCount = 5;
+            baseMultiplier = 1.80; // +80% chỉ số cơ bản
+        } else if (randRank <= 11) {
+            rank = ItemEquipConst.NHI_PHAM; // 2: Nhị phẩm
+            colorName = ItemEquipConst.PURPLE_COLOR; // Màu tím
+            bonusAttrCount = 4;
+            baseMultiplier = 1.55; // +55%
+        } else if (randRank <= 27) {
+            rank = ItemEquipConst.TAM_PHAM; // 3: Tam phẩm
+            colorName = ItemEquipConst.BLUE_COLOR; // Màu xanh dương
+            bonusAttrCount = 3;
+            baseMultiplier = 1.35; // +35%
+        } else if (randRank <= 55) {
+            rank = ItemEquipConst.TU_PHAM; // 4: Tứ phẩm
+            colorName = ItemEquipConst.BLUE_COLOR;
+            bonusAttrCount = 2;
+            baseMultiplier = 1.20; // +20%
+        } else {
+            rank = ItemEquipConst.NGU_PHAM; // 5: Ngũ phẩm (phổ biến nhất)
+            colorName = ItemEquipConst.BLUE_COLOR;
+            bonusAttrCount = 1;
+            baseMultiplier = 1.10; // +10%
+        }
+
+        // 5. Ngũ hành (Hệ): 0=Thủy, 1=Mộc, 2=Hỏa, 3=Thổ, 4=Kim
+        byte he = (byte) Util.nextInt(ItemEquipConst.THUY, ItemEquipConst.KIM);
+
+        // 6. Tạo ItemEquip
+        short durable = (short) (template.getDurable() * 1.5);
+        ItemEquip item = ItemEquip.builder()
+                .idItem(template.getId())
+                .template(template)
+                .classChar(template.getClassChar() != -1 ? template.getClassChar() : classChar)
+                .level(template.getLevel())
+                .plusTemplate((byte) 0)
+                .colorName(colorName)
+                .isLock(false)
+                .durable(durable)
+                .mDurable(durable)
+                .viTriVe((byte) 0)
+                .rank(rank)
+                .he(he)
+                .damageType(ItemEquipConst.DAMAGE_NONE)
+                .nameCharSeal("Tinh Anh")
+                .dayUse(0)
+                .timeCreateItem(System.currentTimeMillis())
+                .itemAttributes(new ArrayList<>())
+                .build();
+
+        // 7. Thuộc tính cơ bản (tăng theo phẩm cấp)
+        if (template.getAttribute()[0] > 0) {
+            short baseAtk = (short) Math.round(template.getAttribute()[0] * baseMultiplier);
+            item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate((short) 0), baseAtk));
+        }
+        for (short i = 1; i < 7; i++) {
+            short val = template.getAttribute()[i];
+            if (val > 0 && Manager.ATTRIBUTE_FOR_TYPE[template.getType()][i]) {
+                short baseDef = (short) Math.round(val * baseMultiplier);
+                item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate(i), baseDef));
+            }
+        }
+
+        // 8. Thuộc tính phụ ngẫu nhiên (Bonus Attributes)
+        byte[] pool = {33, 34, 10, 11, 12, 13, 4, 2, 3, 31, 28, 29, 111, 26, 81};
+        java.util.List<Byte> available = new ArrayList<>();
+        for (byte b : pool) available.add(b);
+
+        int rankPower = 6 - rank; // 1..5 (Nhất phẩm = 5, Ngũ phẩm = 1)
+        for (int i = 0; i < bonusAttrCount && !available.isEmpty(); i++) {
+            int idx = Util.nextInt(0, available.size() - 1);
+            byte attId = available.remove(idx);
+
+            short value;
+            switch (attId) {
+                case 33, 34 -> { // HP / MP
+                    value = (short) (150 * rankPower + Util.nextInt(50, 150) + template.getLevel() * 10);
+                }
+                case 10, 11, 12, 13 -> { // STR, AGI, INT, VIT
+                    value = (short) (4 * rankPower + Util.nextInt(1, 5) + template.getLevel() / 5);
+                }
+                case 4, 2, 3 -> { // Crit, Dodge, Acc
+                    value = (short) (2 * rankPower + Util.nextInt(1, 4));
+                }
+                case 31, 28, 29 -> { // Xuyên giáp, Giảm ST vật/ma (%)
+                    value = (short) (1 + rankPower + Util.nextInt(1, 3));
+                }
+                case 111 -> { // Tăng EXP (%)
+                    value = (short) (2 + rankPower * 2 + Util.nextInt(1, 3));
+                }
+                case 26, 81 -> { // X2 ST, Hấp thu (%)
+                    value = (short) (1 + (rankPower >= 3 ? 1 : 0) + (rankPower == 5 ? 1 : 0));
+                }
+                default -> value = (short) (5 * rankPower);
+            }
+            if (Manager.getAttributeTemplate(attId) != null) {
+                item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate(attId), value));
+            }
+        }
+        return item;
+    }
+
     public ItemAnimal createNewItemAnimal(short id) {
         ItemAnimal item = ItemAnimal.builder().template(Manager.getAnimalTemplate(id)).attributes(new ArrayList<>()).minutes(-1).level((byte) 1).timeStart(0).build();
         return item;

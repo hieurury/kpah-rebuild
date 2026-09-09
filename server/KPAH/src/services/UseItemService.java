@@ -275,7 +275,7 @@ public class UseItemService {
         int playerLv = player.getInfo().getLevel();
         byte classChar = player.getInfo().getClassPlayer();
 
-        // Xác định bậc rương (Bậc 1: lv1-9, Bậc 2: lv10-19, Bậc 3: lv20-29, Bậc 4: lv30-35)
+        // Xác định bậc rương (Bậc 1: lv1-9, Bậc 2: lv10-19, Bậc 3: lv20-29, Bậc 4: lv30+)
         int tier = switch (chest.getTemplate().getId()) {
             case 106 -> 1;
             case 160 -> 2;
@@ -284,145 +284,161 @@ public class UseItemService {
             default -> 1;
         };
 
-        // 1. Tiền tệ (Lượng): Bậc 1: 1-2; Bậc 2: 2-4; Bậc 3: 3-6; Bậc 4: 5-10 Lượng
+        // 1. Tiền tệ (Lượng & Xu theo bậc rương)
         int minLuong = switch (tier) {
-            case 1 -> 1;
-            case 2 -> 2;
-            case 3 -> 3;
-            case 4 -> 5;
-            default -> 1;
+            case 1 -> 5;
+            case 2 -> 12;
+            case 3 -> 25;
+            case 4 -> 45;
+            default -> 5;
         };
         int maxLuong = switch (tier) {
-            case 1 -> 2;
-            case 2 -> 4;
-            case 3 -> 6;
-            case 4 -> 10;
-            default -> 2;
+            case 1 -> 10;
+            case 2 -> 25;
+            case 3 -> 45;
+            case 4 -> 80;
+            default -> 10;
         };
         int luong = Util.nextInt(minLuong, maxLuong);
         player.getInventory().plusLuong(luong);
         rewardNames.add(luong + " Lượng");
 
-        // 2. Tinh anh huyết (Bình KN Tinh Anh): theo bậc
-        // Bậc 1: id=108 (Sơ cấp 35.000 KN), qty 1-2
-        // Bậc 2: id=109 (Trung cấp 250.000 KN), qty 1-2
-        // Bậc 3: id=110 (Cao cấp 900.000 KN), qty 1-2
-        // Bậc 4: id=111 (Siêu cấp 2.200.000 KN), qty 1-2
+        int xu = switch (tier) {
+            case 1 -> Util.nextInt(15000, 35000);
+            case 2 -> Util.nextInt(40000, 90000);
+            case 3 -> Util.nextInt(120000, 250000);
+            case 4 -> Util.nextInt(250000, 600000);
+            default -> 15000;
+        };
+        player.getInventory().plusXu(xu);
+        rewardNames.add(Util.formatNumber(xu) + " Xu");
+
+        // 2. Bình KN Tinh Anh theo bậc
         short knId = (short) switch (tier) {
-            case 1 -> 108;
-            case 2 -> 109;
-            case 3 -> 110;
-            case 4 -> 111;
+            case 1 -> 108; // Sơ cấp (35.000 KN)
+            case 2 -> 109; // Trung cấp (250.000 KN)
+            case 3 -> 110; // Cao cấp (900.000 KN)
+            case 4 -> 111; // Siêu cấp (2.200.000 KN)
             default -> 108;
         };
-        short knQty = (short) (tier <= 2 ? Util.nextInt(1, 2) : Util.nextInt(1, 3));
+        short knQty = (short) (tier <= 2 ? Util.nextInt(2, 3) : Util.nextInt(3, (tier == 3 ? 4 : 5)));
         InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(knId, knQty));
         rewardNames.add(knQty + " " + Manager.getPotionTemplate(knId).getName().split("\\n")[0]);
 
-        // 3. Bình thuốc theo bậc chất lượng
+        // 3. Dược phẩm lớn (HP & MP) theo bậc
         short potId;
         short potQty;
         if (tier == 1) {
-            short[] potPool = {1, 4, 2, 5}; // HP nhỏ, MP nhỏ, HP vừa, MP vừa
+            short[] potPool = {1, 4, 2, 5};
             potId = potPool[Util.nextInt(0, potPool.length - 1)];
-            potQty = (short) Util.nextInt(5, 10);
+            potQty = (short) Util.nextInt(20, 35);
         } else if (tier == 2) {
-            short[] potPool = {2, 5, 3, 6}; // HP vừa, MP vừa, HP to, MP to
+            short[] potPool = {2, 5, 3, 6};
             potId = potPool[Util.nextInt(0, potPool.length - 1)];
-            potQty = (short) Util.nextInt(8, 15);
+            potQty = (short) Util.nextInt(25, 40);
         } else if (tier == 3) {
-            short[] potPool = {3, 6, 21, 23}; // HP to, MP to, HP đặc biệt, MP đặc biệt
+            short[] potPool = {3, 6, 21, 23};
             potId = potPool[Util.nextInt(0, potPool.length - 1)];
-            potQty = (short) Util.nextInt(10, 20);
+            potQty = (short) Util.nextInt(35, 55);
         } else {
-            short[] potPool = {3, 6, 21, 23}; // Trần cao nhất: 15-25 bình cao cấp
+            short[] potPool = {3, 6, 21, 23};
             potId = potPool[Util.nextInt(0, potPool.length - 1)];
-            potQty = (short) Util.nextInt(15, 25);
+            potQty = (short) Util.nextInt(45, 75);
         }
         InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(potId, potQty));
         rewardNames.add(potQty + " " + Manager.getPotionTemplate(potId).getName().split("\\n")[0]);
 
-        // 4. Nguyên liệu sơ cấp: Bậc 1: 50% nhận 1 viên; Bậc 2: 1-2 viên; Bậc 3: 2-3 viên; Bậc 4: 2-4 viên
-        short scQty = 0;
-        if (tier == 1) {
-            if (Util.isTrue(50, 100)) scQty = 1;
-        } else if (tier == 2) {
-            scQty = (short) Util.nextInt(1, 2);
-        } else if (tier == 3) {
-            scQty = (short) Util.nextInt(2, 3);
-        } else {
-            scQty = (short) Util.nextInt(2, 4);
-        }
-        if (scQty > 0) {
-            short[] scPool = {5, 8, 12, 13, 14, 15, 16, 17, 18, 19};
-            short scId = scPool[Util.nextInt(0, scPool.length - 1)];
-            InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(scId, scQty));
-            rewardNames.add(scQty + " " + Manager.getGemTemplate(scId).getName());
-        }
-
-        // 5. Nguyên liệu cao cấp: Bậc 1: 0%; Bậc 2: 25% (1 viên); Bậc 3: 50% (1-2 viên); Bậc 4: 75% (1-3 viên)
-        int ccChance = switch (tier) {
-            case 2 -> 25;
-            case 3 -> 50;
-            case 4 -> 75;
-            default -> 0;
+        // 4. Đá may mắn & Luyện kim dược
+        short lkdQty = (short) switch (tier) {
+            case 1 -> Util.nextInt(2, 3);
+            case 2 -> Util.nextInt(3, 5);
+            case 3 -> Util.nextInt(4, 6);
+            case 4 -> Util.nextInt(5, 8);
+            default -> 2;
         };
-        if (ccChance > 0 && Util.isTrue(ccChance, 100)) {
-            short ccQty = (short) (tier == 2 ? 1 : (tier == 3 ? Util.nextInt(1, 2) : Util.nextInt(1, 3)));
-            short[] ccPool = {0, 1, 2, 6, 7, 9, 10, 20, 21, 22, 23, 24, 25, 26, 27};
-            short ccId = ccPool[Util.nextInt(0, ccPool.length - 1)];
+        short lkdId;
+        if (tier == 1) {
+            lkdId = Util.isTrue(50, 100) ? (short) 5 : (short) 8; // Đá may mắn 1 hoặc Luyện kim dược
+        } else if (tier == 2) {
+            short[] poolLkd = {5, 6, 8, 9};
+            lkdId = poolLkd[Util.nextInt(0, poolLkd.length - 1)];
+        } else if (tier == 3) {
+            short[] poolLkd = {6, 7, 9, 10, 69}; // Đá may mắn 2-3, LKD 2-3, Vé quay số
+            lkdId = poolLkd[Util.nextInt(0, poolLkd.length - 1)];
+        } else {
+            short[] poolLkd = {7, 155, 156, 10, 157, 158}; // Đá may mắn 3-5, LKD cao cấp
+            lkdId = poolLkd[Util.nextInt(0, poolLkd.length - 1)];
+        }
+        if (lkdId == 69) {
+            InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(lkdId, lkdQty));
+        } else {
+            InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(lkdId, lkdQty));
+        }
+        rewardNames.add(lkdQty + " " + (lkdId == 69 ? Manager.getPotionTemplate(lkdId).getName() : Manager.getGemTemplate(lkdId).getName()));
+
+        // 5. PHẦN THƯỞNG ĐẶC BIỆT THEO BẬC RƯƠNG:
+        if (tier <= 2) {
+            // Rương Tinh Anh Bậc 1 & 2 (Cấp < 20): Rơi gói Nguyên Liệu Sơ Cấp & Cao Cấp từ bậc 1 đến 6
+            int minMatRank = (tier == 1) ? 1 : 2;
+            int maxMatRank = (tier == 1) ? 3 : 5;
+
+            // Nguyên liệu sơ cấp: 2-3 loại
+            int numScTypes = (tier == 1) ? 2 : 3;
+            for (int k = 0; k < numScTypes; k++) {
+                short scId = getRandomMaterial(false, minMatRank, maxMatRank);
+                short scQty = (short) (tier == 1 ? Util.nextInt(3, 6) : Util.nextInt(4, 8));
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(scId, scQty));
+                rewardNames.add(scQty + " " + Manager.getGemTemplate(scId).getName());
+            }
+
+            // Nguyên liệu cao cấp: 1-2 loại
+            int numCcTypes = (tier == 1) ? 1 : 2;
+            for (int k = 0; k < numCcTypes; k++) {
+                short ccId = getRandomMaterial(true, minMatRank, maxMatRank);
+                short ccQty = (short) (tier == 1 ? Util.nextInt(2, 4) : Util.nextInt(3, 6));
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(ccId, ccQty));
+                rewardNames.add(ccQty + " " + Manager.getGemTemplate(ccId).getName());
+            }
+
+            // Đá ngũ hợp
+            short nhId = (short) (tier == 1 ? Util.nextInt(137, 139) : Util.nextInt(138, 145)); // Đá ngũ hợp thường/cao cấp
+            short nhQty = (short) (tier == 1 ? Util.nextInt(1, 2) : Util.nextInt(2, 3));
+            if (Manager.getGemTemplate(nhId) != null) {
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(nhId, nhQty));
+                rewardNames.add(nhQty + " " + Manager.getGemTemplate(nhId).getName());
+            }
+        } else {
+            // Rương Tinh Anh Bậc 3 & 4 (Cấp 20+): Rơi Nguyên Liệu Cấp Cao + TRANG BỊ CHẾ TẠO HOÀN MỸ CÓ PHẨM CẤP
+            // Nguyên liệu cao cấp bậc 3..6
+            short ccId = getRandomMaterial(true, (tier == 3 ? 3 : 4), 6);
+            short ccQty = (short) (tier == 3 ? Util.nextInt(4, 8) : Util.nextInt(6, 12));
             InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(ccId, ccQty));
             rewardNames.add(ccQty + " " + Manager.getGemTemplate(ccId).getName());
-        }
 
-        // 6. Trang bị / Vũ khí theo bậc:
-        // Bậc 1: 40% nhận trang bị Lv 1-9
-        // Bậc 2: 60% nhận trang bị Lv 10-19
-        // Bậc 3: 80% nhận trang bị Lv 20-29
-        // Bậc 4: 100% nhận trang bị Lv 30-35
-        int equipChance = switch (tier) {
-            case 1 -> 40;
-            case 2 -> 60;
-            case 3 -> 80;
-            case 4 -> 100;
-            default -> 50;
-        };
-        if (Util.isTrue(equipChance, 100) && !player.getInventory().isFullInventory()) {
-            int targetMinLv = switch (tier) {
-                case 1 -> 1;
-                case 2 -> 10;
-                case 3 -> 20;
-                case 4 -> 30;
-                default -> 1;
-            };
-            int targetMaxLv = switch (tier) {
-                case 1 -> 9;
-                case 2 -> 19;
-                case 3 -> 29;
-                case 4 -> 35;
-                default -> 35;
-            };
-            List<ItemEquipTemplate> weaponList = new ArrayList<>();
-            for (ItemEquipTemplate it : Manager.ITEM_EQUIPMENTS.values()) {
-                if (it != null && it.getType() >= 3 && it.getType() <= 7) {
-                    if (it.getClassChar() == classChar && it.getLevel() >= targetMinLv && it.getLevel() <= targetMaxLv) {
-                        weaponList.add(it);
-                    }
+            // Đá ngũ hợp cao cấp / tinh khiết (lv 3..6)
+            short nhId = (short) (tier == 3 ? Util.nextInt(145, 151) : Util.nextInt(149, 154));
+            short nhQty = (short) (tier == 3 ? Util.nextInt(2, 3) : Util.nextInt(3, 5));
+            if (Manager.getGemTemplate(nhId) != null) {
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(nhId, nhQty));
+                rewardNames.add(nhQty + " " + Manager.getGemTemplate(nhId).getName());
+            }
+
+            // 100% NHẬN TRANG BỊ CHẾ TẠO HOÀN MỸ CÓ PHẨM CẤP (Ngũ phẩm -> Nhất phẩm)
+            if (!player.getInventory().isFullInventory()) {
+                ItemEquip craftItem = ItemService.instance.createCraftedEquipment((byte) tier, playerLv, classChar);
+                if (craftItem != null) {
+                    InventoryService.instance.addItemBagEquipment(player, craftItem);
+                    rewardNames.add("[" + craftItem.getTemplate().getName() + " - " + getRankName(craftItem.getRank()) + "]");
                 }
             }
-            if (weaponList.isEmpty()) {
-                for (ItemEquipTemplate it : Manager.ITEM_EQUIPMENTS.values()) {
-                    if (it != null && it.getType() >= 3 && it.getType() <= 7 && Math.abs(it.getLevel() - playerLv) <= 8) {
-                        weaponList.add(it);
-                    }
-                }
-            }
-            if (!weaponList.isEmpty()) {
-                ItemEquipTemplate weaponTpl = weaponList.get(Util.nextInt(0, weaponList.size() - 1));
-                ItemEquip weapon = ItemService.instance.createNewItemEquipment(weaponTpl.getId(), classChar);
-                if (weapon != null) {
-                    InventoryService.instance.addItemBagEquipment(player, weapon);
-                    rewardNames.add("Vũ khí [" + weaponTpl.getName() + "]");
+
+            // Cơ hội nhận thêm món trang bị thứ 2 (Tier 3: 25%, Tier 4: 35%)
+            int secondEquipChance = (tier == 3) ? 25 : 35;
+            if (Util.isTrue(secondEquipChance, 100) && !player.getInventory().isFullInventory()) {
+                ItemEquip secondCraft = ItemService.instance.createCraftedEquipment((byte) tier, playerLv, classChar);
+                if (secondCraft != null) {
+                    InventoryService.instance.addItemBagEquipment(player, secondCraft);
+                    rewardNames.add("[" + secondCraft.getTemplate().getName() + " - " + getRankName(secondCraft.getRank()) + "]");
                 }
             }
         }
@@ -436,6 +452,26 @@ public class UseItemService {
         // Thông báo kết quả mở rương
         String msg = "Mở Rương Tinh Anh (Bậc " + tier + ") nhận được: " + String.join(", ", rewardNames);
         Service.instance.sendLogOut(player.getSession(), msg);
+    }
+
+    private static short getRandomMaterial(boolean isCaoCap, int minRank, int maxRank) {
+        short[] baseIds = isCaoCap
+                ? new short[]{103, 110, 117, 124, 131} // Tơ lụa, Bạc, Thủy tinh, Gỗ sưa, Da cứng
+                : new short[]{68, 75, 82, 89, 96};     // Vải, Sắt, Ngọc, Gỗ, Da mềm
+        short base = baseIds[Util.nextInt(0, baseIds.length - 1)];
+        int rank = Util.nextInt(minRank, maxRank);
+        return (short) (base + (rank - 1));
+    }
+
+    private static String getRankName(byte rank) {
+        return switch (rank) {
+            case 1 -> "Nhất phẩm";
+            case 2 -> "Nhị phẩm";
+            case 3 -> "Tam phẩm";
+            case 4 -> "Tứ phẩm";
+            case 5 -> "Ngũ phẩm";
+            default -> "Hoàn mỹ";
+        };
     }
 
     public void riderAnimal(@NonNull Player player, short id, byte typeAnimal) throws IOException {

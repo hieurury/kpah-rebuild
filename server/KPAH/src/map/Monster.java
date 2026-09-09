@@ -299,9 +299,9 @@ public class Monster implements Cloneable {
             tnPl = 1;
         }
 
-        // Quái tinh anh cho kinh nghiệm gấp 30 lần
+        // Quái tinh anh cho kinh nghiệm khổng lồ gấp 60 lần
         if (isElite) {
-            tnPl *= 30;
+            tnPl *= 60;
         }
 
         // Áp dụng % thưởng từ người chơi (thú cưỡi, sự kiện, item, etc.)
@@ -396,19 +396,14 @@ public class Monster implements Cloneable {
             its.add(ItemService.instance.createNewItemMap((short) 0, quantity, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
         }
         
-        // 3. Equipment drop (mặc định 2.0%, quái tinh anh x2.5 = 5.0%)
-        double equipRate = Math.min(100.0, 2.0 * rateMultiplier);
-        if (Util.isTrue(equipRate, 100.0)) {
-            byte maxLevelEquip = (byte) level;
-            short idItemEquipment = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
-            if (idItemEquipment != -1) {
-                its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
-            }
-            if (isElite) {
-                // Tinh anh luôn có thêm cơ hội rơi món trang bị thứ 2
-                short extraEquip = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
-                if (extraEquip != -1) {
-                    its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
+        // 3. Equipment drop (mặc định 2.0%, quái tinh anh KHÔNG rơi trang bị thường trên đất - phần thưởng tập trung vào rương tinh anh)
+        if (!isElite) {
+            double equipRate = 2.0;
+            if (Util.isTrue(equipRate, 100.0)) {
+                byte maxLevelEquip = (byte) level;
+                short idItemEquipment = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
+                if (idItemEquipment != -1) {
+                    its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                 }
             }
         }
@@ -443,35 +438,38 @@ public class Monster implements Cloneable {
             }
         }
 
-        // 5. Rương tinh anh: 100% quái tinh anh rớt đúng 1 rương phân loại theo 4 bậc
+        // 5. Rương tinh anh: Số lượng rương tùy theo cấp quái tinh anh
         if (isElite) {
             short idChest;
+            short chestQty;
             if (level <= 9) {
                 idChest = 106; // Rương Tinh Anh (Bậc 1)
+                chestQty = 1;
             } else if (level <= 19) {
                 idChest = 160; // Rương Tinh Anh (Bậc 2)
+                chestQty = (short) Util.nextInt(1, 2);
             } else if (level <= 29) {
                 idChest = 161; // Rương Tinh Anh (Bậc 3)
+                chestQty = (short) Util.nextInt(2, 3);
             } else {
                 idChest = 162; // Rương Tinh Anh (Bậc 4)
+                chestQty = (short) Util.nextInt(3, 4);
             }
-            short chestQty = 1;
             its.add(ItemService.instance.createNewItemMap(idChest, chestQty, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
 
-            // 6. Bình kinh nghiệm: 20% rơi từ quái tinh anh theo 4 bậc
-            if (Util.isTrue(20.0, 100.0)) {
-                short idPotionExp;
-                if (level <= 9) {
-                    idPotionExp = 108; // Sơ cấp: 3.500 EXP
-                } else if (level <= 19) {
-                    idPotionExp = 109; // Trung cấp: 25.000 EXP
-                } else if (level <= 29) {
-                    idPotionExp = 110; // Cao cấp: 90.000 EXP
-                } else {
-                    idPotionExp = 111; // Siêu cấp: 220.000 EXP
-                }
-                its.add(ItemService.instance.createNewItemMap(idPotionExp, (short) 1, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
+            // 6. Bình kinh nghiệm: 100% rơi từ quái tinh anh theo bậc
+            short idPotionExp;
+            if (level <= 9) {
+                idPotionExp = 108; // Sơ cấp: 35.000 EXP
+            } else if (level <= 19) {
+                idPotionExp = 109; // Trung cấp: 250.000 EXP
+            } else if (level <= 29) {
+                idPotionExp = 110; // Cao cấp: 900.000 EXP
+            } else {
+                idPotionExp = 111; // Siêu cấp: 2.200.000 EXP
             }
+            short expQty = (short) (level <= 19 ? 1 : Util.nextInt(1, 2));
+            its.add(ItemService.instance.createNewItemMap(idPotionExp, expQty, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
         }
         
         if (isKhoangSan()) {
