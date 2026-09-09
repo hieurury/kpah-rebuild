@@ -209,7 +209,10 @@ public class LoginService {
             if (weapon == null) {
                 m.writer().writeByte(-1);
             } else {
-                byte[][] img = Util.readFileAndSplit("data/image/weapon/" + weapon.getTemplate().getId() + ".png");
+                byte[][] img = Manager.getImageWeapon((short) weapon.getTemplate().getId());
+                if (img == null) {
+                    img = Util.readFileAndSplit("data/image/weapon/" + weapon.getTemplate().getId() + ".png");
+                }
                 if (img == null) {
                     m.writer().writeByte(-1);
                 } else {

@@ -259,7 +259,11 @@ public class Util {
     }
 
     public static byte[][] readFileAndSplit(String url) throws IOException {
-        try (FileChannel channel = FileChannel.open(Paths.get(url), StandardOpenOption.READ)) {
+        File file = new File(url);
+        if (!file.exists() || !file.isFile()) {
+            return null;
+        }
+        try (FileChannel channel = FileChannel.open(file.toPath(), StandardOpenOption.READ)) {
             long fileSize = channel.size();
             int halfLength = (int) Math.ceil(fileSize / 2.0);
             ByteBuffer buffer1 = channel.map(FileChannel.MapMode.READ_ONLY, 0, halfLength);

@@ -1477,3 +1477,47 @@
 - Sạch log opcode `-66`.
 
 ---
+
+## [2026-09-09 10:54] — Khởi chạy bản Game Public (KPAH_PROD.jar) trên Giả lập MicroEmulator để Test
+
+**Yêu cầu:** Chạy game bản public tại máy tính để test kết nối và gameplay.
+
+**Mức độ rủi ro:** Thấp
+
+**Hành động:**
+- Biên dịch cập nhật gói client `KPAH_PROD.jar` và `KPAH_PROD.jad` (kết nối `bore.pub:19129`, server "Dị giới") với Java 8 Ant build.
+- Khởi chạy giả lập MicroEmulator trên màn hình (`DISPLAY=:0`) với file `game/build/dist/KPAH_PROD.jar`.
+- Ghi nhận console game kết nối socket thành công:
+  ```text
+  ket noi socket://bore.pub:19129
+  send cmd=-1
+  send cmd=1
+  ```
+
+**Kết quả:** ✅ Thành công (Cửa sổ game bản public đã mở trên màn hình và kết nối thành công tới server public).
+
+---
+
+## [2026-09-09 11:01] — Sửa lỗi NoSuchFileException khi gửi danh sách nhân vật (Login CHARLIST)
+
+**Yêu cầu:** Khắc phục lỗi crash đăng nhập: `NoSuchFileException: data/image/weapon/96.png` khiến người chơi bị ngắt kết nối (`LOGIN_EXCEPTION`).
+
+**Nguyên nhân gốc rễ:**
+- Nhân vật trang bị vũ khí ID 96 (Bút sắt) hoặc các vũ khí mặc định không có file PNG riêng trong thư mục `data/image/weapon/`.
+- Trong `LoginService.java`, code gọi `Util.readFileAndSplit(...)`. Khi file không tồn tại, hàm này trực tiếp gọi `FileChannel.open` ném ra `NoSuchFileException` thay vì trả về `null` để nhánh `if (img == null)` gửi cờ an toàn `-1`.
+- Hơn nữa, toàn bộ ảnh vũ khí hợp lệ đã được nạp sẵn vào cache RAM `Manager.IMAGES_WEAPON` khi khởi động server nhưng `LoginService` không tận dụng mà đọc lại từ ổ đĩa mỗi lần đăng nhập.
+
+**Mức độ rủi ro:** Trung bình
+
+**Files thay đổi:**
+- `server/KPAH/src/utils/Util.java` — Thêm kiểm tra `if (!file.exists() || !file.isFile()) return null;` trong `readFileAndSplit(String url)` để trả về `null` an toàn.
+- `server/KPAH/src/services/LoginService.java` — Sử dụng cache `Manager.getImageWeapon((short) weapon.getTemplate().getId())`, fallback `Util.readFileAndSplit`, và nếu `img == null` gửi byte `-1` an toàn cho client.
+- `server/KPAH/dist/KPAH.jar` — Biên dịch lại toàn bộ server với Ant Java 21 (`BUILD SUCCESSFUL`).
+
+**Backup:**
+- `server/KPAH/src/utils/_backup/Util.java.bak.20260909_1100`
+- `server/KPAH/src/services/_backup/LoginService.java.bak.20260909_1100`
+
+**Kết quả:** ✅ Thành công (Đã build passed, triệt tiêu lỗi crash khi đăng nhập với các vũ khí không có file ảnh riêng).
+
+---
