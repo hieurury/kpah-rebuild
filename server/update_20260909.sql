@@ -36,3 +36,21 @@ UPDATE potion_template SET recovered = 20000, name = 'MP 20k\nHồi phục 20.00
 
 -- 4. Cập nhật cấu hình VALUE_MP_HP trong others
 UPDATE others SET data = '[[500,1500,4000,3000,8000,15000,30000],[300,1000,2500,2000,5000,10000,20000]]' WHERE type = 'VALUE_MP_HP';
+
+-- 5. Nâng cấp các cột bảng players sang MEDIUMTEXT utf8mb4 (Fix dứt điểm lỗi Data truncation: Data too long for column 'info')
+ALTER TABLE `players` 
+  MODIFY COLUMN `info` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `location` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `point` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `inventory` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `skills` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemBody` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemBag` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemBox` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemPotion` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemQuest` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemGem` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemGemLock` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemSold` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemAnimal` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  MODIFY COLUMN `itemAnimalExpiry` MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;

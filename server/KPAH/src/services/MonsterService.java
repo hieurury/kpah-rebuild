@@ -54,6 +54,10 @@ public class MonsterService {
         }
         if (monster.isElite()) {
             ChatService.instance.sendChatOnlyMe(plAtt, "Bạn đã tiêu diệt Quái Tinh Anh [" + monster.getTemplate().getName() + "]!");
+            String mapName = (monster.getZone() != null && monster.getZone().getMap() != null) ? monster.getZone().getMap().getName() : "Bản đồ";
+            int zoneId = (monster.getZone() != null) ? monster.getZone().getId() : 0;
+            utils.ServerLog.combat("Nhân vật '%s' (ID: %d, Cấp %d) đã tiêu diệt Quái Tinh Anh [%s] (Cấp %d) tại %s [Khu %d - X:%d, Y:%d].",
+                    plAtt.getName(), plAtt.getIdPlayer(), plAtt.getInfo().getLevel(), monster.getTemplate().getName(), monster.getTemplate().getLevel(), mapName, zoneId, monster.getX(), monster.getY());
         }
         services.QuestService.instance.onKillMonster(plAtt, monster.getTemplate().getId(), (byte) monster.getTemplate().getLevel());
         Message msg = new Message(CommandMessage.MONSTER_DIE);

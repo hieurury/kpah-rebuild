@@ -141,6 +141,30 @@ public class ServerLog {
         log(Ansi.Color.BLUE, "HEARTBEAT", msg);
     }
 
+    public static void shop(String message) {
+        log(Ansi.Color.CYAN, "SHOP", message);
+    }
+
+    public static void shop(String format, Object... args) {
+        shop(String.format(format, args));
+    }
+
+    public static void combat(String message) {
+        log(Ansi.Color.RED, "COMBAT", message);
+    }
+
+    public static void combat(String format, Object... args) {
+        combat(String.format(format, args));
+    }
+
+    public static void quest(String message) {
+        log(Ansi.Color.MAGENTA, "QUEST", message);
+    }
+
+    public static void quest(String format, Object... args) {
+        quest(String.format(format, args));
+    }
+
     public static void warn(String message) {
         log(Ansi.Color.YELLOW, "WARN", message);
     }

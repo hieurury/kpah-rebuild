@@ -146,6 +146,40 @@
   - `game/app/src/classes/_backup/Paint.java.bak.20260909_1638`
   - `game/app/src/classes/_backup/ModController.java.bak.20260909_1638`
   - `server/KPAH/src/services/_backup/ShopService.java.bak.20260909_1638`
-- Hiện tại Phần 07 có: 5/10 task.
+## [2026-09-09 21:10] — Task #66: Tái bố cục HUD sang bên trái tách màu Tiêu đề - Giá trị, sửa triệt để vòng lặp Tự bán đồ & ChatOnly, khắc phục lỗi Database Truncation cột info và nâng cấp hệ thống Server Log chi tiết
+
+**Yêu cầu:**
+- Tái bố cục HUD: Chuyển HUD về góc trên bên trái (dưới avatar và icon 12+) để tránh che khuất tên quái/NPC target ở góc trên bên phải. Chia bố cục rõ ràng, phân biệt màu sắc giữa tiêu đề (chữ trắng `class_d.j[0]`) và nội dung/giá trị (chữ cam/vàng `class_d.j[3]`, hỏng nhấp nháy đỏ `class_d.j[2]`).
+- Khắc phục lỗi Server MySQL Truncation: `com.mysql.jdbc.MysqlDataTruncation: Data truncation: Data too long for column 'info' at row 1` khi `PlayerDAO.updatePlayer` do dữ liệu `QuestData` mở rộng.
+- Sửa lỗi tính năng Tự bán đồ không kích hoạt: Phát hiện game loop `class_abj` override `c()` mà không gọi `super.c()` khiến `ModController.update()` bị bỏ qua -> Đưa lời gọi `handleAutoSellLowEquip()` trực tiếp vào `Paint.onPaint(g)`.
+- Bổ sung thông báo `ChatOnlyMe`: Khi bán đồ (cả tự động lẫn bán qua NPC), gửi chat riêng cho nhân vật thông báo rõ tên món đồ đã bán và số xu nhận được.
+- Nâng cấp hệ thống Server Log: Cấu hình log gọn gàng, chi tiết, màu sắc ANSI trực quan cho các sự kiện: Mua đồ từ Shop (Đặc biệt, NPC, Chuộc đồ), Bán đồ, Tiêu diệt Quái Tinh Anh (tên quái, map, tọa độ X/Y), và Làm nhiệm vụ (Nhận & Hoàn thành Chính tuyến/Hằng ngày).
+
+**Files thay đổi:**
+- `game/app/src/classes/Paint.java`:
+  - Di chuyển HUD sang bên trái (`startX = 4`, `startY = Math.max(avatarH + 26, 58)`), nằm ngay dưới avatar và icon 12+, không che lấp bất kỳ thông tin target nào bên phải.
+  - Phân tách rõ ràng: Tiêu đề "Toạ độ: ", "Độ bền: " dùng font trắng `class_d.j[0]`; giá trị bản đồ và số độ bền dùng font cam/vàng `class_d.j[3]`; cảnh báo hỏng dùng font đỏ `class_d.j[2]`.
+  - Hook `ModController.handleAutoSellLowEquip()` trực tiếp vào đầu `Paint.onPaint(g)` để game loop render đảm bảo kiểm tra tự động bán trang bị liên tục mỗi frame.
+- `server/KPAH/src/utils/ServerLog.java`:
+  - Thêm các method chuyên dụng `shop(...)`, `combat(...)`, `quest(...)` với định dạng thời gian chuẩn `[yyyy-MM-dd HH:mm:ss.SSS]` và màu sắc ANSI bắt mắt (CYAN cho Shop, RED cho Combat, MAGENTA cho Quest), hỗ trợ ghi log song song ra console và file xoay vòng ngày.
+- `server/KPAH/src/services/ShopService.java`:
+  - Trong `onSellItem`: Thêm `ChatService.instance.sendChatOnlyMe(player, String.format("Đã bán %s nhận được %s xu.", item.getTemplate().getName(), Util.formatNumber(price)))` và `ServerLog.shop(...)`.
+  - Trong `buyItemSpecial`, `buyItemNpcShop`, `buyItemDeposite`: Bổ sung ServerLog chi tiết cho từng loại giao dịch mua trang bị, mua ngọc, mua dược phẩm, mua shop đặc biệt và chuộc lại đồ.
+- `server/KPAH/src/services/MonsterService.java`:
+  - Trong `onMonsterDropItem`: Bổ sung `ServerLog.combat(...)` khi Quái Tinh Anh bị tiêu diệt (ghi rõ tên người chơi, tên quái tinh anh, map, khu vực và tọa độ X/Y).
+- `server/KPAH/src/services/QuestService.java`:
+  - Bổ sung `ServerLog.quest(...)` chi tiết khi người chơi nhận và hoàn thành tất cả các mốc nhiệm vụ cốt truyện (Chính tuyến 0 -> 6) cũng như nhiệm vụ hằng ngày (Mã NV, Mục tiêu, Trả thưởng).
+- `server/update_20260909.sql`:
+  - Bổ sung mục 5: Các câu lệnh `ALTER TABLE players MODIFY COLUMN ... MEDIUMTEXT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL` cho toàn bộ các cột dữ liệu JSON/danh sách (`info`, `location`, `point`, `inventory`, `skills`, `itemBody`, `itemBag`, `itemBox`, `itemPotion`, `itemQuest`, `itemGem`, `itemGemLock`, `itemSold`, `itemAnimal`, `itemAnimalExpiry`) để người dùng chạy trên Termux fix dứt điểm lỗi Data truncation.
+
+**Kết quả:** ✅ Thành công (Đã biên dịch cả Client `KPAH_PROD.jar`/`KPAH_MOD.jar` và Server `KPAH.jar`; Khởi động lại Server daemon port 19129 chạy ổn định).
+**Ghi chú:**
+- Backup files:
+  - `server/KPAH/src/utils/_backup/ServerLog.java.bak.20260909_2106`
+  - `server/KPAH/src/services/_backup/ShopService.java.bak.20260909_2106`
+  - `server/KPAH/src/services/_backup/MonsterService.java.bak.20260909_2106`
+  - `server/KPAH/src/services/_backup/QuestService.java.bak.20260909_2106`
+  - `game/app/src/classes/_backup/Paint.java.bak.20260909_2106`
+- Hiện tại Phần 07 có: 6/10 task.
 
 ---

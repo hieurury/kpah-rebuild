@@ -111,6 +111,9 @@ public class ShopService {
                 }
             }
         }
+        String currency = (shopTemplate.getTypeMoney() == 1) ? "xu" : "lượng";
+        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Shop Đặc Biệt: [%s] với giá %s %s.",
+                player.getName(), player.getIdPlayer(), shopTemplate.getName(), Util.formatNumber(price), currency);
         InventoryService.instance.sendItemPotion(player);
         sendSuccessBuyItemShop(player);
     }
@@ -143,6 +146,8 @@ public class ShopService {
                             itemEquipment.setDayUse(template.getNdayLoan());
                         }
                         InventoryService.instance.addItemBagEquipment(player, itemEquipment);
+                        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Trang Bị từ NPC: [%s] (Cấp %d) với giá %s xu.",
+                                player.getName(), player.getIdPlayer(), template.getName(), template.getLevel(), Util.formatNumber(template.getPrice()));
                     }
                     if (item.getCategory() == Const.CATEGORY_GEM_ITEM) {
                         GemTemplate gemTemplate = Manager.getGemTemplate(item.getIdItem());
@@ -162,6 +167,9 @@ public class ShopService {
                         }
                         ItemGem itemGem = ItemService.instance.createNewItemGem(item.getIdItem(), item.getQuantity());
                         InventoryService.instance.addItemGem(player, itemGem);
+                        String curGem = (gemTemplate.getTypeMoney() == Const.XU) ? "xu" : "lượng";
+                        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Ngọc từ NPC: [%s] x%d với giá %s %s.",
+                                player.getName(), player.getIdPlayer(), gemTemplate.getName(), item.getQuantity(), Util.formatNumber(gemTemplate.getPrice()), curGem);
                     } else if (item.getCategory() == Const.CATEGORY_POTION) {
                         int money = Manager.getPotionTemplate(item.getIdItem()).getPrice();
                         int totalCost = money * item.getQuantity();
@@ -172,6 +180,8 @@ public class ShopService {
                         }
                         ItemPotion potion = ItemService.instance.createNewItemPotion(item.getIdItem(), item.getQuantity());
                         InventoryService.instance.addItemPotion(player, potion);
+                        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Dược Phẩm từ NPC: [%s] x%d với giá %s xu.",
+                                player.getName(), player.getIdPlayer(), Manager.getPotionTemplate(item.getIdItem()).getName(), item.getQuantity(), Util.formatNumber(totalCost));
                     }
                 }
             }
@@ -338,6 +348,9 @@ public class ShopService {
         int price = item.getTemplate().getPrice() / 5;
         player.getInventory().plusXu(price);
         sendSuccessSellItem(player, indexItem);
+        ChatService.instance.sendChatOnlyMe(player, String.format("Đã bán %s nhận được %s xu.", item.getTemplate().getName(), Util.formatNumber(price)));
+        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) đã bán [%s] (Cấp %d) nhận được %s xu.",
+                player.getName(), player.getIdPlayer(), item.getTemplate().getName(), item.getTemplate().getLevel(), Util.formatNumber(price));
     }
 
     private void sendSuccessBuyItemShop(@NonNull Player player) throws IOException {

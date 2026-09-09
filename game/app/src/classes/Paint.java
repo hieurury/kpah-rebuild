@@ -14,10 +14,13 @@ public class Paint {
 			return;
 		}
 
-		// 1. Hiển thị HUD thông tin Tọa độ & Độ bền vũ khí (Góc trên bên phải gọn gàng, đúng chuẩn KPAH)
+		// Kích hoạt nhịp kiểm tra tự động bán trang bị cấp thấp liên tục mỗi frame
+		ModController.handleAutoSellLowEquip();
+
+		// 1. Hiển thị HUD thông tin Tọa độ & Độ bền vũ khí ở bên trái (dưới Avatar, tiêu đề trắng, giá trị cam/vàng)
 		paintDurabilityAndPosition(g);
 
-		// 2. Hiển thị các trạng thái Buff/Debuff thanh lịch dạng danh sách góc phải
+		// 2. Hiển thị các trạng thái Buff/Debuff thanh lịch dạng danh sách phía dưới HUD bên trái
 		paintBuffBadges(g);
 
 		// 3. Hiển thị chỉ báo nhiệm vụ trên đầu NPC (!) hoặc (?)
@@ -25,35 +28,77 @@ public class Paint {
 	}
 
 	/**
-	 * Vẽ HUD hiển thị Tọa độ map và Độ bền vũ khí ở góc trên bên phải (Top-Right)
-	 * Chuẩn phong cách mod game KPAH cổ điển, căn lề phải, không che avatar/kinh nghiệm.
+	 * Vẽ HUD hiển thị Tọa độ map và Độ bền vũ khí ở bên trái (dưới Avatar)
+	 * Bố cục tách biệt rõ ràng: Tiêu đề màu trắng, Nội dung màu cam/vàng.
 	 */
 	private static void paintDurabilityAndPosition(Graphics g) {
 		try {
-			int rightX = class_acv.m - 5; // Căn lề phải màn hình
+			int startX = 4;
+			int avatarH = class_abj.O != null ? class_abj.O.getHeight() : 32;
+			int startY = Math.max(avatarH + 26, 58); // Nằm ngay dưới icon 12+ bên trái, tách bạch rõ ràng
 
-			// 1. Tọa độ bản đồ (Dòng 1, font chuẩn class_d.j[0])
+			// 1. Tọa độ bản đồ (Dòng 1)
 			String mapPos = ModHelpers.getMapNameAndPosition();
 			if (mapPos != null && mapPos.length() > 0) {
-				class_d.j[0].a(g, mapPos, rightX, 4, 1);
+				String title = "Toạ độ: ";
+				int titleW = class_d.j[0].a(title);
+				int valW = class_d.j[3].a(mapPos);
+				int totalW = titleW + valW;
+
+				// Nền mờ tối giản chống chói
+				g.setColor(0x000000);
+				g.fillRect(startX - 2, startY, totalW + 4, 12);
+				g.setColor(0x2E3842);
+				g.drawRect(startX - 2, startY, totalW + 4, 12);
+
+				// Tiêu đề chữ trắng
+				class_d.j[0].a(g, title, startX, startY + 1, 0);
+				// Tọa độ chữ cam/vàng
+				class_d.j[3].a(g, mapPos, startX + titleW, startY + 1, 0);
 			}
 
 			// 2. Độ bền vũ khí (Dòng 2)
 			int doBen = MainCharInfo.getDoBen();
+			int row2Y = startY + 14;
+			String titleDoBen = "Độ bền: ";
+			int titleDoBenW = class_d.j[0].a(titleDoBen);
+
 			if (doBen <= 0) {
-				// Cảnh báo vũ khí hỏng (nhấp nháy đỏ bằng font class_d.j[2])
+				// Cảnh báo vũ khí hỏng (nhấp nháy đỏ)
 				boolean blink = (class_acv.l % 10 < 5);
+				String valHỏng = "0 (HỎNG)";
+				int valW = class_d.j[2].a(valHỏng);
+				int totalW = titleDoBenW + valW;
+
+				g.setColor(blink ? 0x4A0000 : 0x000000);
+				g.fillRect(startX - 2, row2Y, totalW + 4, 12);
+				g.setColor(0xFF1744);
+				g.drawRect(startX - 2, row2Y, totalW + 4, 12);
+
+				class_d.j[0].a(g, titleDoBen, startX, row2Y + 1, 0);
 				if (blink) {
-					class_d.j[2].a(g, "Độ bền: HỎNG", rightX, 17, 1);
+					class_d.j[2].a(g, valHỏng, startX + titleDoBenW, row2Y + 1, 0);
 				}
 			} else {
-				class_d.j[0].a(g, "Độ bền: " + doBen, rightX, 17, 1);
+				String valStr = String.valueOf(doBen);
+				int valW = class_d.j[3].a(valStr);
+				int totalW = titleDoBenW + valW;
+
+				g.setColor(0x000000);
+				g.fillRect(startX - 2, row2Y, totalW + 4, 12);
+				g.setColor(0x2E3842);
+				g.drawRect(startX - 2, row2Y, totalW + 4, 12);
+
+				// Tiêu đề chữ trắng
+				class_d.j[0].a(g, titleDoBen, startX, row2Y + 1, 0);
+				// Giá trị độ bền chữ cam/vàng
+				class_d.j[3].a(g, valStr, startX + titleDoBenW, row2Y + 1, 0);
 			}
 		} catch (Exception ignored) {}
 	}
 
 	/**
-	 * Vẽ trạng thái Buff/Debuff dạng danh sách gọn gàng góc trên bên phải (dưới Độ bền)
+	 * Vẽ trạng thái Buff/Debuff dạng danh sách phân màu phía dưới HUD bên trái
 	 */
 	private static void paintBuffBadges(Graphics g) {
 		try {
@@ -62,8 +107,9 @@ public class Paint {
 				return;
 			}
 
-			int rightX = class_acv.m - 5;
-			int startY = 30; // Nằm ngay dưới thông tin Độ bền
+			int startX = 4;
+			int avatarH = class_abj.O != null ? class_abj.O.getHeight() : 32;
+			int startY = Math.max(avatarH + 26, 58) + 28; // Nằm dưới 2 dòng HUD
 
 			for (int i = 0; i < buffs.size(); i++) {
 				MainCharInfo.BuffItem buff = (MainCharInfo.BuffItem) buffs.elementAt(i);
@@ -71,16 +117,28 @@ public class Paint {
 					continue;
 				}
 
-				String text = buff.name;
-				if (buff.timeStr != null && buff.timeStr.length() > 0) {
-					text += " (" + buff.timeStr + ")";
+				String titleText = buff.name + ": ";
+				String timeText = (buff.timeStr != null && buff.timeStr.length() > 0) ? buff.timeStr : "";
+
+				classes.class_d fontTitle = buff.isDebuff ? class_d.j[2] : class_d.j[0];
+				int titleW = fontTitle.a(titleText);
+				int timeW = class_d.j[3].a(timeText);
+				int totalW = titleW + timeW;
+
+				// Nền mờ
+				g.setColor(0x000000);
+				g.fillRect(startX - 2, startY, totalW + 4, 12);
+				g.setColor(buff.isDebuff ? 0x7F1D1D : 0x2E3842);
+				g.drawRect(startX - 2, startY, totalW + 4, 12);
+
+				// Tên hiệu ứng
+				fontTitle.a(g, titleText, startX, startY + 1, 0);
+				// Thời gian còn lại màu cam/vàng
+				if (timeText.length() > 0) {
+					class_d.j[3].a(g, timeText, startX + titleW, startY + 1, 0);
 				}
 
-				// Debuff dùng font đỏ (j[2]), Buff dùng font trắng (j[0])
-				classes.class_d font = buff.isDebuff ? class_d.j[2] : class_d.j[0];
-				font.a(g, text, rightX, startY, 1);
-
-				startY += 13;
+				startY += 14;
 			}
 		} catch (Exception ignored) {}
 	}
