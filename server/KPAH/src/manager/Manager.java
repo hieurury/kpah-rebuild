@@ -1306,7 +1306,12 @@ public class Manager {
             }
             File folder = new File("data/image/icon");
             for (File file : folder.listFiles()) {
-                IMAGES_DEFAULT.put(Short.valueOf(Util.getFileNameWithoutExtension(file.getName())), Util.readFile(file));
+                if (file.isFile() && file.getName().endsWith(".png")) {
+                    try {
+                        IMAGES_DEFAULT.put(Short.valueOf(Util.getFileNameWithoutExtension(file.getName())), Util.readFile(file));
+                    } catch (NumberFormatException ignored) {
+                    }
+                }
             }
             Printer.printGreen(String.format("Finish Load Images Default [%s]", IMAGES_DEFAULT.size()));
 

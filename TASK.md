@@ -1644,3 +1644,75 @@
 **Kết quả:** ✅ Thành công — Cả Server và Client (`kpah_mod_v1.0.0.1.jar`) đều đã được build thành công không có lỗi.
 
 ---
+
+## [2026-09-09 14:28] — Cân bằng hồi phục HP/MP (HP > MP), chuẩn hóa icon Thẻ mua bán & Lọ Luyện Kinh Dược, và cơ chế tự sửa vũ khí
+
+**Yêu cầu:**
+1. Tăng mạnh lượng hồi phục của các loại dược phẩm HP và MP, trong đó HP hồi nhiều hơn MP ở tất cả các bậc theo yêu cầu.
+2. Chuẩn hóa hình ảnh: Frame 39 là Thẻ mua bán (`idImage = 39`, item `id = 33`), Frame 40 là Lọ Luyện Kinh Dược (Lọ Tiên cộng EXP, `idImage = 40`, item `id = 108, 109, 110, 111`).
+3. Cơ chế tự động sửa chữa vũ khí và cuốc: Khi độ bền vũ khí/cuốc về 0, nếu người chơi sở hữu Thẻ mua bán trong hành trang, hệ thống tự động trừ xu sửa chữa, phục hồi đầy đủ độ bền, đồng bộ ngay lập tức sang client và thông báo chatonly. Nếu không có thẻ hoặc không đủ xu, chặn tấn công và yêu cầu đến thợ rèn. Cho phép dùng trực tiếp Thẻ mua bán từ hành trang để sửa chữa toàn bộ trang bị.
+4. Đồng bộ hiển thị độ bền trên HUD: Khắc phục điều kiện phụ thuộc `v > 0`, hiển thị chính xác độ bền vũ khí và cảnh báo đỏ `Độ bền: 0 (Hỏng)` khi vũ khí bị hư hỏng.
+
+**Mức độ rủi ro:** Trung bình
+
+**Chi tiết thông số Dược phẩm sau khi cân bằng (HP > MP):**
+- **HP nhỏ (id 1):** 80 $\rightarrow$ **500 HP** | **MP nhỏ (id 4):** 160 $\rightarrow$ **300 MP**
+- **HP vừa (id 2):** 300 $\rightarrow$ **1.500 HP** | **MP vừa (id 5):** 600 $\rightarrow$ **1.000 MP**
+- **HP to (id 3):** 1.000 $\rightarrow$ **4.000 HP** | **MP to (id 6):** 2.000 $\rightarrow$ **2.500 MP**
+- **HP đ.biệt vừa (id 21):** 1.500 $\rightarrow$ **3.000 HP** (tức thì) | **MP đ.biệt vừa (id 23):** 2.500 $\rightarrow$ **2.000 MP** (tức thì)
+- **HP đ.biệt to (id 22):** 3.000 $\rightarrow$ **8.000 HP** (tức thì) | **MP đ.biệt to (id 24):** 3.500 $\rightarrow$ **5.000 MP** (tức thì)
+- **HP cao cấp (id 93):** 7.000 $\rightarrow$ **15.000 HP** | **MP cao cấp (id 95):** 7.000 $\rightarrow$ **10.000 MP**
+- **HP siêu cấp (id 94):** 15.000 $\rightarrow$ **30.000 HP** | **MP siêu cấp (id 96):** 15.000 $\rightarrow$ **20.000 MP**
+
+**Files & Database thay đổi:**
+- `Database MariaDB`:
+  - `others`: Cập nhật cấu hình JSON `VALUE_MP_HP` gửi tới client và server.
+  - `potion_template`: Cập nhật `recovered` và mô tả đa dòng `name` cho toàn bộ 14 loại dược phẩm HP/MP; thiết lập `idImage = 40` cho cả 4 cấp Lọ Luyện Kinh Dược (id 108..111); thiết lập `name` cho Thẻ mua bán (id 33); cập nhật mô tả Rương Tinh Anh (id 106, 160, 161, 162) và Tinh Anh Đan (id 107).
+  - `shop_template`: Cập nhật shop item 13 thành 'Thẻ mua bán'.
+- `server/KPAH/src/services/SkillService.java` — Thêm `checkWeaponUsable` và `checkCuocUsable`: tự động kiểm tra Thẻ mua bán (id 33), trừ xu và khôi phục độ bền, gửi packet đồng bộ `sendItemBody` + `sendItemPotion` sang client; chặn tấn công và nhắc nhở qua chatonly khi hỏng.
+- `server/KPAH/src/services/UseItemService.java` — Bổ sung `case 33`: kích hoạt sửa nhanh toàn bộ trang bị khi bấm sử dụng Thẻ mua bán trong hành trang; làm sạch tên hiển thị phần thưởng trong `openEliteChest`.
+- `server/KPAH/src/manager/Manager.java` — Bảo vệ nạp dữ liệu `data/image/icon`: lọc file an toàn và xử lý ngoại lệ tránh crash khi có thư mục hoặc file phi số.
+- `game/app/src/classes/MainCharInfo.java` — Cập nhật `getDoBen()`: lấy trực tiếp độ bền `u` của vũ khí, loại bỏ phụ thuộc vào `v > 0`.
+- `game/app/src/classes/Paint.java` — Hiển thị chữ đỏ `Độ bền: 0 (Hỏng)` trên HUD khi vũ khí bị hư hỏng.
+
+**Backup:**
+- `server/KPAH/src/services/_backup/SkillService.java.bak.20260909_1425`
+- `server/KPAH/src/services/_backup/UseItemService.java.bak.20260909_1425`
+- `server/KPAH/src/manager/_backup/Manager.java.bak.20260909_1428`
+- `game/app/src/classes/_backup/MainCharInfo.java.bak.20260909_1425`
+- `game/app/src/classes/_backup/Paint.java.bak.20260909_1425`
+
+**Kết quả:** ✅ Thành công
+- Đã kiểm tra biên dịch cả Server (`KPAH.jar`) với Java 21 và Client (`kpah_mod_v1.0.0.1.jar`) với Java 8 không có lỗi.
+- Server đã được khởi động và lắng nghe trên port 19129.
+- Đã dọn dẹp toàn bộ file tạm trong `/tmp/`.
+
+---
+
+## [2026-09-09 14:35] — Đổi tên "Lọ Luyện Kinh Dược" thành "Tinh anh huyết", tăng gấp 10 lần EXP, và cung cấp đường dẫn hình ảnh
+
+**Yêu cầu:**
+1. Đổi tên vật phẩm "Lọ Luyện Kinh Dược" thành "Tinh anh huyết".
+2. Tăng gấp 10 lần lượng kinh nghiệm (EXP) nhận được khi sử dụng:
+   - Sơ Cấp (ID 108): 3.500 $\rightarrow$ **35.000 EXP**
+   - Trung Cấp (ID 109): 25.000 $\rightarrow$ **250.000 EXP**
+   - Cao Cấp (ID 110): 90.000 $\rightarrow$ **900.000 EXP**
+   - Siêu Cấp (ID 111): 220.000 $\rightarrow$ **2.200.000 EXP**
+3. Cung cấp đường dẫn chi tiết từng hình ảnh của item để người dùng kiểm chứng không gán sai.
+
+**Mức độ rủi ro:** Thấp
+
+**Files & Database thay đổi:**
+- `Database MariaDB`:
+  - `potion_template`: Cập nhật tên và mô tả mới cho 4 bậc ID 108..111 thành `Tinh anh huyết (Sơ Cấp/Trung Cấp/Cao Cấp/Siêu Cấp)`.
+  - `potion_template`: Cập nhật mô tả mở thưởng của Rương Tinh Anh (ID 106, 160, 161, 162) ghi nhận "Tinh anh huyết".
+- `server/KPAH/src/services/UseItemService.java`:
+  - `useExpPotion()`: Tăng x10 lượng kinh nghiệm cho các ID 108 (35.000), 109 (250.000), 110 (900.000), 111 (2.200.000).
+  - Cập nhật chú thích và text thông báo.
+
+**Kết quả:** ✅ Thành công
+- Server Java 21 biên dịch hoàn tất (`BUILD SUCCESSFUL`) và daemon server đang chạy lắng nghe cổng 19129.
+- Dọn dẹp sạch sẽ các file tạm trong `/tmp/`.
+
+---
+

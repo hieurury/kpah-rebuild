@@ -14,7 +14,12 @@ public class Paint {
 		// Kiểm tra màn hình, nếu ở màn hình GameScreen thì mới hiển thị
 		if (class_acv.q == class_acv.s) {
 			int xPos = class_abj.O.getHeight() - 9 + 12;
-			class_d.b.a(_graphics, "Độ bền: " + MainCharInfo.getDoBen(), 1, xPos += 12, 0);
+			int doBen = MainCharInfo.getDoBen();
+			if (doBen <= 0) {
+				class_d.e.a(_graphics, "Độ bền: 0 (Hỏng)", 1, xPos += 12, 0);
+			} else {
+				class_d.b.a(_graphics, "Độ bền: " + doBen, 1, xPos += 12, 0);
+			}
 			class_d.b.a(_graphics, "Toạ độ: " + ModHelpers.getMapNameAndPosition(), 1, xPos += 12, 0);
 
 			// Hiển thị thông tin thuộc tính tăng EXP nếu có

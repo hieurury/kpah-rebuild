@@ -1,6 +1,7 @@
 package services;
 
 import item.ItemEquip;
+import item.ItemPotion;
 import java.io.IOException;
 import java.util.List;
 import lombok.Cleanup;
@@ -34,7 +35,7 @@ public class SkillService {
             return;
         }
         ItemEquip weapon = InventoryService.instance.findItemBodyByType(pl, (byte) (3 + pl.getInfo().getClassPlayer()));
-        if (weapon == null || weapon.getDurable() <= 0) {
+        if (!checkWeaponUsable(pl, weapon)) {
             return;
         }
         pl.getSkill().setTypeSkill(typeSkill);
@@ -80,7 +81,7 @@ public class SkillService {
         }
         ItemEquip weapon = InventoryService.instance.findItemBodyByType(pl, (byte) (3 + pl.getInfo().getClassPlayer()));
         ItemEquip cuoc = InventoryService.instance.findItemBodyByType(pl, (byte) 13);
-        if (weapon == null || weapon.getDurable() <= 0) {
+        if (!checkWeaponUsable(pl, weapon)) {
             return;
         }
         boolean isSkillAeo = Manager.isSkillAeo(pl.getInfo().getClassPlayer(), typeSkill);
@@ -118,7 +119,7 @@ public class SkillService {
             onPlayerAttackMultiMob(pl, mobsNear);
         } else {
             if (mobTarget.isKhoangSan()) {
-                if (cuoc == null || cuoc.getDurable() <= 0) {
+                if (!checkCuocUsable(pl, cuoc)) {
                     return;
                 }
                 cuoc.minusDurable();
@@ -126,6 +127,60 @@ public class SkillService {
             onPlayerAttackMob(pl, mobTarget, cuoc);
         }
         pl.getSkill().getTimeLastUseSkills()[typeSkill] = System.currentTimeMillis();
+    }
+
+    private boolean checkWeaponUsable(@NonNull Player pl, ItemEquip weapon) throws IOException {
+        if (weapon == null) {
+            return false;
+        }
+        if (weapon.getDurable() <= 0) {
+            ItemPotion theMuaBan = InventoryService.instance.findItemPotion(pl, (short) 33);
+            if (theMuaBan != null && theMuaBan.getQuantity() > 0) {
+                int price = weapon.getTemplate().getPrice() / 10;
+                if (pl.getInventory().minusXu(price)) {
+                    short mDurable = weapon.getTemplate().getDurable();
+                    weapon.setDurable(mDurable);
+                    weapon.setMDurable(mDurable);
+                    InventoryService.instance.sendItemBody(pl);
+                    InventoryService.instance.sendItemPotion(pl);
+                    ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã được tự động sửa chữa bằng Thẻ mua bán (Trừ " + Util.formatNumber(price) + " xu).");
+                    return true;
+                } else {
+                    ChatService.instance.sendChatOnlyMe(pl, "Không đủ " + Util.formatNumber(price) + " xu để tự động sửa chữa vũ khí!");
+                    return false;
+                }
+            }
+            ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã hỏng! Hãy mang vũ khí đến thợ rèn để sửa chữa.");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean checkCuocUsable(@NonNull Player pl, ItemEquip cuoc) throws IOException {
+        if (cuoc == null) {
+            return false;
+        }
+        if (cuoc.getDurable() <= 0) {
+            ItemPotion theMuaBan = InventoryService.instance.findItemPotion(pl, (short) 33);
+            if (theMuaBan != null && theMuaBan.getQuantity() > 0) {
+                int price = cuoc.getTemplate().getPrice() / 10;
+                if (pl.getInventory().minusXu(price)) {
+                    short mDurable = cuoc.getTemplate().getDurable();
+                    cuoc.setDurable(mDurable);
+                    cuoc.setMDurable(mDurable);
+                    InventoryService.instance.sendItemBody(pl);
+                    InventoryService.instance.sendItemPotion(pl);
+                    ChatService.instance.sendChatOnlyMe(pl, "Cuốc đã được tự động sửa chữa bằng Thẻ mua bán (Trừ " + Util.formatNumber(price) + " xu).");
+                    return true;
+                } else {
+                    ChatService.instance.sendChatOnlyMe(pl, "Không đủ " + Util.formatNumber(price) + " xu để tự động sửa chữa cuốc!");
+                    return false;
+                }
+            }
+            ChatService.instance.sendChatOnlyMe(pl, "Cuốc mỏ đã hỏng! Hãy mang cuốc đến thợ rèn để sửa chữa.");
+            return false;
+        }
+        return true;
     }
 
     private void onPlayerAttackPlayer(@NonNull Player player, @NonNull Player playerTarget) throws IOException {

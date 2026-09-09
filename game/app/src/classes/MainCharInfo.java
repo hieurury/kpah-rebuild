@@ -19,8 +19,8 @@ public class MainCharInfo {
 			class_ql localclass_ql = (class_ql) ((class_hw) class_acv.s.q).aT.elementAt(i1);
 			class_yc localclass_yc = class_yi.b((int) localclass_ql.r);
 			if (((localclass_yc.c == 3) || (localclass_yc.c == 4) || (localclass_yc.c == 5) || (localclass_yc.c == 6)
-					|| (localclass_yc.c == 7)) && (localclass_ql.v > 0)) {
-				return localclass_ql.u;
+					|| (localclass_yc.c == 7))) {
+				return localclass_ql.u > 0 ? localclass_ql.u : 0;
 			}
 		}
 		return 0;

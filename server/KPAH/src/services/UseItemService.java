@@ -129,6 +129,26 @@ public class UseItemService {
                 case 30, 34, 64, 65, 66, 67, 68, 86 -> {
                     useHorsePotion(player, potion, id);
                 }
+                case 33 -> {
+                    int price = player.getInventory().getPriceRepair(consts.ItemEquipConst.REPAIR_ALL);
+                    if (price <= 0) {
+                        ChatService.instance.sendChatOnlyMe(player, "Tất cả trang bị đang mặc đều còn nguyên độ bền, không cần sửa chữa.");
+                        return;
+                    }
+                    if (!player.getInventory().minusXu(price)) {
+                        ChatService.instance.sendChatOnlyMe(player, "Không đủ " + Util.formatNumber(price) + " xu để sửa chữa toàn bộ trang bị!");
+                        return;
+                    }
+                    for (int i = 0; i < player.getInventory().getItemBody().size(); i++) {
+                        ItemEquip item = player.getInventory().getItemBody().get(i);
+                        short mDurable = item.getTemplate().getDurable();
+                        item.setDurable(mDurable);
+                        item.setMDurable(mDurable);
+                    }
+                    InventoryService.instance.sendItemBody(player);
+                    InventoryService.instance.sendItemPotion(player);
+                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Thẻ mua bán sửa chữa toàn bộ trang bị (Trừ " + Util.formatNumber(price) + " xu).");
+                }
                 case 35 -> {
                     player.setBuffGioVang(3600000L, (short) 100);
                     player.getPoint().initPoint();
@@ -224,10 +244,10 @@ public class UseItemService {
             case 10 -> 100000;
             case 11 -> 500000;
             case 12 -> 1000000;
-            case 108 -> 3500;
-            case 109 -> 25000;
-            case 110 -> 90000;
-            case 111 -> 220000;
+            case 108 -> 35000;
+            case 109 -> 250000;
+            case 110 -> 900000;
+            case 111 -> 2200000;
             default -> 1000;
         };
         InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
@@ -297,21 +317,21 @@ public class UseItemService {
         player.getInventory().plusLuong(luong);
         rewardNames.add(luong + " Lượng");
 
-        // 2. Tinh Anh Đan: Bậc 1: 50% nhận 1 viên; Bậc 2: 100% nhận 1 viên; Bậc 3: 1-2 viên; Bậc 4: 2 viên
-        short tanQty = 0;
-        if (tier == 1) {
-            if (Util.isTrue(50, 100)) tanQty = 1;
-        } else if (tier == 2) {
-            tanQty = 1;
-        } else if (tier == 3) {
-            tanQty = (short) Util.nextInt(1, 2);
-        } else {
-            tanQty = 2;
-        }
-        if (tanQty > 0) {
-            InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, tanQty));
-            rewardNames.add(tanQty + " Tinh Anh Đan");
-        }
+        // 2. Tinh anh huyết (Bình KN Tinh Anh): theo bậc
+        // Bậc 1: id=108 (Sơ cấp 35.000 KN), qty 1-2
+        // Bậc 2: id=109 (Trung cấp 250.000 KN), qty 1-2
+        // Bậc 3: id=110 (Cao cấp 900.000 KN), qty 1-2
+        // Bậc 4: id=111 (Siêu cấp 2.200.000 KN), qty 1-2
+        short knId = (short) switch (tier) {
+            case 1 -> 108;
+            case 2 -> 109;
+            case 3 -> 110;
+            case 4 -> 111;
+            default -> 108;
+        };
+        short knQty = (short) (tier <= 2 ? Util.nextInt(1, 2) : Util.nextInt(1, 3));
+        InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(knId, knQty));
+        rewardNames.add(knQty + " " + Manager.getPotionTemplate(knId).getName().split("\\n")[0]);
 
         // 3. Bình thuốc theo bậc chất lượng
         short potId;
@@ -334,7 +354,7 @@ public class UseItemService {
             potQty = (short) Util.nextInt(15, 25);
         }
         InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(potId, potQty));
-        rewardNames.add(potQty + " " + Manager.getPotionTemplate(potId).getName());
+        rewardNames.add(potQty + " " + Manager.getPotionTemplate(potId).getName().split("\\n")[0]);
 
         // 4. Nguyên liệu sơ cấp: Bậc 1: 50% nhận 1 viên; Bậc 2: 1-2 viên; Bậc 3: 2-3 viên; Bậc 4: 2-4 viên
         short scQty = 0;
