@@ -36,7 +36,11 @@ public class ItemEquip {
 
     private transient int hitCounter = 0;
 
-    public boolean minusDurable() {
+    public void minusDurable() {
+        minusDurableCheck();
+    }
+
+    public boolean minusDurableCheck() {
         if (durable <= 0) {
             durable = 0;
             return false;

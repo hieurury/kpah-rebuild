@@ -63,7 +63,7 @@ public class SkillService {
         if (Util.getDistance(pl, playerTarget) > range) {
             return;
         }
-        if (weapon.minusDurable()) {
+        if (weapon.minusDurableCheck()) {
             InventoryService.instance.sendItemBody(pl);
         }
         pl.getPoint().minusMp(skillMP);
@@ -110,7 +110,7 @@ public class SkillService {
         if (Util.getDistance(pl, mobTarget) > range + Settings.DISTANCE_MOB_CAN_ATTACK + 60) {
             return;
         }
-        if (weapon.minusDurable()) {
+        if (weapon.minusDurableCheck()) {
             InventoryService.instance.sendItemBody(pl);
         }
         pl.getPoint().minusMp(skillMP);
@@ -126,7 +126,7 @@ public class SkillService {
                 if (!checkCuocUsable(pl, cuoc)) {
                     return;
                 }
-                if (cuoc.minusDurable()) {
+                if (cuoc.minusDurableCheck()) {
                     InventoryService.instance.sendItemBody(pl);
                 }
             }
