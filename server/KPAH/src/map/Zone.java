@@ -41,7 +41,6 @@ public class Zone {
     @Synchronized
     public void removeItem(ItemMap itemMap) {
         itemMap.dispose();
-        countItemAppeaerd--;
         items.remove(itemMap);
     }
 

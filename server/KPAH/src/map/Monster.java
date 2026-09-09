@@ -177,17 +177,38 @@ public class Monster implements Cloneable {
             }
         } else {
             Iterator<Player> iterator = playerAttack.iterator();
+            int nearestAggroDist = Integer.MAX_VALUE;
+            Player nearestAggro = null;
             while (iterator.hasNext()) {
                 Player pl = iterator.next();
                 if (pl == null || !isPlayerAttackable(pl)) {
                     iterator.remove();
                 } else {
-                    playerTarget = pl;
+                    int dist = Util.getDistance(this, pl);
+                    if (dist < nearestAggroDist) {
+                        nearestAggroDist = dist;
+                        nearestAggro = pl;
+                    }
                 }
             }
-            for (Player pl : zone.getPlayers()) {
-                if (!pl.isDie() && isPlayerAttackable(pl)) {
-                    playerTarget = pl;
+            if (nearestAggro != null) {
+                playerTarget = nearestAggro;
+            } else if (zone != null) {
+                int nearestDist = Integer.MAX_VALUE;
+                Player nearestPlayer = null;
+                synchronized (zone) {
+                    for (Player pl : zone.getPlayers()) {
+                        if (pl != null && !pl.isDie() && isPlayerAttackable(pl)) {
+                            int dist = Util.getDistance(this, pl);
+                            if (dist < nearestDist) {
+                                nearestDist = dist;
+                                nearestPlayer = pl;
+                            }
+                        }
+                    }
+                }
+                if (nearestPlayer != null) {
+                    playerTarget = nearestPlayer;
                 }
             }
         }
@@ -299,28 +320,12 @@ public class Monster implements Cloneable {
                 }
                 member.getPoint().plusExp(expParty);
                 MapService.instance.onSetXP(member, expParty);
+                MapService.instance.checkLevelUp(member);
             }
         }
         
         // Level up
-        boolean isLevelUp = false;
-        while (pl.getPoint().getExp() >= Util.getExp(pl.getInfo().getLevel())) {
-            pl.getPoint().setExp(pl.getPoint().getExp() - Util.getExp(pl.getInfo().getLevel()));
-            pl.getInfo().plusLevel((byte) 1);
-            pl.getPoint().plusStrength(1);
-            pl.getPoint().plusHealth(1);
-            pl.getPoint().plusAgility(1);
-            pl.getPoint().plusLuck(1);
-            pl.getPoint().plusSpirit(1);
-            pl.getPoint().plusSkillPoint(1);
-            pl.getPoint().plusBasePoint(5);
-            isLevelUp = true;
-        }
-        if (isLevelUp) {
-            pl.getPoint().initPoint();
-            MapService.instance.onLevelUp(pl);
-            Service.instance.sendMainCharInfo(pl);
-        }
+        MapService.instance.checkLevelUp(pl);
         
         // Hiển thị +EXP cho client
         MapService.instance.onSetXP(pl, tnPl);
@@ -372,7 +377,7 @@ public class Monster implements Cloneable {
                     idItemPotion = (short) 5; // MP vừa
                 }
             }
-            its.add(ItemService.instance.createNewItemMap(idItemPotion, quantity, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+            its.add(ItemService.instance.createNewItemMap(idItemPotion, quantity, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
         }
         
         // 2. Gold drop (15% cho lv <= 15, 20% cho lv 16-35)
@@ -388,7 +393,7 @@ public class Monster implements Cloneable {
             // Trần lv35: gấp 2 lần vàng, cấp thấp hơn giảm dần theo cấp quái
             double goldEliteMultiplier = isElite ? (1.0 + 1.0 * lvRatio) : 1.0;
             quantity = (short) Math.max(10, Math.round(quantity * goldEliteMultiplier));
-            its.add(ItemService.instance.createNewItemMap((short) 0, quantity, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+            its.add(ItemService.instance.createNewItemMap((short) 0, quantity, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
         }
         
         // 3. Equipment drop (mặc định 2.0%, quái tinh anh x2.5 = 5.0%)
@@ -397,13 +402,13 @@ public class Monster implements Cloneable {
             byte maxLevelEquip = (byte) level;
             short idItemEquipment = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
             if (idItemEquipment != -1) {
-                its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                its.add(ItemService.instance.createNewItemMap(idItemEquipment, (short) 1, Const.CATEGORY_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
             }
             if (isElite) {
                 // Tinh anh luôn có thêm cơ hội rơi món trang bị thứ 2
                 short extraEquip = Manager.randomItemEquipment(maxLevelEquip, (byte) Util.getOne(plAttack.getInfo().getGender(), 0));
                 if (extraEquip != -1) {
-                    its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap(extraEquip, (short) 1, Const.CATEGORY_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                 }
             }
         }
@@ -421,18 +426,18 @@ public class Monster implements Cloneable {
                 if (level <= 25) {
                     // Lv 10-25: 50% Đá may mắn cấp 1 (5), 50% Luyện kim dược (8)
                     short gemId = Util.isTrue(50, 100) ? (short) 5 : (short) 8;
-                    its.add(ItemService.instance.createNewItemMap(gemId, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap(gemId, gemQty, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                 } else {
                     // Lv 26-35: 40% Đá may mắn cấp 1 (5), 40% Luyện kim dược (8), 15% Đá may mắn cấp 2 (6), 5% Vé quay số (69)
                     int rand = Util.nextInt(1, 100);
                     if (rand <= 40) {
-                        its.add(ItemService.instance.createNewItemMap((short) 5, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 5, gemQty, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                     } else if (rand <= 80) {
-                        its.add(ItemService.instance.createNewItemMap((short) 8, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 8, gemQty, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                     } else if (rand <= 95) {
-                        its.add(ItemService.instance.createNewItemMap((short) 6, gemQty, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 6, gemQty, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                     } else {
-                        its.add(ItemService.instance.createNewItemMap((short) 69, gemQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+                        its.add(ItemService.instance.createNewItemMap((short) 69, gemQty, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                     }
                 }
             }
@@ -451,7 +456,7 @@ public class Monster implements Cloneable {
                 idChest = 162; // Rương Tinh Anh (Bậc 4)
             }
             short chestQty = 1;
-            its.add(ItemService.instance.createNewItemMap(idChest, chestQty, Const.CATEGORY_POTION, destX, destY, plAttack.getIdPlayer(), zone));
+            its.add(ItemService.instance.createNewItemMap(idChest, chestQty, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
 
             // 6. Bình kinh nghiệm: 20% rơi từ quái tinh anh theo 4 bậc
             if (Util.isTrue(20.0, 100.0)) {
@@ -465,27 +470,33 @@ public class Monster implements Cloneable {
                 } else {
                     idPotionExp = 111; // Siêu cấp: 220.000 EXP
                 }
-                short scatterX = (short) (destX + Util.nextInt(-15, 15));
-                short scatterY = (short) (destY + Util.nextInt(-15, 15));
-                its.add(ItemService.instance.createNewItemMap(idPotionExp, (short) 1, Const.CATEGORY_POTION, scatterX, scatterY, plAttack.getIdPlayer(), zone));
+                its.add(ItemService.instance.createNewItemMap(idPotionExp, (short) 1, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
             }
         }
         
         if (isKhoangSan()) {
             switch (template.getId()) {
                 case 85 ->
-                    its.add(ItemService.instance.createNewItemMap((short) 81, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap((short) 81, (short) 1, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                 case 86 ->
-                    its.add(ItemService.instance.createNewItemMap((short) 67, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap((short) 67, (short) 1, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                 case 87 ->
-                    its.add(ItemService.instance.createNewItemMap((short) 88, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap((short) 88, (short) 1, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                 case 88 ->
-                    its.add(ItemService.instance.createNewItemMap((short) 95, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap((short) 95, (short) 1, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
                 case 89 ->
-                    its.add(ItemService.instance.createNewItemMap((short) 74, (short) 1, Const.CATEGORY_GEM_ITEM, destX, destY, plAttack.getIdPlayer(), zone));
+                    its.add(ItemService.instance.createNewItemMap((short) 74, (short) 1, Const.CATEGORY_GEM_ITEM, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
             }
         }
         return its;
+    }
+
+    private short scatterX(short baseX) {
+        return (short) (baseX + Util.nextInt(-12, 12));
+    }
+
+    private short scatterY(short baseY) {
+        return (short) (baseY + Util.nextInt(-12, 12));
     }
 
     public boolean isMelee() {

@@ -334,6 +334,9 @@ public class PlayerDAO {
             JSONArray dataItem = arrAll.getJSONArray(i);
             short idTemp = (short) dataItem.getInt(1);
             ItemEquipTemplate template = Manager.getItemEquipment(idTemp);
+            if (template == null) {
+                continue;
+            }
             ItemEquip item = ItemEquip.builder().template(template).itemAttributes(new ArrayList<>()).build();
             item.setIdItem((short) dataItem.getInt(0));
             item.setClassChar((byte) dataItem.getInt(2));

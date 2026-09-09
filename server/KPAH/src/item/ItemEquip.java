@@ -35,9 +35,17 @@ public class ItemEquip {
     private long timeCreateItem;
 
     public void minusDurable() {
+        if (durable <= 0 || mDurable <= 0) {
+            durable = 0;
+            mDurable = 0;
+            return;
+        }
         mDurable--;
         if (mDurable % 10 == 0) {
             durable--;
+            if (durable < 0) {
+                durable = 0;
+            }
         }
     }
 

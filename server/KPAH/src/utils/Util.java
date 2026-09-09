@@ -181,15 +181,28 @@ public class Util {
     }
 
     public static long getExp(int level) {
+        if (Manager.exps == null || Manager.exps.length == 0) {
+            return Long.MAX_VALUE;
+        }
+        if (level <= 0) {
+            return Manager.exps[0];
+        }
+        if (level >= Manager.exps.length) {
+            return Long.MAX_VALUE;
+        }
         long exp = 0;
-        for (int i = 0; i < level; i++) {
+        for (int i = 0; i < level && i < Manager.exps.length; i++) {
             exp += Manager.exps[i];
         }
-        return exp;
+        return exp > 0 ? exp : Long.MAX_VALUE;
     }
 
     public static short getPercentExp(int level, long exp) {
-        return (short) ((double) exp / (double) getExp(level) * 1000);
+        long reqExp = getExp(level);
+        if (reqExp <= 0 || reqExp == Long.MAX_VALUE) {
+            return 1000;
+        }
+        return (short) Math.min(1000, Math.max(0, (double) exp / (double) reqExp * 1000));
     }
 
     public static byte[] readFile(File file) {
@@ -302,6 +315,10 @@ public class Util {
 
     public static int getDistance(Player pl1, Monster mob) {
         return getDistance(pl1.getLocation().getX(), pl1.getLocation().getY(), mob.getX(), mob.getY());
+    }
+
+    public static int getDistance(Monster mob, Player pl1) {
+        return getDistance(pl1, mob);
     }
 
     public static int getDistance(Player pl1, Player pl2) {

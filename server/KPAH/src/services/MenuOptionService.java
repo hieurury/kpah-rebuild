@@ -2,6 +2,7 @@ package services;
 
 import consts.Const;
 import java.io.IOException;
+import java.time.LocalDate;
 import lombok.NonNull;
 import network.Message;
 import player.Player;
@@ -46,6 +47,13 @@ public class MenuOptionService {
     private static final byte SELECT_HOA_TIEU_MAP = 16;
     private static final byte BANG_TOP = 17;
     private static final byte MENU_NPC_DYNAMIC = 100;
+    public static final byte MENU_XA_PHU = 101;
+    public static final byte MENU_HOA_TIEU = 102;
+    public static final byte MENU_LE_QUAN = 103;
+    public static final byte MENU_TIEN_NU = 104;
+    public static final byte MENU_THO_SAN = 105;
+    public static final byte MENU_ONG_NOI = 106;
+    public static final byte MENU_LINH_GAC = 107;
 
     public void onMenuOption(@NonNull Player player, byte idMenu, byte selected) throws IOException {
         if (selected < 0) {
@@ -68,6 +76,8 @@ public class MenuOptionService {
                         ShopService.instance.openNpcShop(player, "GEM_SHOP", ItemEquipConst.DAMAGE_NONE);
                     } else if (npcId == NpcConst.THIET_BI) {
                         sendOptionBuyItem(player);
+                    } else if (npcId == NpcConst.DI_UT_HP) {
+                        ShopService.instance.openNpcShop(player, "POTION", ItemEquipConst.DAMAGE_NONE);
                     }
                 }
             }
@@ -211,7 +221,201 @@ public class MenuOptionService {
                 short y = template.getY()[player.getSundry().getIndexHoaTieu()];
                 ChangeMapService.instance.changeMap(player, mapId, x, y);
             }
+            case MENU_XA_PHU -> {
+                int cost = 50;
+                switch (selected) {
+                    case 0 -> { // Làng Sen (50 xu)
+                        if (!player.getInventory().minusXu(cost)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 50 xu đi xa phu");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 0, (short) (24 * 16 + 8), (short) (39 * 16 + 8));
+                    }
+                    case 1 -> { // Làng Đồi (50 xu)
+                        if (!player.getInventory().minusXu(cost)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 50 xu đi xa phu");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 1, (short) (1 * 16 + 8), (short) (61 * 16 + 8));
+                    }
+                    case 2 -> { // Nam Sơn (50 xu)
+                        if (!player.getInventory().minusXu(cost)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 50 xu đi xa phu");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 2, (short) (15 * 16 + 8), (short) (1 * 16 + 8));
+                    }
+                    case 3 -> { // Châu Thành (100 xu)
+                        if (!player.getInventory().minusXu(100)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 100 xu đi xa phu");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 3, (short) (5 * 16 + 8), (short) (20 * 16 + 8));
+                    }
+                    case 4 -> { // Thủ phủ quốc gia (Dương Đông / Sơn Nam) (100 xu)
+                        if (!player.getInventory().minusXu(100)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 100 xu đi xa phu");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        short capitalMap = (player.getInfo().getIdNation() == Const.THANH_LONG) ? (short) 1701 : (short) 301;
+                        ChangeMapService.instance.changeMap(player, capitalMap, (short) (24 * 16 + 8), (short) (39 * 16 + 8));
+                    }
+                    case 5 -> { // Chiến trường (200 xu)
+                        if (!player.getInventory().minusXu(200)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 200 xu đi xa phu");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 104, (short) (35 * 16 + 8), (short) (60 * 16 + 8));
+                    }
+                }
+            }
+            case MENU_HOA_TIEU -> {
+                int cost = 100;
+                switch (selected) {
+                    case 0 -> { // Đảo Cát (100 xu)
+                        if (!player.getInventory().minusXu(cost)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 100 xu đi thuyền");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 9, (short) 280, (short) 1464);
+                    }
+                    case 1 -> { // Vịnh Triều Dương (100 xu)
+                        if (!player.getInventory().minusXu(cost)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 100 xu đi thuyền");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 10, (short) 300, (short) 500);
+                    }
+                    case 2 -> { // Quay về đất liền (Làng Sen - 50 xu)
+                        if (!player.getInventory().minusXu(50)) {
+                            Service.instance.sendLogOut(player.getSession(), "Không đủ 50 xu đi thuyền");
+                            return;
+                        }
+                        InventoryService.instance.sendItemPotion(player);
+                        ChangeMapService.instance.changeMap(player, (short) 0, (short) (24 * 16 + 8), (short) (39 * 16 + 8));
+                    }
+                }
+            }
+            case MENU_LE_QUAN -> {
+                switch (selected) {
+                    case 0 -> { // Điểm danh hàng ngày
+                        String today = LocalDate.now().toString();
+                        if (today.equals(player.getQuestData().getClaimedDailyLogin())) {
+                            Service.instance.sendLogOut(player.getSession(), "Hôm nay ngươi đã điểm danh rồi, hãy quay lại vào ngày mai nhé!");
+                            return;
+                        }
+                        player.getQuestData().setClaimedDailyLogin(today);
+                        player.getInventory().plusXu(10000);
+                        MapService.instance.onSetXP(player, 50000);
+                        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 8, (short) 1)); // Luyện kim dược
+                        InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 1)); // Tinh anh huyết
+                        InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 11, 2)); // Thẻ x1.5 EXP
+                        InventoryService.instance.sendItemPotion(player);
+                        InventoryService.instance.sendItemGem(player);
+                        Service.instance.sendLogOut(player.getSession(), "Điểm danh thành công!\nNhận: 10.000 Xu, 50.000 EXP, 1 Luyện kim dược, 1 Tinh anh huyết và 2 Thẻ x1.5 EXP.");
+                    }
+                    case 1 -> { // Quà Tân Thủ (Cấp 1 - 10)
+                        if (player.getInfo().getLevel() <= 10) {
+                            player.getInventory().plusXu(5000);
+                            InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 1, 20)); // HP
+                            InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 4, 20)); // MP
+                            InventoryService.instance.sendItemPotion(player);
+                            Service.instance.sendLogOut(player.getSession(), "Chúc mừng dũng sĩ tân thủ! Đã nhận 5.000 Xu, 20 Bình HP và 20 Bình MP.");
+                        } else {
+                            Service.instance.sendLogOut(player.getSession(), "Ngươi đã qua giai đoạn tân thủ (cấp > 10) rồi!");
+                        }
+                    }
+                    case 2 -> { // Thông tin sự kiện
+                        Service.instance.sendLogOut(player.getSession(), "=== SỰ KIỆN MÁY CHỦ KPAH ===\n- Nhân Đôi Kinh Nghiệm quái vật toàn máy chủ.\n- Rơi Rương Tinh Anh & Tinh Anh Huyết khi diệt quái.\n- Chuỗi nhiệm vụ tân thủ và hàng ngày nhận phần thưởng cực lớn!");
+                    }
+                }
+            }
+            case MENU_TIEN_NU -> {
+                switch (selected) {
+                    case 0 -> { // Hồi phục toàn bộ HP & MP
+                        player.getPoint().setHp(player.getPoint().getHpMax());
+                        player.getPoint().setMp(player.getPoint().getMpMax());
+                        Service.instance.sendMainCharInfo(player);
+                        Service.instance.sendLogOut(player.getSession(), "Tiên Nữ đã thi triển tiên thuật, hồi phục toàn bộ Sinh Lực và Nội Lực cho ngươi!");
+                    }
+                    case 1 -> { // Nhận Bùa May Mắn
+                        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 5, (short) 1)); // Đá may mắn 1
+                        InventoryService.instance.sendItemGem(player);
+                        Service.instance.sendLogOut(player.getSession(), "Tiên Nữ ban tặng 1 Bùa May Mắn cấp 1. Chúc ngươi may mắn trên con đường hành hiệp!");
+                    }
+                }
+            }
+            case MENU_THO_SAN -> {
+                switch (selected) {
+                    case 0 -> { // Nhiệm vụ Thợ Săn
+                        services.QuestService.instance.processQuestMenu(player, NpcConst.THO_SAN);
+                    }
+                    case 1 -> { // Đổi 10 Da Thú lấy 5.000 xu
+                        Service.instance.sendLogOut(player.getSession(), "Thợ Săn: Hãy đi săn quái rừng và mang da thú/thịt rừng về đây ta sẽ thu mua giá tốt!");
+                    }
+                }
+            }
+            case MENU_ONG_NOI -> {
+                switch (selected) {
+                    case 0 -> { // Nhiệm vụ Ông Nội
+                        services.QuestService.instance.processQuestMenu(player, NpcConst.ONG_NOI);
+                    }
+                    case 1 -> { // Bí kíp Ngũ Hành
+                        Service.instance.sendLogOut(player.getSession(), "=== BÍ KÍP NGŨ HÀNH ===\nQuy luật tương sinh tương khắc:\n- Kim khắc Mộc\n- Mộc khắc Thổ\n- Thổ khắc Thủy\n- Thủy khắc Hỏa\n- Hỏa khắc Kim\nTấn công mục tiêu bị khắc sẽ gây thêm 30% sát thương!");
+                    }
+                    case 2 -> { // Lời khuyên tân thủ
+                        Service.instance.sendLogOut(player.getSession(), "Ông Nội: Hãy chăm chỉ làm nhiệm vụ Trưởng Làng và Thợ Rèn, rèn trang bị tốt trước khi tiến vào các vùng rừng sâu nhé cháu!");
+                    }
+                }
+            }
+            case MENU_LINH_GAC -> {
+                switch (selected) {
+                    case 0 -> {
+                        Service.instance.sendLogOut(player.getSession(), "Lính Gác: Cổng làng dẫn thẳng ra Đồi Nhím và Rừng Rậm. Hãy cẩn thận các dã thú nguy hiểm!");
+                    }
+                    case 1 -> {
+                        Service.instance.sendLogOut(player.getSession(), "Lính Gác: Gần đây xuất hiện nhiều Quái Tinh Anh đột biến hung tợn. Hãy lập đội ngũ trước khi đi săn!");
+                    }
+                }
+            }
         }
+    }
+
+    public void sendMenuXaPhu(@NonNull Player player) throws IOException {
+        String capitalName = (player.getInfo().getIdNation() == Const.THANH_LONG) ? "Dương Đông (Thủ phủ)" : "Sơn Nam (Thủ phủ)";
+        sendOptionMenu(player, MENU_XA_PHU, "Làng Sen (50 xu)", "Làng Đồi (50 xu)", "Nam Sơn (50 xu)", "Châu Thành (100 xu)", capitalName + " (100 xu)", "Chiến Trường (200 xu)");
+    }
+
+    public void sendMenuHoaTieuMapList(@NonNull Player player) throws IOException {
+        sendOptionMenu(player, MENU_HOA_TIEU, "Đảo Cát (100 xu)", "Vịnh Triều Dương (100 xu)", "Quay về Làng Sen (50 xu)");
+    }
+
+    public void sendMenuLeQuan(@NonNull Player player) throws IOException {
+        sendOptionMenu(player, MENU_LE_QUAN, "Điểm danh nhận quà hôm nay", "Quà Tân Thủ (Cấp 1-10)", "Thông tin Sự Kiện");
+    }
+
+    public void sendMenuTienNu(@NonNull Player player) throws IOException {
+        sendOptionMenu(player, MENU_TIEN_NU, "Hồi phục toàn bộ HP & MP (Miễn phí)", "Nhận Bùa May Mắn");
+    }
+
+    public void sendMenuThoSan(@NonNull Player player) throws IOException {
+        sendOptionMenu(player, MENU_THO_SAN, "Nhiệm vụ Thợ Săn", "Đổi Da Thú lấy Xu");
+    }
+
+    public void sendMenuOngNoi(@NonNull Player player) throws IOException {
+        sendOptionMenu(player, MENU_ONG_NOI, "Nhiệm vụ Ông Nội", "Bí kíp Ngũ Hành", "Lời khuyên tân thủ");
+    }
+
+    public void sendMenuLinhGac(@NonNull Player player) throws IOException {
+        sendOptionMenu(player, MENU_LINH_GAC, "Hỏi đường ra bãi quái", "Cảnh báo quái dữ");
     }
 
     public void sendMenuLuyenThuSpecial(@NonNull Player player) throws IOException {

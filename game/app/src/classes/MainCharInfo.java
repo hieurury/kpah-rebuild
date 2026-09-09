@@ -116,49 +116,158 @@ public class MainCharInfo {
 		}
 	}
 
+	public static class BuffItem {
+		public String name;
+		public String timeStr;
+		public int secLeft;
+		public boolean isDebuff;
+		public int color;
+
+		public BuffItem(String name, String timeStr, int secLeft, boolean isDebuff, int color) {
+			this.name = name;
+			this.timeStr = timeStr;
+			this.secLeft = secLeft;
+			this.isDebuff = isDebuff;
+			this.color = color;
+		}
+	}
+
 	/**
-	 * Lấy danh sách chuỗi mô tả các hiệu ứng buff đang hoạt động kèm thời gian còn lại
+	 * Lấy danh sách đối tượng buff/debuff có cấu trúc đầy đủ thông tin
 	 */
-	public static java.util.Vector getActiveBuffStrings() {
+	public static java.util.Vector getActiveBuffItems() {
 		java.util.Vector list = new java.util.Vector();
 		try {
 			if (class_acv.s == null || class_acv.s.q == null) {
 				return list;
 			}
 			class_hw mainChar = (class_hw) class_acv.s.q;
-			if (mainChar.de == null) {
-				return list;
-			}
 			long now = System.currentTimeMillis();
-			for (int i = 0; i < mainChar.de.size(); i++) {
-				Object obj = mainChar.de.elementAt(i);
-				if (obj instanceof class_zx) {
-					class_zx buff = (class_zx) obj;
-					long secLeft = (buff.a - now) / 1000L;
-					if (secLeft > 0) {
-						String name = getBuffName(buff.h);
-						String time = formatTime(secLeft);
-						list.addElement(name + ": " + time);
+
+			// 1. Quét các hiệu ứng buff/skill đang hoạt động trong mainChar.de
+			if (mainChar.de != null) {
+				for (int i = 0; i < mainChar.de.size(); i++) {
+					Object obj = mainChar.de.elementAt(i);
+					if (obj instanceof class_zx) {
+						class_zx buff = (class_zx) obj;
+						long secLeft = (buff.a - now) / 1000L;
+						if (secLeft > 0) {
+							String name;
+							int color;
+							boolean isDebuff = false;
+
+							switch (buff.h) {
+								case 19:
+									if (mainChar.aJ == 4) { // Cung thủ
+										name = "Tăng Công";
+										color = 0xFF9100;
+									} else {
+										name = "Bảo Hộ";
+										color = 0xFFD600;
+									}
+									break;
+								case 20:
+									name = "Tăng Giáp";
+									color = 0x00E676;
+									break;
+								case 21:
+									name = "Tăng Công";
+									color = 0xFF9100;
+									break;
+								case 22:
+									name = "Tẩm Độc";
+									color = 0x76FF03;
+									break;
+								case 23:
+									name = "Công & Giáp";
+									color = 0x00E5FF;
+									break;
+								case 24:
+									name = "Phản Đòn";
+									color = 0xE040FB;
+									break;
+								case 25:
+									name = "Hồi Lực";
+									color = 0x40C4FF;
+									break;
+								case 27:
+									name = "Hồi Sinh";
+									color = 0xFFFF00;
+									break;
+								case 3:
+									name = "Choáng";
+									color = 0xFFD600;
+									isDebuff = true;
+									break;
+								case 4:
+									name = "Trúng Độc";
+									color = 0xFF1744;
+									isDebuff = true;
+									break;
+								case 5:
+									name = "Tăng Giáp";
+									color = 0x00E676;
+									break;
+								default:
+									name = "Buff #" + buff.h;
+									color = 0x81C784;
+									break;
+							}
+							list.addElement(new BuffItem(name, formatTime(secLeft), (int) secLeft, isDebuff, color));
+						}
 					}
 				}
 			}
+
+			// 2. Trạng thái Choáng (Stun) từ cW / cZ
+			if (mainChar.cW && mainChar.cZ > now) {
+				int secStun = (int) ((mainChar.cZ - now) / 1000L);
+				if (secStun > 0 && !hasBuffNamed(list, "Choáng")) {
+					list.addElement(new BuffItem("Choáng", formatTime(secStun), secStun, true, 0xFFD600));
+				}
+			}
+
+			// 3. Trạng thái Trúng Độc từ dg / dh
+			if (mainChar.dg > 0 && (now - mainChar.dg) < (long) mainChar.dh * 1000L) {
+				int secPoison = (int) ((long) mainChar.dh - (now - mainChar.dg) / 1000L);
+				if (secPoison > 0 && !hasBuffNamed(list, "Trúng Độc")) {
+					list.addElement(new BuffItem("Trúng Độc", formatTime(secPoison), secPoison, true, 0xFF1744));
+				}
+			}
+
+			// 4. Thuộc tính tăng EXP (nếu có)
+			String expBonus = getExpBonusInfo();
+			if (expBonus != null && expBonus.length() > 0) {
+				int plusIdx = expBonus.indexOf("+");
+				String expStr = plusIdx >= 0 ? expBonus.substring(plusIdx) : expBonus;
+				list.addElement(new BuffItem("Tăng EXP", expStr, 0, false, 0x00E5FF));
+			}
+
 		} catch (Exception ignored) {}
 		return list;
 	}
 
-	private static String getBuffName(int id) {
-		switch (id) {
-			case 19: return "Bất Di Biến";
-			case 20: return "Cương Thân Giáp";
-			case 22: return "Độc Lưu Tiễn";
-			case 23: return "Song Hộ Công Thủ";
-			case 24: return "Di Lực Đảo Công";
-			case 25: return "Hồi Công Lực Đạn";
-			case 3:  return "Choáng";
-			case 4:  return "Trúng Độc";
-			case 5:  return "Phòng Thủ";
-			default: return "Buff #" + id;
+	private static boolean hasBuffNamed(java.util.Vector list, String name) {
+		for (int i = 0; i < list.size(); i++) {
+			BuffItem item = (BuffItem) list.elementAt(i);
+			if (item != null && item.name != null && item.name.equals(name)) {
+				return true;
+			}
 		}
+		return false;
+	}
+
+	/**
+	 * Lấy danh sách chuỗi mô tả các hiệu ứng buff đang hoạt động kèm thời gian còn lại
+	 */
+	public static java.util.Vector getActiveBuffStrings() {
+		java.util.Vector res = new java.util.Vector();
+		java.util.Vector items = getActiveBuffItems();
+		for (int i = 0; i < items.size(); i++) {
+			BuffItem it = (BuffItem) items.elementAt(i);
+			res.addElement(it.name + ": " + it.timeStr);
+		}
+		return res;
 	}
 
 	private static String formatTime(long sec) {

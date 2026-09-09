@@ -28,6 +28,8 @@ public class Sundry {
     private long lastTimeEndDelete;
     private long lastTimeLogout;
     public boolean isAutoLoot = false;
+    private long lastTimeWarnBrokenWeapon;
+    private long lastTimeWarnNoWeapon;
 
     private byte idNpcOpen;
     private byte selected;

@@ -30,12 +30,34 @@ public class NpcService {
                 MenuOptionService.instance.sendMenuHoaTieu2(player);
             case NpcConst.HOA_TIEU_NEW ->
                 MenuOptionService.instance.sendMenuHoaTieu(player);
-            case NpcConst.XA_PHU_NEW ->
-                MenuOptionService.instance.sendMenuXaPhuNew(player);
+            case NpcConst.HOA_TIEU ->
+                MenuOptionService.instance.sendMenuHoaTieuMapList(player);
+            case NpcConst.XA_PHU_NEW, NpcConst.XA_PHU ->
+                MenuOptionService.instance.sendMenuXaPhu(player);
             case NpcConst.CONG_DICH_CHUYEN ->
                 MenuOptionService.instance.sendMenuCongDichChuyen(player);
             case NpcConst.HAO_DUYEN ->
                 MenuOptionService.instance.sendMenuHaoDuyen(player);
+            case NpcConst.LE_QUAN ->
+                MenuOptionService.instance.sendMenuLeQuan(player);
+            case NpcConst.TIEN_NU ->
+                MenuOptionService.instance.sendMenuTienNu(player);
+            case NpcConst.THO_SAN ->
+                MenuOptionService.instance.sendMenuThoSan(player);
+            case NpcConst.ONG_NOI ->
+                MenuOptionService.instance.sendMenuOngNoi(player);
+            case NpcConst.LINH_GAC ->
+                MenuOptionService.instance.sendMenuLinhGac(player);
+            case NpcConst.DI_UT_HP -> {
+                List<String> menu = new ArrayList<>();
+                services.QuestService.instance.insertQuestMenu(player, type, menu);
+                if (!menu.isEmpty()) {
+                    menu.add("Mua dược phẩm");
+                    MenuOptionService.instance.sendOptionMenu(player, (byte) 100, menu.toArray(new String[0]));
+                } else {
+                    ShopService.instance.openNpcShop(player, "POTION", ItemEquipConst.DAMAGE_NONE);
+                }
+            }
             case NpcConst.GIAP_SU ->
                 MenuOptionService.instance.sendOptionBuyItem(player);
             case NpcConst.KIEM_SU ->

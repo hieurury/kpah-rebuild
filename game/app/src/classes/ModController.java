@@ -69,6 +69,20 @@ public class ModController {
 		class_abj gameScreen = class_acv.s;
 		long now = System.currentTimeMillis();
 
+		// 0. Tự động hồi sinh khi hy sinh (hoạt động liên tục cả khi bật hay tắt auto)
+		if (gameScreen != null && gameScreen.q != null) {
+			class_hw player = gameScreen.q;
+			if (player.cV == 3) {
+				handleAutoRevive(gameScreen, player);
+				return;
+			} else {
+				resetAutoRevive();
+			}
+		}
+
+		// Tự động bán trang bị cấp thấp hơn bản thân
+		handleAutoSellLowEquip();
+
 		// 1. Kiểm tra nếu người chơi chủ động tắt Auto trong cài đặt hoặc chết:
 		// Khi cả 2 cờ au (auto đánh) và av (cờ cấu hình auto) đều tắt,
 		// nghĩa là người chơi đã chủ động TẮT AUTO!
@@ -221,12 +235,21 @@ public class ModController {
 	 * @param orig     khoảng cách gốc do class_yg.d() tính ra
 	 */
 	public static int priorityDistance(Object context, int orig) {
-		if (!globalConfig.isAutoPickup) return orig;
 		if (context instanceof class_ba) {
-			return orig / 4;   // đồ rơi: rút ngắn khoảng cách => ưu tiên tối cao
+			return globalConfig.isAutoPickup ? orig / 4 : orig;
 		}
-		if (context instanceof class_vh && ((class_vh) context).cF == 1) {
-			return orig * 4;   // quái vật: tăng khoảng cách => giảm ưu tiên
+		if (context instanceof class_bb) {
+			class_bb mob = (class_bb) context;
+			if (globalConfig.isPrioritizeElite && mob.isElite) {
+				return orig / 10;   // quái Tinh Anh: giảm khoảng cách 10 lần => ưu tiên tối cao
+			}
+			if (globalConfig.isAutoPickup) {
+				return orig * 4;   // quái vật: tăng khoảng cách => giảm ưu tiên so với nhặt đồ
+			}
+		} else if (context instanceof class_vh && ((class_vh) context).cF == 1) {
+			if (globalConfig.isAutoPickup) {
+				return orig * 4;
+			}
 		}
 		return orig;
 	}
@@ -370,6 +393,7 @@ public class ModController {
 	// Trạng thái điều tiết về trung tâm bãi
 	public static boolean isRegulating = false;
 	private static long lastRegulateMoveTime = 0;
+	private static long lastBrokenWeaponTryTime = 0;
 
 	/**
 	 * Kiểm tra xem tọa độ (x, y) có nằm trọn vẹn trong vùng 4 góc của bãi treo máy hay không.
@@ -408,6 +432,17 @@ public class ModController {
 	public static void triggerAutoAttack(class_abj gameScreen) {
 		if (gameScreen == null || gameScreen.q == null) {
 			class_acv.c[1] = true;
+			return;
+		}
+		// Nếu vũ khí đã hỏng hoàn toàn (độ bền = 0):
+		// Thử gõ 1 hit mỗi 2.5s để Server có cơ hội tự sửa bằng Thẻ Mua Bán (nếu có trong túi).
+		// Tránh spam phím 30 FPS gây flood packet và spam chat khi hết xu/không có thẻ.
+		if (MainCharInfo.getDoBen() <= 0) {
+			long now = System.currentTimeMillis();
+			if (now - lastBrokenWeaponTryTime >= 2500L) {
+				lastBrokenWeaponTryTime = now;
+				class_acv.c[1] = true;
+			}
 			return;
 		}
 		class_hw player = gameScreen.q;
@@ -529,6 +564,197 @@ public class ModController {
 			}
 		}
 		return nearest;
+	}
+
+	// =========================================================================
+	// CÁC HÀM HỖ TRỢ: QUÁI TINH ANH, TỰ ĐỘNG HỒI SINH, TỰ ĐỘNG BÁN ĐỒ CẤP THẤP
+	// =========================================================================
+	public static class_bb findNearestEliteMob(class_abj gameScreen, int originX, int originY, class_hw player) {
+		Vector entityList = gameScreen.l;
+		if (entityList == null) return null;
+		class_bb nearest = null;
+		int minDistance = Integer.MAX_VALUE;
+		long now = System.currentTimeMillis();
+		int size = entityList.size();
+		for (int i = 0; i < size; i++) {
+			Object obj = entityList.elementAt(i);
+			if (obj instanceof class_bb) {
+				class_bb mob = (class_bb) obj;
+				if (!mob.isElite || mob.cV == 5 || mob.v <= 0) {
+					continue;
+				}
+				Long expire = (Long) ignoredMobs.get(new Short(mob.cG));
+				if (expire != null) {
+					if (now < expire.longValue()) continue;
+					ignoredMobs.remove(new Short(mob.cG));
+				}
+				if (!isInsideZone((int) mob.cK, (int) mob.cL)) {
+					continue;
+				}
+				int distToPlayer = class_yg.a((int) mob.cK, (int) mob.cL, (int) player.cK, (int) player.cL);
+				if (distToPlayer <= MAX_TARGET_DISTANCE && distToPlayer < minDistance) {
+					minDistance = distToPlayer;
+					nearest = mob;
+				}
+			}
+		}
+		return nearest;
+	}
+
+	private static long playerDeadStartTime = 0;
+	private static boolean spotReviveRequested = false;
+	private static boolean homeReviveRequested = false;
+
+	public static void resetAutoRevive() {
+		playerDeadStartTime = 0;
+		spotReviveRequested = false;
+		homeReviveRequested = false;
+	}
+
+	public static void handleAutoRevive(class_abj gameScreen, class_hw player) {
+		if (!globalConfig.isAutoRevive) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		if (playerDeadStartTime == 0) {
+			playerDeadStartTime = now;
+			spotReviveRequested = false;
+			homeReviveRequested = false;
+		}
+
+		long deadDuration = now - playerDeadStartTime;
+		// 1. Sau 1.5 giây kể từ lúc chết: thử hồi sinh tại chỗ bằng xu
+		if (deadDuration >= 1500L && !spotReviveRequested) {
+			spotReviveRequested = true;
+			class_go.a().a((int) player.cG, (byte) 0, "", 1);
+			class_acv.w = null; // Đóng bảng popup chết
+		}
+
+		// 2. Nếu sau 4.5 giây vẫn chưa sống lại (hết xu hoặc lỗi popup): tự động về làng hồi phục
+		if (deadDuration >= 4500L && !homeReviveRequested) {
+			homeReviveRequested = true;
+			class_go.a().j(); // Về làng
+			class_acv.w = null;
+		}
+	}
+
+	private static long lastAutoSellTime = 0;
+
+	public static boolean hasTheMuaBan() {
+		try {
+			class_gz card = class_gz.a((short) 33);
+			return card != null && card.c > 0;
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	public static boolean isShopOrBlacksmithNpcId(int npcId) {
+		switch (npcId) {
+			case 0:  // Dì út HP
+			case 1:  // Bà tám tạp hóa
+			case 2:  // Hắc ngưu (Thợ rèn)
+			case 3:  // Thiết bì (Thợ rèn)
+			case -8: // Thợ rèn thần bí
+			case 11: // Nhất giáp
+			case 12: // Nhị giáp
+			case 13: // Tam giáp
+			case 14: // Tứ giáp
+			case 15: // Ngũ giáp
+			case 16: // Nhất ngưu
+			case 17: // Nhị ngưu
+			case 18: // Tam ngưu
+			case 19: // Tứ ngưu
+			case 20: // Ngũ ngưu
+			case 24: // Bảo ngọc
+			case 27: // Giáp Sư
+			case 28: // Kiếm Sư
+			case 29: // Bội Châu
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	public static boolean isNearShopOrBlacksmith(class_abj gameScreen, class_hw player) {
+		if (gameScreen == null || gameScreen.l == null || player == null) {
+			return false;
+		}
+		for (int i = 0; i < gameScreen.l.size(); i++) {
+			Object obj = gameScreen.l.elementAt(i);
+			if (obj instanceof class_gn) {
+				class_gn npc = (class_gn) obj;
+				if (isShopOrBlacksmithNpcId(npc.a)) {
+					int dist = class_yg.a((int) player.cK, (int) player.cL, (int) npc.cK, (int) npc.cL);
+					if (dist <= 100) {
+						return true;
+					}
+				}
+			} else if (obj instanceof class_vh) {
+				class_vh vh = (class_vh) obj;
+				if (isShopOrBlacksmithNpcId(vh.cG)) {
+					int dist = class_yg.a((int) player.cK, (int) player.cL, (int) vh.cK, (int) vh.cL);
+					if (dist <= 100) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	public static void handleAutoSellLowEquip() {
+		if (!globalConfig.isAutoSellLowEquip) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		if (now - lastAutoSellTime < 1500L) {
+			return;
+		}
+		class_abj gameScreen = class_acv.s;
+		if (gameScreen == null || gameScreen.q == null) return;
+		class_hw player = gameScreen.q;
+		int playerLv = player.N; // Level nhân vật
+		if (playerLv <= 1) return;
+
+		// 2 ĐIỀU KIỆN TIÊN QUYẾT:
+		// 1. Phải đang đứng gần quầy Thợ Rèn hoặc nơi bán đồ (<= 100px)
+		// 2. HOẶC trong túi đồ phải có "Thẻ Mua Bán" (item id 33)
+		boolean hasCard = hasTheMuaBan();
+		boolean nearShop = isNearShopOrBlacksmith(gameScreen, player);
+		if (!hasCard && !nearShop) {
+			return;
+		}
+
+		Vector bag = class_hw.bu; // Danh sách trang bị trong hành trang
+		if (bag == null || bag.size() == 0) return;
+
+		for (int i = 0; i < bag.size(); i++) {
+			Object obj = bag.elementAt(i);
+			if (obj instanceof class_ql) {
+				class_ql ql = (class_ql) obj;
+				class_yc tmpl = class_yi.b((int) ql.r);
+				int equipLv = (ql.y != -1) ? ql.y : (tmpl != null ? tmpl.f : 0);
+
+				// BỘ LỌC AN TOÀN BẢO VỆ TÀI SẢN:
+				// 1. Chỉ bán trang bị có cấp độ thấp hơn nhân vật
+				if (equipLv >= playerLv) continue;
+				// 2. Tuyệt đối không bán đồ đã cường hóa (+1, +2, ...)
+				if (ql.s > 0) continue;
+				// 3. Tuyệt đối không bán đồ đã khảm hoặc có lỗ khảm ngọc
+				if (ql.k > 0 || (ql.H != null && ql.H.size() > 0)) continue;
+				// 4. Tuyệt đối không bán đồ thuê / đồ có hạn ngày
+				if (ql.x > 0 || (tmpl != null && tmpl.h > 0)) continue;
+
+				// Hợp lệ: Thực hiện bán trang bị này
+				lastAutoSellTime = now;
+				class_go.a().f(ql.i);
+				String itemName = (tmpl != null && tmpl.a != null) ? tmpl.a : "Trang bị";
+				String methodStr = hasCard ? "Thẻ Mua Bán" : "Thợ Rèn";
+				class_acv.a("Tự bán đồ (" + methodStr + "): " + itemName + " (Lv " + equipLv + ")", false);
+				return; // Bán 1 món mỗi 1.5s để server xử lý tuần tự an toàn
+			}
+		}
 	}
 
 	/**
@@ -684,6 +910,19 @@ public class ModController {
 					class_bb mob = (class_bb) currentTarget;
 					int distToMob = class_yg.a((int) player.cK, (int) player.cL, (int) mob.cK, (int) mob.cL);
 
+					// ƯU TIÊN QUÁI TINH ANH: Nếu đang đánh quái thường mà có quái Tinh Anh trong bãi, chuyển target ngay!
+					if (globalConfig.isPrioritizeElite && !mob.isElite) {
+						class_bb eliteMob = findNearestEliteMob(gameScreen, originX, originY, player);
+						if (eliteMob != null && eliteMob.cG != mob.cG) {
+							gameScreen.r = eliteMob;
+							currentTarget = eliteMob;
+							mob = eliteMob;
+							distToMob = class_yg.a((int) player.cK, (int) player.cL, (int) mob.cK, (int) mob.cL);
+							lastAttackMobId = -1;
+							((class_sc) player).s = null;
+						}
+					}
+
 					// NẾU QUÁI ĐÃ RA NGOÀI 4 GÓC HOẶC ĐÃ CHẾT HOẶC QUÁ XA:
 					// Hủy target ngay lập tức để không bao giờ đuổi theo quái ra khỏi bãi!
 					if (!isInsideZone((int) mob.cK, (int) mob.cL) || mob.cV == 5 || mob.v <= 0 || distToMob > MAX_TARGET_DISTANCE) {
@@ -753,34 +992,41 @@ public class ModController {
 			Vector entityList = gameScreen.l;
 			if (entityList != null) {
 				class_bb nearestMob = null;
-				int minDistance = Integer.MAX_VALUE;
+				// ƯU TIÊN SỐ 1: Quét tìm quái Tinh Anh trong bãi trước!
+				if (globalConfig.isPrioritizeElite) {
+					nearestMob = findNearestEliteMob(gameScreen, originX, originY, player);
+				}
 
-				int size = entityList.size();
-				for (int i = 0; i < size; i++) {
-					Object obj = entityList.elementAt(i);
-					if (obj instanceof class_bb) {
-						class_bb mob = (class_bb) obj;
-						if (mob.cV == 5 || mob.v <= 0) {
-							continue;
-						}
-						Long expire = (Long) ignoredMobs.get(new Short(mob.cG));
-						if (expire != null) {
-							if (now < expire.longValue()) {
+				if (nearestMob == null) {
+					int minDistance = Integer.MAX_VALUE;
+
+					int size = entityList.size();
+					for (int i = 0; i < size; i++) {
+						Object obj = entityList.elementAt(i);
+						if (obj instanceof class_bb) {
+							class_bb mob = (class_bb) obj;
+							if (mob.cV == 5 || mob.v <= 0) {
 								continue;
-							} else {
-								ignoredMobs.remove(new Short(mob.cG));
 							}
-						}
+							Long expire = (Long) ignoredMobs.get(new Short(mob.cG));
+							if (expire != null) {
+								if (now < expire.longValue()) {
+									continue;
+								} else {
+									ignoredMobs.remove(new Short(mob.cG));
+								}
+							}
 
-						// BẮT BUỘC QUÁI PHẢI NẰM TRONG VÙNG 4 GÓC CỦA BÃI TRAIN
-						if (!isInsideZone((int) mob.cK, (int) mob.cL)) {
-							continue;
-						}
+							// BẮT BUỘC QUÁI PHẢI NẰM TRONG VÙNG 4 GÓC CỦA BÃI TRAIN
+							if (!isInsideZone((int) mob.cK, (int) mob.cL)) {
+								continue;
+							}
 
-						int distToPlayer = class_yg.a((int) mob.cK, (int) mob.cL, (int) player.cK, (int) player.cL);
-						if (distToPlayer <= MAX_TARGET_DISTANCE && distToPlayer < minDistance) {
-							minDistance = distToPlayer;
-							nearestMob = mob;
+							int distToPlayer = class_yg.a((int) mob.cK, (int) mob.cL, (int) player.cK, (int) player.cL);
+							if (distToPlayer <= MAX_TARGET_DISTANCE && distToPlayer < minDistance) {
+								minDistance = distToPlayer;
+								nearestMob = mob;
+							}
 						}
 					}
 				}

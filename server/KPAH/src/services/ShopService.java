@@ -23,6 +23,7 @@ import template.ItemEquipTemplate;
 import template.PotionTemplate;
 import utils.Printer;
 import utils.Util;
+import map.Zone;
 
 /**
  *
@@ -40,7 +41,9 @@ public class ShopService {
         if (shopTemplate == null || !shopTemplate.isSell()) {
             return;
         }
-        if (player.getInventory().isFullInventory()) {
+        boolean canStack = (shopTemplate.getIdItemPotion() != -1 && InventoryService.instance.findItemPotion(player, shopTemplate.getIdItemPotion()) != null);
+        if (!canStack && player.getInventory().isFullInventory()) {
+            Service.instance.sendLogOut(player.getSession(), "Hành trang đã đầy");
             return;
         }
         int price = shopTemplate.getPrice();
@@ -120,7 +123,8 @@ public class ShopService {
             for (int i = 0; i < player.getSundry().getItemNpcShop().size(); i++) {
                 ItemBuyNpc item = player.getSundry().getItemNpcShop().get(i);
                 if (item != null) {
-                    if (player.getInventory().isFullInventory()) {
+                    boolean canStack = (item.getCategory() == Const.CATEGORY_POTION && InventoryService.instance.findItemPotion(player, item.getIdItem()) != null);
+                    if (!canStack && player.getInventory().isFullInventory()) {
                         Service.instance.sendLogOut(player.getSession(), "Hành trang đã đầy");
                         return;
                     }
@@ -320,7 +324,28 @@ public class ShopService {
         if (player.getSundry().getTrader() != null) {
             return;
         }
+
+        // KIỂM TRA 2 ĐIỀU KIỆN TIÊN QUYẾT:
+        // 1. Có "Thẻ Mua Bán" trong hành trang?
+        ItemPotion theMuaBan = InventoryService.instance.findItemPotion(player, (short) 33);
+        boolean hasTheMuaBan = (theMuaBan != null && theMuaBan.getQuantity() > 0);
+
+        // 2. Hoặc đang đứng gần quầy Thợ Rèn / NPC bán đồ?
+        boolean isNearShop = isNearShopNpc(player);
+
+        if (!hasTheMuaBan && !isNearShop) {
+            long now = System.currentTimeMillis();
+            if (now - player.getSundry().getLastTimeWarnBrokenWeapon() > 5000L) {
+                player.getSundry().setLastTimeWarnBrokenWeapon(now);
+                ChatService.instance.sendChatOnlyMe(player, "Cần đứng gần Thợ Rèn hoặc sở hữu Thẻ Mua Bán để bán trang bị!");
+            }
+            return;
+        }
+
         ItemEquip item = InventoryService.instance.findItemBag(player, indexItem);
+        if (item == null || item.getTemplate() == null) {
+            return;
+        }
         if (item.getTemplate().getNdayLoan() != 0 || item.getTemplate().getAttribute()[Const.ATTRIBUTE_CLOTH] == 1) {
             InventoryService.instance.sendItemBag(player);
             return;
@@ -331,6 +356,54 @@ public class ShopService {
         int price = item.getTemplate().getPrice() / 5;
         player.getInventory().plusXu(price);
         sendSuccessSellItem(player, indexItem);
+    }
+
+    public boolean isNearShopNpc(@NonNull Player player) {
+        if (player.getLocation() == null || player.getLocation().getZone() == null) {
+            return false;
+        }
+        Zone zone = player.getLocation().getZone();
+        if (zone.getPlayers() == null) {
+            return false;
+        }
+        for (Player p : zone.getPlayers()) {
+            if (p != null && !p.isPlayer()) {
+                short npcId = (short) p.getIdDatabase();
+                if (isShopOrBlacksmithNpc(npcId)) {
+                    if (Util.getDistance(player, p) <= 120) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    public boolean isShopOrBlacksmithNpc(short npcId) {
+        switch (npcId) {
+            case NpcConst.THIET_BI:
+            case NpcConst.HAC_NGUU:
+            case NpcConst.THO_REN_THAN_BI:
+            case NpcConst.KIEM_SU:
+            case NpcConst.GIAP_SU:
+            case NpcConst.BOI_CHAU:
+            case NpcConst.BAO_NGOC:
+            case NpcConst.BA_TAM_TAP_HOA:
+            case NpcConst.DI_UT_HP:
+            case NpcConst.NHAT_GIAP:
+            case NpcConst.NHI_GIAP:
+            case NpcConst.TAM_GIAP:
+            case NpcConst.TU_GIAP:
+            case NpcConst.NGU_GIAP:
+            case NpcConst.NHAT_NGUU:
+            case NpcConst.NHI_NGUU:
+            case NpcConst.TAM_NGUU:
+            case NpcConst.TU_NGUU:
+            case NpcConst.NGU_NGUU:
+                return true;
+            default:
+                return false;
+        }
     }
 
     private void sendSuccessBuyItemShop(@NonNull Player player) throws IOException {

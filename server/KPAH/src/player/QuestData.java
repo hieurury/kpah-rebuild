@@ -28,6 +28,7 @@ public class QuestData {
     public int totalMonstersKilled = 0;
     public long totalPixelsTraveled = 0;
     public int totalItemsSold = 0;
+    public String claimedDailyLogin = "";
 
     public static QuestData parse(String jsonString) {
         QuestData data = new QuestData();
@@ -40,6 +41,7 @@ public class QuestData {
             if (obj.has("beginnerProgress")) data.beginnerProgress = obj.getInt("beginnerProgress");
             if (obj.has("dailyQuestsGiven")) data.dailyQuestsGiven = obj.getInt("dailyQuestsGiven");
             if (obj.has("lastDailyReset")) data.lastDailyReset = obj.getString("lastDailyReset");
+            if (obj.has("claimedDailyLogin")) data.claimedDailyLogin = obj.getString("claimedDailyLogin");
             if (obj.has("totalMonstersKilled")) data.totalMonstersKilled = obj.getInt("totalMonstersKilled");
             if (obj.has("totalPixelsTraveled")) data.totalPixelsTraveled = obj.getLong("totalPixelsTraveled");
             if (obj.has("totalItemsSold")) data.totalItemsSold = obj.getInt("totalItemsSold");
@@ -81,6 +83,7 @@ public class QuestData {
             obj.put("beginnerProgress", beginnerProgress);
             obj.put("dailyQuestsGiven", dailyQuestsGiven);
             obj.put("lastDailyReset", lastDailyReset != null ? lastDailyReset : "");
+            obj.put("claimedDailyLogin", claimedDailyLogin != null ? claimedDailyLogin : "");
             obj.put("totalMonstersKilled", totalMonstersKilled);
             obj.put("totalPixelsTraveled", totalPixelsTraveled);
             obj.put("totalItemsSold", totalItemsSold);

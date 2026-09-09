@@ -153,6 +153,9 @@ public class TradeService {
         }
         disposeTrade(player);
         disposeTrade(trader);
+        InventoryService.instance.sendItemPotion(player);
+        InventoryService.instance.sendItemPotion(trader);
+        sendCancelTrade(player);
         sendCancelTrade(trader);
     }
 

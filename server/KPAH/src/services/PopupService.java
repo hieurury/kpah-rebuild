@@ -41,7 +41,8 @@ public class PopupService {
                         MapService.instance.revivePlayer(player, (byte) 100);
                         InventoryService.instance.sendItemPotion(player);
                     } else {
-                        Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(player.getPoint().getXuRevive())));
+                        ChatService.instance.sendChatOnlyMe(player, String.format("Không đủ %s xu để hồi sinh tại chỗ, chuyển về làng an toàn.", Util.formatNumber(player.getPoint().getXuRevive())));
+                        MapService.instance.comeHome(player);
                     }
                 }
             }

@@ -131,26 +131,39 @@ public class SkillService {
 
     private boolean checkWeaponUsable(@NonNull Player pl, ItemEquip weapon) throws IOException {
         if (weapon == null) {
+            long now = System.currentTimeMillis();
+            if (now - pl.getSundry().getLastTimeWarnNoWeapon() > 3000L) {
+                pl.getSundry().setLastTimeWarnNoWeapon(now);
+                ChatService.instance.sendChatOnlyMe(pl, "Bạn chưa trang bị vũ khí!");
+            }
             return false;
         }
         if (weapon.getDurable() <= 0) {
             ItemPotion theMuaBan = InventoryService.instance.findItemPotion(pl, (short) 33);
             if (theMuaBan != null && theMuaBan.getQuantity() > 0) {
                 int price = weapon.getTemplate().getPrice() / 10;
-                if (pl.getInventory().minusXu(price)) {
+                if (price <= 0 || pl.getInventory().minusXu(price)) {
                     short mDurable = weapon.getTemplate().getDurable();
                     weapon.setDurable(mDurable);
                     weapon.setMDurable(mDurable);
                     InventoryService.instance.sendItemBody(pl);
                     InventoryService.instance.sendItemPotion(pl);
-                    ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã được tự động sửa chữa bằng Thẻ mua bán (Trừ " + Util.formatNumber(price) + " xu).");
+                    ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã được tự động sửa chữa bằng Thẻ mua bán" + (price > 0 ? " (Trừ " + Util.formatNumber(price) + " xu)." : "."));
                     return true;
                 } else {
-                    ChatService.instance.sendChatOnlyMe(pl, "Không đủ " + Util.formatNumber(price) + " xu để tự động sửa chữa vũ khí!");
+                    long now = System.currentTimeMillis();
+                    if (now - pl.getSundry().getLastTimeWarnBrokenWeapon() > 3000L) {
+                        pl.getSundry().setLastTimeWarnBrokenWeapon(now);
+                        ChatService.instance.sendChatOnlyMe(pl, "Không đủ " + Util.formatNumber(price) + " xu để tự động sửa chữa vũ khí!");
+                    }
                     return false;
                 }
             }
-            ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã hỏng! Hãy mang vũ khí đến thợ rèn để sửa chữa.");
+            long now = System.currentTimeMillis();
+            if (now - pl.getSundry().getLastTimeWarnBrokenWeapon() > 3000L) {
+                pl.getSundry().setLastTimeWarnBrokenWeapon(now);
+                ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã hỏng! Hãy mang vũ khí đến thợ rèn để sửa chữa.");
+            }
             return false;
         }
         return true;
@@ -164,20 +177,28 @@ public class SkillService {
             ItemPotion theMuaBan = InventoryService.instance.findItemPotion(pl, (short) 33);
             if (theMuaBan != null && theMuaBan.getQuantity() > 0) {
                 int price = cuoc.getTemplate().getPrice() / 10;
-                if (pl.getInventory().minusXu(price)) {
+                if (price <= 0 || pl.getInventory().minusXu(price)) {
                     short mDurable = cuoc.getTemplate().getDurable();
                     cuoc.setDurable(mDurable);
                     cuoc.setMDurable(mDurable);
                     InventoryService.instance.sendItemBody(pl);
                     InventoryService.instance.sendItemPotion(pl);
-                    ChatService.instance.sendChatOnlyMe(pl, "Cuốc đã được tự động sửa chữa bằng Thẻ mua bán (Trừ " + Util.formatNumber(price) + " xu).");
+                    ChatService.instance.sendChatOnlyMe(pl, "Cuốc đã được tự động sửa chữa bằng Thẻ mua bán" + (price > 0 ? " (Trừ " + Util.formatNumber(price) + " xu)." : "."));
                     return true;
                 } else {
-                    ChatService.instance.sendChatOnlyMe(pl, "Không đủ " + Util.formatNumber(price) + " xu để tự động sửa chữa cuốc!");
+                    long now = System.currentTimeMillis();
+                    if (now - pl.getSundry().getLastTimeWarnBrokenWeapon() > 3000L) {
+                        pl.getSundry().setLastTimeWarnBrokenWeapon(now);
+                        ChatService.instance.sendChatOnlyMe(pl, "Không đủ " + Util.formatNumber(price) + " xu để tự động sửa chữa cuốc!");
+                    }
                     return false;
                 }
             }
-            ChatService.instance.sendChatOnlyMe(pl, "Cuốc mỏ đã hỏng! Hãy mang cuốc đến thợ rèn để sửa chữa.");
+            long now = System.currentTimeMillis();
+            if (now - pl.getSundry().getLastTimeWarnBrokenWeapon() > 3000L) {
+                pl.getSundry().setLastTimeWarnBrokenWeapon(now);
+                ChatService.instance.sendChatOnlyMe(pl, "Cuốc mỏ đã hỏng! Hãy mang cuốc đến thợ rèn để sửa chữa.");
+            }
             return false;
         }
         return true;

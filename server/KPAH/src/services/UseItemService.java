@@ -141,6 +141,9 @@ public class UseItemService {
                     }
                     for (int i = 0; i < player.getInventory().getItemBody().size(); i++) {
                         ItemEquip item = player.getInventory().getItemBody().get(i);
+                        if (item == null || item.getTemplate() == null) {
+                            continue;
+                        }
                         short mDurable = item.getTemplate().getDurable();
                         item.setDurable(mDurable);
                         item.setMDurable(mDurable);
@@ -254,24 +257,7 @@ public class UseItemService {
         player.getPoint().plusExp(expAdd);
         
         // Kiểm tra thăng cấp nếu đủ kinh nghiệm
-        boolean isLevelUp = false;
-        while (player.getPoint().getExp() >= Util.getExp(player.getInfo().getLevel())) {
-            player.getPoint().setExp(player.getPoint().getExp() - Util.getExp(player.getInfo().getLevel()));
-            player.getInfo().plusLevel((byte) 1);
-            player.getPoint().plusStrength(1);
-            player.getPoint().plusHealth(1);
-            player.getPoint().plusAgility(1);
-            player.getPoint().plusLuck(1);
-            player.getPoint().plusSpirit(1);
-            player.getPoint().plusSkillPoint(1);
-            player.getPoint().plusBasePoint(5);
-            isLevelUp = true;
-        }
-        if (isLevelUp) {
-            player.getPoint().initPoint();
-            MapService.instance.onLevelUp(player);
-        }
-        Service.instance.sendMainCharInfo(player);
+        MapService.instance.checkLevelUp(player);
         MapService.instance.onSetXP(player, expAdd);
         ChatService.instance.sendChatOnlyMe(player, "Bạn nhận được " + Util.formatNumber(expAdd) + " điểm kinh nghiệm!");
     }

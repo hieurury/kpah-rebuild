@@ -103,7 +103,7 @@ public class PartyService {
             return;
         }
         sendPlayerKicked(leader, idPlayerKick);
-        leader.getParty().removeMember(leader);
+        leader.getParty().removeMember(playerKicked);
         playerKicked.setParty(new Party(playerKicked));
     }
 

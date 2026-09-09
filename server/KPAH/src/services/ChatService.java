@@ -41,8 +41,10 @@ public class ChatService {
         if (chat.startsWith("autoloot")) {
             if (chat.equals("autoloot on")) {
                 pl.getSundry().isAutoLoot = true;
+                sendChatOnlyMe(pl, "Tự động nhặt đồ: BẬT");
             } else if (chat.equals("autoloot off")) {
                 pl.getSundry().isAutoLoot = false;
+                sendChatOnlyMe(pl, "Tự động nhặt đồ: TẮT");
             }
             return;
         }

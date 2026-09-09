@@ -63,6 +63,10 @@ public class InventoryService {
 
     public void repairItem(@NonNull Player player, byte type) throws IOException {
         int price = player.getInventory().getPriceRepair(type);
+        if (price <= 0) {
+            ChatService.instance.sendChatOnlyMe(player, "Trang bị đang còn nguyên độ bền, không cần sửa chữa.");
+            return;
+        }
         if (!player.getInventory().minusXu(price)) {
             Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(price)));
             return;
@@ -71,7 +75,7 @@ public class InventoryService {
             case ItemEquipConst.REPAIR_EQUIP -> {
                 for (int i = 0; i < player.getInventory().getItemBody().size(); i++) {
                     ItemEquip item = player.getInventory().getItemBody().get(i);
-                    if (item.getTemplate().getType() == 3 || item.getTemplate().getType() == 4 || item.getTemplate().getType() == 5 || item.getTemplate().getType() == 6 || item.getTemplate().getType() == 7) {
+                    if (item == null || item.getTemplate() == null || (item.getTemplate().getType() >= 3 && item.getTemplate().getType() <= 7)) {
                         continue;
                     }
                     short mDurable = item.getTemplate().getDurable();
@@ -81,6 +85,11 @@ public class InventoryService {
             }
             case ItemEquipConst.REPAIR_WEAPON -> {
                 ItemEquip weapon = findItemBodyByType(player, (byte) (3 + player.getInfo().getClassPlayer()));
+                if (weapon == null || weapon.getTemplate() == null) {
+                    player.getInventory().plusXu(price);
+                    ChatService.instance.sendChatOnlyMe(player, "Bạn chưa trang bị vũ khí!");
+                    return;
+                }
                 short mDurable = weapon.getTemplate().getDurable();
                 weapon.setDurable(mDurable);
                 weapon.setMDurable(mDurable);
@@ -88,6 +97,9 @@ public class InventoryService {
             case ItemEquipConst.REPAIR_ALL -> {
                 for (int i = 0; i < player.getInventory().getItemBody().size(); i++) {
                     ItemEquip item = player.getInventory().getItemBody().get(i);
+                    if (item == null || item.getTemplate() == null) {
+                        continue;
+                    }
                     short mDurable = item.getTemplate().getDurable();
                     item.setDurable(mDurable);
                     item.setMDurable(mDurable);

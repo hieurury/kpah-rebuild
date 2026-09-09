@@ -394,6 +394,27 @@ public class MapService {
         sendAllPlayerInMap(player, msg);
     }
 
+    public void checkLevelUp(@NonNull Player pl) throws IOException {
+        boolean isLevelUp = false;
+        while (pl.getInfo().getLevel() < Manager.exps.length && pl.getPoint().getExp() >= Util.getExp(pl.getInfo().getLevel())) {
+            pl.getPoint().setExp(pl.getPoint().getExp() - Util.getExp(pl.getInfo().getLevel()));
+            pl.getInfo().plusLevel((byte) 1);
+            pl.getPoint().plusStrength(1);
+            pl.getPoint().plusHealth(1);
+            pl.getPoint().plusAgility(1);
+            pl.getPoint().plusLuck(1);
+            pl.getPoint().plusSpirit(1);
+            pl.getPoint().plusSkillPoint(1);
+            pl.getPoint().plusBasePoint(5);
+            isLevelUp = true;
+        }
+        if (isLevelUp) {
+            pl.getPoint().initPoint();
+            MapService.instance.onLevelUp(pl);
+            Service.instance.sendMainCharInfo(pl);
+        }
+    }
+
     public void sendViewInfo(@NonNull Player player, byte type, short idView) throws IOException {
         Player playerView = player.getLocation().getZone().findPlayer(idView);
         if (playerView == null) {

@@ -29,9 +29,22 @@ public final class class_wc extends class_aae {
 
 	public static class_wc a() {
 		if (class_wc.a == null) {
-			return class_wc.a = new class_wc();
+			class_wc.a = new class_wc();
 		}
+		class_wc.a.updateMechanicsMenu();
 		return class_wc.a;
+	}
+
+	public final void updateMechanicsMenu() {
+		if (this.k != null && this.k.length > 10) {
+			this.k[10] = new String[] {
+					"Cơ chế",
+					"Nhặt đồ: " + (classes.ModController.globalConfig.isAutoPickup ? "ON" : "OFF"),
+					"Ưu tiên Tinh Anh: " + (classes.ModController.globalConfig.isPrioritizeElite ? "ON" : "OFF"),
+					"Tự hồi sinh: " + (classes.ModController.globalConfig.isAutoRevive ? "ON" : "OFF"),
+					"Tự bán đồ lv thấp: " + (classes.ModController.globalConfig.isAutoSellLowEquip ? "ON" : "OFF")
+			};
+		}
 	}
 
 	public final void f() {
@@ -81,7 +94,12 @@ public final class class_wc extends class_aae {
 				{ "" }, // 7 (Bang hoi)
 				{ "Cửa hàng" }, // 8
 				{ "Thoát" }, // 9
-				{ "Cơ chế", "Nhặt đồ: " + (classes.ModController.globalConfig.isAutoPickup ? "ON" : "OFF") } // 10
+				{ "Cơ chế",
+				  "Nhặt đồ: " + (classes.ModController.globalConfig.isAutoPickup ? "ON" : "OFF"),
+				  "Ưu tiên Tinh Anh: " + (classes.ModController.globalConfig.isPrioritizeElite ? "ON" : "OFF"),
+				  "Tự hồi sinh: " + (classes.ModController.globalConfig.isAutoRevive ? "ON" : "OFF"),
+				  "Tự bán đồ lv thấp: " + (classes.ModController.globalConfig.isAutoSellLowEquip ? "ON" : "OFF")
+				} // 10
         };
 		this.b = 0;
 		this.e = -1;
@@ -290,7 +308,7 @@ public final class class_wc extends class_aae {
 				classes.ModController.globalConfig.isAutoPickup = !classes.ModController.globalConfig.isAutoPickup;
 				classes.ModController.globalConfig.saveConfig();
 				class_acv.a("Tự động nhặt đồ: " + (classes.ModController.globalConfig.isAutoPickup ? "BẬT" : "TẮT"));
-				this.k[10][1] = "Nhặt đồ: " + (classes.ModController.globalConfig.isAutoPickup ? "ON" : "OFF");
+				updateMechanicsMenu();
 				class_go.a().a(classes.ModController.globalConfig.isAutoPickup ? "autoloot on" : "autoloot off");
 				class_acv.s.d();
 				return;
@@ -298,6 +316,14 @@ public final class class_wc extends class_aae {
 			break;
 		}
 		case 1: {
+			if (this.e == 10) {
+				classes.ModController.globalConfig.isPrioritizeElite = !classes.ModController.globalConfig.isPrioritizeElite;
+				classes.ModController.globalConfig.saveConfig();
+				class_acv.a("Ưu tiên quái Tinh Anh: " + (classes.ModController.globalConfig.isPrioritizeElite ? "BẬT" : "TẮT"));
+				updateMechanicsMenu();
+				class_acv.s.d();
+				return;
+			}
 			if (this.e == 0) {
 				Menu.showConfigMenu();
 				return;
@@ -348,6 +374,14 @@ public final class class_wc extends class_aae {
 			return;
 		}
 		case 2: {
+			if (this.e == 10) {
+				classes.ModController.globalConfig.isAutoRevive = !classes.ModController.globalConfig.isAutoRevive;
+				classes.ModController.globalConfig.saveConfig();
+				class_acv.a("Tự động hồi sinh: " + (classes.ModController.globalConfig.isAutoRevive ? "BẬT" : "TẮT"));
+				updateMechanicsMenu();
+				class_acv.s.d();
+				return;
+			}
 			if (this.e == 0) {
 //				Menu.gI().showPointerMenu();
 
@@ -393,6 +427,14 @@ public final class class_wc extends class_aae {
 
 		}
 		case 3: {
+			if (this.e == 10) {
+				classes.ModController.globalConfig.isAutoSellLowEquip = !classes.ModController.globalConfig.isAutoSellLowEquip;
+				classes.ModController.globalConfig.saveConfig();
+				class_acv.a("Tự bán trang bị cấp thấp: " + (classes.ModController.globalConfig.isAutoSellLowEquip ? "BẬT" : "TẮT"));
+				updateMechanicsMenu();
+				class_acv.s.d();
+				return;
+			}
 			if (this.e == 0) {
 				ModController.doDownHorse();
 				return;

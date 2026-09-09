@@ -59,6 +59,10 @@ cp <file_gốc> <thư_mục_chứa_file>/_backup/<tên_file>.bak.$(date +%Y%m%d_
 
 Sau **mỗi nhiệm vụ hoàn thành**, agent phải cập nhật `TASK.md` tại thư mục gốc dự án.
 
+**Quy định số lượng Task mỗi file:**
+- Mỗi file `TASK.md` chỉ ghi nhận tối đa **10 task**.
+- Khi đủ 10 task, lưu trữ file hiện tại thành `tasks/TASK_XX.md` và bắt đầu file `TASK.md` mới để tránh file quá lớn và không cộng dồn.
+
 **Cấu trúc entry tối thiểu:**
 ```markdown
 ## [YYYY-MM-DD HH:MM] — <Tên nhiệm vụ>

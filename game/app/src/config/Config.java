@@ -23,6 +23,9 @@ public class Config {
 	public boolean isAutoCayThan;
 	public boolean isLiaQuai; // Chức năng này là cái gì ?
 	public boolean isAutoPickup = false;
+	public boolean isPrioritizeElite = true;
+	public boolean isAutoRevive = true;
+	public boolean isAutoSellLowEquip = true;
 
 	public class AutoChatConfig {
 		public String content = "KPAH TEAMOBI";
@@ -109,8 +112,11 @@ public class Config {
 
                 try {
                     _config.isAutoPickup = dis.readBoolean();
+                    _config.isPrioritizeElite = dis.readBoolean();
+                    _config.isAutoRevive = dis.readBoolean();
+                    _config.isAutoSellLowEquip = dis.readBoolean();
                 } catch (Exception ex) {
-                    // Ignore if older config doesn't have this field
+                    // Ignore if older config doesn't have these fields
                 }
 
 				dis.close();
@@ -165,6 +171,9 @@ public class Config {
 //			dos.writeBoolean(isLiaQuai);
 
             dos.writeBoolean(isAutoPickup);
+            dos.writeBoolean(isPrioritizeElite);
+            dos.writeBoolean(isAutoRevive);
+            dos.writeBoolean(isAutoSellLowEquip);
 
 			ResUtils.saveRecordBytes(CONFIG_RECORD_NAME, baos.toByteArray());
 			dos.flush();
