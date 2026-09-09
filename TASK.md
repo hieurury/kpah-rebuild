@@ -183,3 +183,45 @@
 - Hiện tại Phần 07 có: 6/10 task.
 
 ---
+
+## [2026-09-09 21:46] — Task #67: Khắc phục lỗi độ bền vũ khí lệch trạng thái Client-Server, sửa bộ lọc Tự bán trang bị cấp thấp & thiết lập toàn bộ cơ chế mới mặc định OFF
+
+**Yêu cầu:**
+- Khắc phục lỗi "Vũ khí còn độ bền nhưng báo đã hỏng": Tìm ra nguyên nhân gốc rễ và xử lý triệt để sự sai lệch trạng thái độ bền giữa Client và Server.
+- Khắc phục lỗi "Chức năng tự động bán trang bị cấp thấp không hoạt động": Phân tích mã nguồn Client decompile để tìm ra điểm nghẽn của bộ lọc kiểm tra trang bị và sửa chữa để hoạt động trơn tru, bảo vệ tài sản an toàn.
+- Thiết lập mặc định OFF (`false`) cho toàn bộ 4 cơ chế mới (Tự nhặt đồ, Ưu tiên quái Tinh Anh, Tự động hồi sinh, Tự bán trang bị cấp thấp) để đảm bảo trải nghiệm nguyên bản ban đầu cho người chơi.
+
+**Nguyên nhân gốc rễ phát hiện:**
+1. *Lỗi độ bền vũ khí:* 
+   - Trong `server/KPAH/src/item/ItemEquip.java`: `mDurable` là Độ bền tối đa (Max Durable), nhưng code cũ lại trừ `mDurable--` theo từng hit đánh. Sau vài phút train quái, `mDurable` chạm 0 và bị âm. Một điều kiện cũ `if (durable <= 0 || mDurable <= 0)` lập tức ép `durable = 0` ngay khi `mDurable` âm, dù độ bền thực sự của vũ khí còn hàng trăm điểm.
+   - Khi `durable = 0`, Server chặn đánh quái và chat `"Vũ khí đã hỏng!..."`, nhưng Server không hề gửi packet `sendItemBody` cập nhật cho Client, dẫn đến HUD Client vẫn hiển thị con số độ bền cũ (732) gây lệch pha.
+2. *Lỗi Tự bán trang bị cấp thấp:*
+   - Trong `game/app/src/classes/ModController.java`: Điều kiện `if (ql.k > 0 || (ql.H != null && ql.H.size() > 0)) continue;` bị sai bản chất. Trong mã nguồn KPAH, `ql.H` chính là danh sách Option thuộc tính của trang bị (Công, Thủ, HP...). Vì 100% trang bị rơi ra hoặc mua đều có thuộc tính (`ql.H.size() > 0`), câu lệnh này đã vô tình chặn 100% tất cả trang bị trong túi, khiến hàm không bao giờ bán được món nào. Lỗ khảm ngọc thực tế là `ql.I` (số ngọc đã khảm) và `ql.J` (tổng số lỗ).
+   - Dòng lệnh `class_acv.a("Tự bán: ...", false)` mở ra popup dialog OK giữa màn hình gây gián đoạn trải nghiệm chơi game.
+
+**Files thay đổi:**
+- `server/KPAH/src/item/ItemEquip.java`:
+  - Viết lại hàm `minusDurable()`: Dùng biến đếm `hitCounter` (cứ 15 đòn đánh mới trừ 1 điểm độ bền), tuyệt đối không chạm vào `mDurable`. Trả về `boolean` (true nếu độ bền thực sự giảm 1 điểm).
+- `server/KPAH/src/services/SkillService.java`:
+  - Trong `useSkillToPlayer` và `useSkillToMob`: Khi `weapon.minusDurable()` trả về true, gọi `InventoryService.instance.sendItemBody(pl)` để đồng bộ ngay độ bền mới về Client (HUD nhảy số thời gian thực).
+  - Trong `checkWeaponUsable`: Khi vũ khí chạm mốc hỏng ($\le 0$), gửi `sendItemBody(pl)` đồng bộ ngay lập tức để HUD Client chuyển sang nhấp nháy đỏ `0 (HỎNG)` khớp hoàn hảo với bubble chat cảnh báo.
+- `server/KPAH/src/daos/PlayerDAO.java`:
+  - Thêm cơ chế tự động phục hồi thông minh khi đọc trang bị từ DB: Nếu `mDurable <= 0` do lỗi âm cũ, tự động gán lại bằng `template.getDurable()`; nếu `durable <= 0` do bug ép về 0 bởi `mDurable` âm, tự động khôi phục `durable = mDurable`.
+- `game/app/src/classes/ModController.java`:
+  - Sửa lại toàn bộ bộ lọc trong `handleAutoSellLowEquip()`: Loại bỏ kiểm tra sai `ql.H.size() > 0`, kiểm tra chuẩn xác cấp cường hóa (`ql.s > 0`), ngọc đã khảm (`ql.I > 0`), hạn dùng/thuê (`ql.w > 0 || ql.x > 0 || tmpl.h > 0`).
+  - Loại bỏ lời gọi `class_acv.a(...)`, để Server tự trừ trang bị, cộng xu và gửi chat thông báo `ChatOnlyMe` êm dịu, không gián đoạn thao tác người chơi.
+- `game/app/src/config/Config.java`:
+  - Đổi tên Record Store lên `global_config_v3` để toàn bộ thiết bị (kể cả MicroEmulator đã chạy trước đó) đều nhận cấu hình mới tinh.
+  - Đặt mặc định `false` (OFF) cho tất cả 4 tính năng: `isAutoPickup = false;`, `isPrioritizeElite = false;`, `isAutoRevive = false;`, `isAutoSellLowEquip = false;`.
+
+**Kết quả:** ✅ Thành công (Đã biên dịch cả Server `KPAH.jar` và Client `KPAH_PROD.jar` / `KPAH_MOD.jar`; Server daemon port 19129 đã khởi động lại và MicroEmulator Client đã mở sẵn sàng để trải nghiệm).
+**Ghi chú:**
+- Backup files:
+  - `server/KPAH/src/item/_backup/ItemEquip.java.bak.20260909_2145`
+  - `server/KPAH/src/services/_backup/SkillService.java.bak.20260909_2145`
+  - `server/KPAH/src/daos/_backup/PlayerDAO.java.bak.20260909_2145`
+  - `game/app/src/classes/_backup/ModController.java.bak.20260909_2145`
+  - `game/app/src/config/_backup/Config.java.bak.20260909_2145`
+- Hiện tại Phần 07 có: 7/10 task.
+
+---

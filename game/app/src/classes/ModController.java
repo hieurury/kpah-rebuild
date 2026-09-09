@@ -669,16 +669,14 @@ public class ModController {
 				if (equipLv >= playerLv) continue;
 				// 2. Tuyệt đối không bán đồ đã cường hóa (+1, +2, ...)
 				if (ql.s > 0) continue;
-				// 3. Tuyệt đối không bán đồ đã khảm hoặc có lỗ khảm ngọc
-				if (ql.k > 0 || (ql.H != null && ql.H.size() > 0)) continue;
+				// 3. Tuyệt đối không bán đồ đã khảm ngọc
+				if (ql.I > 0) continue;
 				// 4. Tuyệt đối không bán đồ thuê / đồ có hạn ngày
-				if (ql.x > 0 || (tmpl != null && tmpl.h > 0)) continue;
+				if (ql.w > 0 || ql.x > 0 || (tmpl != null && tmpl.h > 0)) continue;
 
-				// Hợp lệ: Thực hiện bán trang bị này
+				// Hợp lệ: Gửi yêu cầu bán trang bị lên server (Server tự cộng xu và trừ item)
 				lastAutoSellTime = now;
 				class_go.a().f(ql.i);
-				String itemName = (tmpl != null && tmpl.a != null) ? tmpl.a : "Trang bị";
-				class_acv.a("Tự bán: " + itemName + " (Lv " + equipLv + ")", false);
 				return; // Bán 1 món mỗi 1.5s để server xử lý tuần tự an toàn
 			}
 		}

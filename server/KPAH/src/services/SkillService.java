@@ -63,7 +63,9 @@ public class SkillService {
         if (Util.getDistance(pl, playerTarget) > range) {
             return;
         }
-        weapon.minusDurable();
+        if (weapon.minusDurable()) {
+            InventoryService.instance.sendItemBody(pl);
+        }
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);
@@ -108,7 +110,9 @@ public class SkillService {
         if (Util.getDistance(pl, mobTarget) > range + Settings.DISTANCE_MOB_CAN_ATTACK + 60) {
             return;
         }
-        weapon.minusDurable();
+        if (weapon.minusDurable()) {
+            InventoryService.instance.sendItemBody(pl);
+        }
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);
@@ -122,7 +126,9 @@ public class SkillService {
                 if (!checkCuocUsable(pl, cuoc)) {
                     return;
                 }
-                cuoc.minusDurable();
+                if (cuoc.minusDurable()) {
+                    InventoryService.instance.sendItemBody(pl);
+                }
             }
             onPlayerAttackMob(pl, mobTarget, cuoc);
         }
@@ -163,6 +169,7 @@ public class SkillService {
             if (now - pl.getSundry().getLastTimeWarnBrokenWeapon() > 3000L) {
                 pl.getSundry().setLastTimeWarnBrokenWeapon(now);
                 ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã hỏng! Hãy mang vũ khí đến thợ rèn để sửa chữa.");
+                InventoryService.instance.sendItemBody(pl);
             }
             return false;
         }
@@ -198,6 +205,7 @@ public class SkillService {
             if (now - pl.getSundry().getLastTimeWarnBrokenWeapon() > 3000L) {
                 pl.getSundry().setLastTimeWarnBrokenWeapon(now);
                 ChatService.instance.sendChatOnlyMe(pl, "Cuốc mỏ đã hỏng! Hãy mang cuốc đến thợ rèn để sửa chữa.");
+                InventoryService.instance.sendItemBody(pl);
             }
             return false;
         }

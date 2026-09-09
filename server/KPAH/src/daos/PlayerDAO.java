@@ -343,9 +343,19 @@ public class PlayerDAO {
             item.setLevel((byte) dataItem.getInt(3));
             item.setPlusTemplate((byte) dataItem.getInt(4));
             item.setColorName((byte) dataItem.getInt(5));
-            item.setLock(dataItem.getBoolean(6));
-            item.setMDurable((short) dataItem.getInt(7));
-            item.setDurable((short) dataItem.getInt(8));
+            short mDurable = (short) dataItem.getInt(7);
+            short durable = (short) dataItem.getInt(8);
+            if (template != null) {
+                short defaultMDur = template.getDurable();
+                if (mDurable <= 0) {
+                    mDurable = defaultMDur;
+                }
+                if (durable <= 0 && dataItem.getInt(7) <= 0) {
+                    durable = mDurable;
+                }
+            }
+            item.setMDurable(mDurable);
+            item.setDurable(durable);
             item.setViTriVe((byte) dataItem.getInt(9));
             item.setRank((byte) dataItem.getInt(10));
             item.setDamageType((byte) dataItem.getInt(11));

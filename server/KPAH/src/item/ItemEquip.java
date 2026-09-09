@@ -34,19 +34,24 @@ public class ItemEquip {
     private int dayUse;
     private long timeCreateItem;
 
-    public void minusDurable() {
-        if (durable <= 0 || mDurable <= 0) {
+    private transient int hitCounter = 0;
+
+    public boolean minusDurable() {
+        if (durable <= 0) {
             durable = 0;
-            mDurable = 0;
-            return;
+            return false;
         }
-        mDurable--;
-        if (mDurable % 10 == 0) {
+        hitCounter++;
+        // Cứ mỗi 15 đòn đánh mới trừ 1 điểm độ bền
+        if (hitCounter >= 15) {
+            hitCounter = 0;
             durable--;
             if (durable < 0) {
                 durable = 0;
             }
+            return true;
         }
+        return false;
     }
 
     public boolean isJewelry() {

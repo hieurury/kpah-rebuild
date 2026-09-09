@@ -9,7 +9,7 @@ import java.io.IOException;
 import utility.ResUtils;
 
 public class Config {
-	public static final String CONFIG_RECORD_NAME = "global_config";
+	public static final String CONFIG_RECORD_NAME = "global_config_v3";
 	public AutoChatConfig autoChatConfig = new AutoChatConfig();
 	public AutoClickConfig autoClickConfig = new AutoClickConfig();
 	public DrawConfig drawConfig = new DrawConfig();
@@ -23,9 +23,9 @@ public class Config {
 	public boolean isAutoCayThan;
 	public boolean isLiaQuai; // Chức năng này là cái gì ?
 	public boolean isAutoPickup = false;
-	public boolean isPrioritizeElite = true;
-	public boolean isAutoRevive = true;
-	public boolean isAutoSellLowEquip = true;
+	public boolean isPrioritizeElite = false;
+	public boolean isAutoRevive = false;
+	public boolean isAutoSellLowEquip = false;
 
 	public class AutoChatConfig {
 		public String content = "KPAH TEAMOBI";
