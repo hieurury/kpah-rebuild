@@ -99,10 +99,12 @@ public class Service {
         session.sendMessage(m);
     }
 
+    public static final byte IMAGE_VERSION = 69;
+
     public void sendImage(@NonNull Player pl, byte type) throws IOException {
         Message msg = new Message(CommandMessage.GET_IMAGE);
         msg.writer().writeByte(type);
-        msg.writer().writeByte(68);
+        msg.writer().writeByte(IMAGE_VERSION);
         switch (type) {
             case 1 -> {
                 msg.writer().writeShort(Manager.ICON_SKILL[pl.getInfo().getClassPlayer()].length);

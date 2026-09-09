@@ -225,3 +225,52 @@
 - Hiện tại Phần 07 có: 7/10 task.
 
 ---
+
+## [2026-09-09 22:15] — Task #68: Khắc phục triệt để lỗi Tự bán trang bị & Sửa lỗi hiển thị hình ảnh thú cưỡi (Thiên lý mã / Xích thố)
+
+**Yêu cầu:**
+- Khắc phục lỗi "Vẫn không thấy tự bán đồ, cả log server lẫn client đều không hiện": Tìm nguyên nhân gốc rễ và sửa dứt điểm để cơ chế tự bán trang bị hoạt động trơn tru.
+- Khắc phục lỗi "Hình ảnh thú cưỡi: mua ngựa 10L (Thiên lý mã) nhưng game lại hiển thị đang cưỡi con ngựa 70L (Xích thố)": Điều tra chuỗi đóng gói, nạp dữ liệu sprite thú cưỡi và khắc phục sai lệch thứ tự.
+
+**Nguyên nhân gốc rễ phát hiện:**
+1. *Lỗi Tự bán trang bị:*
+   - Trong `game/app/src/classes/ModController.java`: Điều kiện lọc đồ thuê kiểm tra `ql.x > 0`.
+   - Đối chiếu với mã nguồn Client (`class_bi.java` dòng 1384): `class_ql.x = System.currentTimeMillis();`. Biến `ql.x` lưu timestamp thời điểm nhận trang bị, luôn $> 1.7 \times 10^{12} > 0$.
+   - Do đó, điều kiện `ql.x > 0` luôn trả về `true` với 100% trang bị, kích hoạt lệnh `continue;` bỏ qua tất cả đồ trong túi khiến Client không bao giờ gửi lệnh bán lên Server.
+2. *Lỗi hiển thị hình ảnh thú cưỡi:*
+   - Thư mục tài nguyên `server/KPAH/data/image/horse/0` chứa 4 file sprite tương ứng 4 loại ngựa cơ bản: `0.png` (Thiên lý mã - 10L, nâu), `1.png` (Xích thố - 70L, đỏ), `2.png` (Bạch mã - trắng), `3.png` (Hắc mã - đen).
+   - Trong `server/KPAH/src/manager/Manager.java` dòng 1327: Lời gọi `File[] files = fileList.get(i).listFiles();` không hề được sắp xếp (sort).
+   - Trên Linux/Termux (hệ thống file ext4), `listFiles()` trả về danh sách theo thứ tự inode directory entry là `['1.png', '0.png', '2.png', '3.png']`.
+   - Kết quả: `files[0]` bị gán là `1.png` (Xích thố) và `files[1]` bị gán là `0.png` (Thiên lý mã).
+   - Khi Server đóng gói mảng `HEAD_HORSE[0]` gửi sang Client qua gói tin opcode -8 (GET_IMAGE case 2), Client lần lượt add từng sprite vào mảng Image `class_ko.b`.
+   - Dẫn đến: Index 0 trong `class_ko.b` của Client là **Xích thố**, còn Index 1 mới là **Thiên lý mã**.
+   - Khi người chơi cưỡi ngựa 10L (`IMAGE_THIEN_LY_MA = 0`), Client vẽ `class_ko.b.elementAt(0)` -> Vẽ ra hình con Xích thố 70L (ngựa đỏ).
+   - Đồng thời, `MessageHandler.java` chỉ kiểm tra `if (ver == 0)`. Nếu Client đã lưu cache RMS `nqshImgPotionNew` từ trước với dữ liệu lỗi, Server sẽ không gửi lại hình ảnh mới nếu không tăng version hoặc xóa cache cũ.
+
+**Files thay đổi:**
+- `game/app/src/classes/ModController.java`:
+  - Trong `autoSellLowLevelEquips()`: Loại bỏ kiểm tra sai `ql.x > 0`, chỉ kiểm tra `ql.w > 0` (`w` là `dayUse` - hạn ngày đồ thuê) và `tmpl.h > 0`.
+  - Trong static block: Tự động dọn dẹp cache RMS `nqshImgPotionNew` cũ một lần lúc khởi động client thông qua cờ đánh dấu `horse_img_clean_v1`, đảm bảo client yêu cầu tải lại toàn bộ hình ảnh thú cưỡi chuẩn từ Server.
+- `server/KPAH/src/manager/Manager.java`:
+  - Dòng 1327: Thêm `Arrays.sort(files, Comparator.comparing(File::getName, new NumericStringComparator()))` để đảm bảo thứ tự nạp file trong từng folder thú cưỡi luôn tuân theo thứ tự số tăng dần (`0.png` -> `1.png` -> `2.png` -> `3.png`), bất kể hệ điều hành và filesystem.
+- `server/KPAH/src/services/Service.java`:
+  - Định nghĩa hằng số `public static final byte IMAGE_VERSION = 69;` và sử dụng trong phương thức `sendImage(player, type)` thay cho byte cứng 68.
+- `server/KPAH/src/network/MessageHandler.java`:
+  - Sửa đổi điều kiện case `CommandMessage.GET_IMAGE`: Kiểm tra `if (ver != Service.IMAGE_VERSION)` để tự động gửi lại hình ảnh chuẩn xác khi Client gửi lên version cũ.
+
+**Kết quả:** ✅ Thành công
+- Đã biên dịch toàn bộ Client Java 8 (`KPAH_PROD.jar` và `KPAH_MOD.jar`).
+- Đã biên dịch Server Java 21 (`KPAH.jar`).
+- Server daemon (Port 19129) đã khởi động lại và tải thành công 14 thư mục hình ảnh thú cưỡi theo thứ tự chuẩn.
+- Đã test và xác nhận logic `autoSellLowLevelEquips()` và thứ tự sprite thú cưỡi `HEAD_HORSE` chính xác 100%.
+
+**Ghi chú:**
+- Backup files:
+  - `game/app/src/classes/_backup/ModController.java.bak.20260909_2211`
+  - `server/KPAH/src/manager/_backup/Manager.java.bak.20260909_2211`
+  - `server/KPAH/src/services/_backup/Service.java.bak.20260909_2211`
+  - `server/KPAH/src/network/_backup/MessageHandler.java.bak.20260909_2211`
+- Hiện tại Phần 07 có: 8/10 task.
+
+---
+

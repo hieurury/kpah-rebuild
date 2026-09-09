@@ -1325,6 +1325,9 @@ public class Manager {
             HEAD_HORSE = new byte[fileList.size()][][];
             for (int i = 0; i < fileList.size(); i++) {
                 File[] files = fileList.get(i).listFiles();
+                if (files != null) {
+                    Arrays.sort(files, Comparator.comparing(File::getName, new NumericStringComparator()));
+                }
                 HEAD_HORSE[i] = new byte[files.length][];
                 int splitLocation = Util.findSmallestFileSize(files) / 2;
                 for (int j = 0; j < files.length; j++) {

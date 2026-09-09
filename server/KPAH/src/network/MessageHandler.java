@@ -508,7 +508,7 @@ public class MessageHandler {
                     if (player != null) {
                         byte type = msg.reader().readByte();
                         byte ver = msg.reader().readByte();
-                        if (ver == 0) {
+                        if (ver != Service.IMAGE_VERSION) {
                             Service.instance.sendImage(player, type);
                         }
                     }

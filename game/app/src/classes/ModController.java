@@ -22,6 +22,33 @@ public class ModController {
 
 	public static long refeshTime = 0;
 
+	static {
+		try {
+			// Tự động xóa cache ảnh thú cưỡi cũ bị sai lệch thứ tự để tải lại đúng chuẩn từ server
+			javax.microedition.rms.RecordStore checkRs = null;
+			boolean needClean = false;
+			try {
+				checkRs = javax.microedition.rms.RecordStore.openRecordStore("horse_img_clean_v1", true);
+				if (checkRs.getNumRecords() == 0) {
+					needClean = true;
+					byte[] dummy = new byte[]{1};
+					checkRs.addRecord(dummy, 0, dummy.length);
+				}
+			} finally {
+				if (checkRs != null) {
+					try {
+						checkRs.closeRecordStore();
+					} catch (Exception ignored) {}
+				}
+			}
+			if (needClean) {
+				try {
+					javax.microedition.rms.RecordStore.deleteRecordStore("nqshImgPotionNew");
+				} catch (Exception ignored) {}
+			}
+		} catch (Exception ignored) {}
+	}
+
 	// Đóng băng auto khi người chơi thao tác thủ công (bấm phím di chuyển, click chuột):
 	public static long manualFreezeUntil = 0; // Timestamp ms kết thúc đóng băng 5s
 	public static boolean autoWasActiveBeforeManual = false; // Ghi nhớ cờ auto để tự kích hoạt lại sau 5s
@@ -671,8 +698,8 @@ public class ModController {
 				if (ql.s > 0) continue;
 				// 3. Tuyệt đối không bán đồ đã khảm ngọc
 				if (ql.I > 0) continue;
-				// 4. Tuyệt đối không bán đồ thuê / đồ có hạn ngày
-				if (ql.w > 0 || ql.x > 0 || (tmpl != null && tmpl.h > 0)) continue;
+				// 4. Tuyệt đối không bán đồ thuê / đồ có hạn ngày (ql.w là dayUse)
+				if (ql.w > 0 || (tmpl != null && tmpl.h > 0)) continue;
 
 				// Hợp lệ: Gửi yêu cầu bán trang bị lên server (Server tự cộng xu và trừ item)
 				lastAutoSellTime = now;
