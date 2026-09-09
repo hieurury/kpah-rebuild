@@ -427,35 +427,6 @@ public class Manager {
         return ITEM_EQUIPMENTS.getOrDefault(itemId, null);
     }
 
-    private static void applyShopEquipBuff(ItemEquipTemplate it) {
-        if (it == null || it.getColorItem() != 0 || it.getNdayLoan() != 0) {
-            return;
-        }
-        short[] attr = it.getAttribute();
-        if (attr == null || attr.length < 7) {
-            return;
-        }
-        // Buff vũ khí mua bằng xu (type 3..7)
-        if (it.getType() >= 3 && it.getType() <= 7) {
-            if (attr[0] > 0) {
-                attr[0] = (short) (attr[0] + Math.max(15, (int) (attr[0] * 0.45)));
-            }
-        }
-        // Buff giáp phòng thủ mua bằng xu: Áo (0), Quần (1), Nón (2), Giày (10), Găng (11)
-        if (it.getType() == 0 || it.getType() == 1 || it.getType() == 2 || it.getType() == 10 || it.getType() == 11) {
-            if (attr[1] > 0) {
-                short defBonus = (short) Math.max(10, (int) (attr[1] * 0.6) + 5);
-                attr[1] = (short) (attr[1] + defBonus);
-                if (attr[6] > 0) {
-                    attr[6] = (short) (attr[6] + defBonus);
-                }
-            }
-        }
-        // Tăng nhẹ 25% giá bán xu
-        if (it.getPrice() > 0) {
-            it.setPrice((int) (it.getPrice() * 1.25));
-        }
-    }
 
     public static AttributeEquipTemplate getAttributeTemplate(short attId) {
         return ITEM_ATTRIBUTE_TEMPLATES.getOrDefault(attId, null);
@@ -821,7 +792,6 @@ public class Manager {
                 byte dx = dxdy.length() > 0 ? (byte) dxdy.getInt(0) : Manager.DX_DY_WP[0][0];
                 byte dy = dxdy.length() > 0 ? (byte) dxdy.getInt(1) : Manager.DX_DY_WP[1][0];
                 ItemEquipTemplate itemTemplate = ItemEquipTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).classChar(rs.getByte("classChar")).idIcon(rs.getShort("idIcon")).type(rs.getByte("type")).style(rs.getByte("stype")).he(rs.getByte("he")).gender(rs.getByte("gender")).level(rs.getByte("level")).durable(rs.getShort("durable")).price(rs.getInt("price")).colorItem(rs.getByte("colorItem")).ndayLoan(rs.getShort("ndayLoan")).attribute(attribute).dxWear(dx).dyWear(dy).build();
-                applyShopEquipBuff(itemTemplate);
                 ITEM_EQUIPMENTS.put(itemTemplate.getId(), itemTemplate);
                 if (itemTemplate.getColorItem() == 0 && itemTemplate.getNdayLoan() == 0) {
                     short id = itemTemplate.getId();
