@@ -255,23 +255,24 @@ public class SkillService {
         if (templateSkill == null) {
             return;
         }
-        if (!player.getInventory().minusXu(templateSkill.getPrice())) {
-            Service.instance.sendLogOut(player.getSession(), "Không đủ xu");
-            return;
-        }
-        short levelRequest = Manager.getLevelAddSkill(templateSkill.getIdSkill(), 1);
+        short levelRequest = Manager.getLevelAddSkill(player.getInfo().getClassPlayer(), templateSkill.getIdSkill(), 1);
         if (player.getInfo().getLevel() < levelRequest) {
             Service.instance.sendLogOut(player.getSession(), String.format("Yêu cầu level %s để học kĩ năng %s", levelRequest, templateSkill.getName()));
             return;
         }
-        if (player.getSkill().getLevelSkill()[templateSkill.getIdSkill()] == -1) {
-            player.getSkill().getLevelSkill()[templateSkill.getIdSkill()] = 0;
-            player.getPoint().initPoint();
-            Service.instance.sendMainCharInfo(player);
-            Service.instance.sendLogOut(player.getSession(), String.format("Học thành công kĩ năng %s", templateSkill.getName()));
-        } else {
+        if (player.getSkill().getLevelSkill()[templateSkill.getIdSkill()] != -1) {
             Service.instance.sendLogOut(player.getSession(), "Bạn đã học skill này rồi");
+            return;
         }
+        if (!player.getInventory().minusXu(templateSkill.getPrice())) {
+            Service.instance.sendLogOut(player.getSession(), "Không đủ xu");
+            return;
+        }
+        InventoryService.instance.sendItemPotion(player);
+        player.getSkill().getLevelSkill()[templateSkill.getIdSkill()] = 0;
+        player.getPoint().initPoint();
+        Service.instance.sendMainCharInfo(player);
+        Service.instance.sendLogOut(player.getSession(), String.format("Học thành công kĩ năng %s", templateSkill.getName()));
     }
 
     public void sendSkillInfo(@NonNull Player pl) throws IOException {
@@ -301,7 +302,8 @@ public class SkillService {
         }
         for (int i = 0; i < 15; i++) {
             for (int j = 0; j < 11; j++) {
-                msg.writer().writeByte(Manager.LEVEL_ADD_SKILL[i][j]);
+                byte lv = (byte) Manager.getLevelAddSkill(pl.getInfo().getClassPlayer(), i, j);
+                msg.writer().writeByte(lv);
             }
         }
         for (int i = 0; i < 5; i++) {

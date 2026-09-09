@@ -160,7 +160,10 @@ public class ShopService {
                         InventoryService.instance.addItemGem(player, itemGem);
                     } else if (item.getCategory() == Const.CATEGORY_POTION) {
                         int money = Manager.getPotionTemplate(item.getIdItem()).getPrice();
-                        if (!player.getInventory().minusXu(money * item.getQuantity())) {
+                        int totalCost = money * item.getQuantity();
+                        if (!player.getInventory().minusXu(totalCost)) {
+                            Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(totalCost)));
+                            InventoryService.instance.sendItemPotion(player);
                             return;
                         }
                         ItemPotion potion = ItemService.instance.createNewItemPotion(item.getIdItem(), item.getQuantity());

@@ -95,6 +95,7 @@ public class InventoryService {
             }
         }
         InventoryService.instance.sendItemBody(player);
+        InventoryService.instance.sendItemPotion(player);
         sendSuccessRepairItem(player);
     }
 

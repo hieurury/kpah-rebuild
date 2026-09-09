@@ -16,6 +16,21 @@ public class Paint {
 			int xPos = class_abj.O.getHeight() - 9 + 12;
 			class_d.b.a(_graphics, "Độ bền: " + MainCharInfo.getDoBen(), 1, xPos += 12, 0);
 			class_d.b.a(_graphics, "Toạ độ: " + ModHelpers.getMapNameAndPosition(), 1, xPos += 12, 0);
+
+			// Hiển thị thông tin thuộc tính tăng EXP nếu có
+			String expBonus = MainCharInfo.getExpBonusInfo();
+			if (expBonus != null && expBonus.length() > 0) {
+				class_d.h.a(_graphics, expBonus, 1, xPos += 12, 0);
+			}
+
+			// Hiển thị các hiệu ứng buff đang hoạt động kèm thời gian còn lại
+			java.util.Vector activeBuffs = MainCharInfo.getActiveBuffStrings();
+			if (activeBuffs != null) {
+				for (int i = 0; i < activeBuffs.size(); i++) {
+					String buffText = (String) activeBuffs.elementAt(i);
+					class_d.h.a(_graphics, buffText, 1, xPos += 12, 0);
+				}
+			}
 		}
 	}
 }

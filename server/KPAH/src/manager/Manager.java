@@ -323,7 +323,28 @@ public class Manager {
     }
 
     public static short getLevelAddSkill(int idSkill, int lvSkill) {
-        return (short) ((lvSkill > 0) ? LEVEL_ADD_SKILL[idSkill][lvSkill] : 0);
+        return getLevelAddSkill((byte) -1, idSkill, lvSkill);
+    }
+
+    public static short getLevelAddSkill(byte clazz, int idSkill, int lvSkill) {
+        if (clazz == Const.PHAP_SU) {
+            if (idSkill == 6) {
+                return (short) (20 + (lvSkill > 0 ? (lvSkill - 1) : 0));
+            }
+            if (idSkill == 7) {
+                return (short) (23 + (lvSkill > 0 ? (lvSkill - 1) : 0));
+            }
+            if (idSkill == 8) {
+                return (short) ((lvSkill > 0 && 6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length) ? LEVEL_ADD_SKILL[6][lvSkill] : 25);
+            }
+            if (idSkill == 9) {
+                return (short) ((lvSkill > 0 && 7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length) ? LEVEL_ADD_SKILL[7][lvSkill] : 30);
+            }
+            if (idSkill == 10) {
+                return (short) ((lvSkill > 0 && 8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length) ? LEVEL_ADD_SKILL[8][lvSkill] : 45);
+            }
+        }
+        return (short) ((lvSkill > 0 && idSkill < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[idSkill].length) ? LEVEL_ADD_SKILL[idSkill][lvSkill] : 0);
     }
 
     public static boolean isSkillAeo(int cClass, int skill) {

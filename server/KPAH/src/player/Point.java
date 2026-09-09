@@ -63,7 +63,7 @@ public class Point {
 
     public void increaseSkillPoint(byte type) throws IOException {
         byte levelSkill = player.getSkill().getLevelSkill()[type];
-        if (levelSkill == -1 || skillPoint <= 0 || player.getInfo().getLevel() < Manager.getLevelAddSkill(type, levelSkill)) {
+        if (levelSkill == -1 || skillPoint <= 0 || player.getInfo().getLevel() < Manager.getLevelAddSkill(player.getInfo().getClassPlayer(), type, levelSkill)) {
             return;
         }
         if (levelSkill >= 9) {

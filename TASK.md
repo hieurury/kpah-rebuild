@@ -1604,3 +1604,43 @@
 **Kết quả:** ✅ Thành công (`BUILD SUCCESSFUL`)
 
 ---
+
+## [2026-09-09 13:42] — Nâng cấp EXP quái, sửa mua bán potion Bà Tám, HUD hiển thị buff & exp, sửa kỹ năng Pháp Sư, sửa nón nhân vật
+
+**Yêu cầu:**
+1. Tăng mạnh base EXP quái vật; bonus EXP chỉ nhận khi dùng thẻ/vật phẩm hoặc mang trang bị tăng EXP.
+2. Sửa lỗi mua potion Bà Tám (tiền trừ không đúng số lượng, vật phẩm không cộng vào); sửa logic tiền tệ xa phu, sửa đồ, học kỹ năng không trừ/không đồng bộ tiền.
+3. Bổ sung thông tin dưới Độ bền & Tọa độ trên HUD: thời gian/tỷ lệ của thuộc tính tăng EXP và danh sách hiệu ứng buff kèm thời gian còn lại.
+4. Sửa cấp độ học & tăng điểm kỹ năng phái Pháp Sư (kỹ năng cấp 30 và cấp 6 bị đảo lộn).
+5. Sửa lỗi nhân vật chính không hiển thị nón (người khác nhìn thấy nhưng tự nhìn không thấy).
+
+**Mức độ rủi ro:** Cao
+
+**Files thay đổi:**
+- `server/KPAH/src/map/Monster.java` — Nâng cấp công thức `baseExp` cho quái vật mọi cấp độ.
+- `server/KPAH/src/network/MessageHandler.java` — Cho phép `id >= 0` khi mua đồ từ shop NPC (chấp nhận potion ID 0).
+- `server/KPAH/src/services/ShopService.java` — Xử lý mua potion đúng giá, cộng vào hành trang và gọi `sendItemPotion`.
+- `server/KPAH/src/services/ChangeMapService.java` — Thêm `sendItemPotion` sau khi trừ xu đi xa phu.
+- `server/KPAH/src/services/MenuOptionService.java` — Trừ 50 xu khi đi xa phu mới (`XA_PHU_NEW`) và gọi `sendItemPotion`.
+- `server/KPAH/src/services/InventoryService.java` — Gọi `sendItemPotion` sau khi trừ xu sửa đồ.
+- `server/KPAH/src/manager/Manager.java` — Thêm `getLevelAddSkill(byte clazz, int idSkill, int lvSkill)` chuẩn hóa cấp độ Pháp Sư.
+- `server/KPAH/src/player/Point.java` — Truyền class nhân vật khi tăng điểm kỹ năng.
+- `server/KPAH/src/services/SkillService.java` — Kiểm tra level trước khi trừ xu học skill mới, đồng bộ tiền và gửi `LEVEL_ADD_SKILL` chuẩn theo phái.
+- `server/KPAH/src/services/Service.java` — Gửi `writeBoolean(true)` (paint hat) trong `sendMainCharInfo`.
+- `game/app/src/classes/class_rs.java` — Tạo mới để tính đúng tiền theo số lượng, gửi gói mua potion tức thì và xóa giỏ hàng tạm.
+- `game/app/src/classes/MainCharInfo.java` — Thêm `getExpBonusInfo()` và `getActiveBuffStrings()` lấy thông tin thuộc tính tăng EXP và các buff đang hoạt động.
+- `game/app/src/classes/Paint.java` — Vẽ thông tin tăng EXP và danh sách buff kèm thời gian còn lại dưới Tọa độ.
+
+**Backup:**
+- `server/KPAH/src/_backup/Monster.java.bak.*`
+- `server/KPAH/src/_backup/MessageHandler.java.bak.*`
+- `server/KPAH/src/_backup/ShopService.java.bak.*`
+- `server/KPAH/src/_backup/SkillService.java.bak.*`
+- `server/KPAH/src/_backup/Manager.java.bak.*`
+- `server/KPAH/src/_backup/Point.java.bak.*`
+- `server/KPAH/src/_backup/Service.java.bak.*`
+- `game/app/src/classes/_backup/Paint.java.bak.*`
+
+**Kết quả:** ✅ Thành công — Cả Server và Client (`kpah_mod_v1.0.0.1.jar`) đều đã được build thành công không có lỗi.
+
+---

@@ -77,6 +77,7 @@ public class ChangeMapService {
             Service.instance.sendLogOut(pl.getSession(), String.format("Không đủ %s xu", Util.formatNumber(price)));
             return;
         }
+        InventoryService.instance.sendItemPotion(pl);
         changeMap(pl, mapId, (short) (x * 16 + 8), (short) (y * 16 + 8));
     }
 }

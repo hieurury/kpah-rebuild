@@ -238,7 +238,7 @@ public class Service {
         m.writer().writeShort(0);
         m.writer().writeInt(0);
         m.writer().writeUTF(player.getName());
-        m.writer().writeBoolean(false);
+        m.writer().writeBoolean(true); // paint hat cho nhân vật chính
         player.getSession().sendMessage(m);
     }
 }

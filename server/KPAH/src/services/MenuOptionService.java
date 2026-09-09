@@ -167,6 +167,12 @@ public class MenuOptionService {
                 }
             }
             case XA_PHU_NEW -> {
+                int cost = 50;
+                if (!player.getInventory().minusXu(cost)) {
+                    Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu đi xa phu", Util.formatNumber(cost)));
+                    return;
+                }
+                InventoryService.instance.sendItemPotion(player);
                 switch (selected) {
                     case 0 -> {
                         if (player.getLocation().getInCountry() != player.getInfo().getIdNation()) {

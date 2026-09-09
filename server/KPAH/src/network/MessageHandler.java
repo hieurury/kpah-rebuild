@@ -296,7 +296,7 @@ public class MessageHandler {
                             if (category == Const.CATEGORY_ITEM) {
                                 classChar = msg.reader().readByte();
                             }
-                            if (quantity > 0 && id > 0) {
+                            if (quantity > 0 && id >= 0) {
                                 player.getSundry().getItemNpcShop().add(new ItemBuyNpc(category, id, quantity, classChar));
                             }
                         }

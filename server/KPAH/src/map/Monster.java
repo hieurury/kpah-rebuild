@@ -249,24 +249,24 @@ public class Monster implements Cloneable {
 
     @Synchronized
     public void calculatePowerPlus(@NonNull Player pl, int damage) throws IOException {
-        // Tăng base EXP gấp 3-4 lần để người chơi farm thoải mái, chuẩn nhịp cày cuốc
+        // Tăng base EXP của quái vật theo yêu cầu để người chơi up level thoải mái
         int level = this.template.getLevel();
         double baseExp;
         if (level <= 5) {
-            baseExp = level * 65.0;
+            baseExp = level * 160.0;
         } else if (level <= 10) {
-            baseExp = level * 110.0;
+            baseExp = level * 260.0;
         } else if (level <= 15) {
-            baseExp = level * level * 18.0;
+            baseExp = level * level * 45.0;
         } else if (level <= 20) {
-            baseExp = level * level * 22.0;
+            baseExp = level * level * 65.0;
         } else if (level <= 27) {
-            baseExp = level * level * 28.0;
+            baseExp = level * level * 85.0;
         } else {
-            baseExp = level * level * 36.0;
+            baseExp = level * level * 110.0;
         }
         if (baseExp <= 0) {
-            baseExp = 65.0;
+            baseExp = 160.0;
         }
         
         // Tránh damage quá lớn vượt quá máu tối đa làm sai lệch
@@ -278,9 +278,9 @@ public class Monster implements Cloneable {
             tnPl = 1;
         }
 
-        // Quái tinh anh cho kinh nghiệm gấp 10 lần
+        // Quái tinh anh cho kinh nghiệm gấp 30 lần
         if (isElite) {
-            tnPl *= 10;
+            tnPl *= 30;
         }
 
         // Áp dụng % thưởng từ người chơi (thú cưỡi, sự kiện, item, etc.)
