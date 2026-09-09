@@ -102,6 +102,9 @@ public class Service {
     public static final byte IMAGE_VERSION = 69;
 
     public void sendImage(@NonNull Player pl, byte type) throws IOException {
+        if (type != 1 && type != 2 && type != 4) {
+            return;
+        }
         Message msg = new Message(CommandMessage.GET_IMAGE);
         msg.writer().writeByte(type);
         msg.writer().writeByte(IMAGE_VERSION);
