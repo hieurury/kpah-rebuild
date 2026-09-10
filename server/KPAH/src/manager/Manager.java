@@ -354,8 +354,8 @@ public class Manager {
         // Kiếm Khách (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
         if (clazz == Const.KIEM_KHACH) {
             return switch (idSkill) {
-                case 4 -> (short) (20 + Math.min(lvSkill, 9)); // Hộ sát tiến / Xuyên giáp (base lv 20)
-                case 5 -> (short) (24 + Math.min(lvSkill, 9)); // Dĩ lực đáo công / Phản đòn (base lv 24)
+                case 4 -> (short) (4 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[4].length ? LEVEL_ADD_SKILL[4][lvSkill] : 3); // Hộ sát tiến (base lv 3)
+                case 5 -> (short) (5 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[5].length ? LEVEL_ADD_SKILL[5][lvSkill] : 3); // Dĩ lực đáo công (base lv 3)
                 case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Thiên lôi điện trảm (AoE 1, lv 25)
                 case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Sấm động dương gian (AoE 2, lv 30)
                 case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Kiếm phi kinh thiên (AoE 3, lv 45)

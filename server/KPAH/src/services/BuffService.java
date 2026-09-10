@@ -114,9 +114,17 @@ public class BuffService {
         switch (playerTarget.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.DI_LUC_DAO_CONG)) {
-                    short percentDamage = playerTarget.getSkillBuff().getPercentDame(BuffConst.DI_LUC_DAO_CONG);
-                    if (Util.isTrue((double) percentDamage, 100.0)) {
-                        short hp = (short) mobAttack.injured(playerTarget, (int) (damage * percentDamage / 100), false, true, false);
+                    // Cơ chế phản đòn mới: 10% (tăng 5% mỗi cấp) tỷ lệ phản đòn bằng 50% (tăng 10% mỗi cấp) sát thương của bản thân
+                    byte lvSkill = playerTarget.getSkill().getLevelSkill()[5];
+                    int rate = 10 + (lvSkill > 0 ? (lvSkill - 1) * 5 : 0);
+                    if (Util.isTrue((double) rate, 100.0)) {
+                        int reflectPercent = 50 + (lvSkill > 0 ? (lvSkill - 1) * 10 : 0);
+                        int myDame = playerTarget.getPoint().getDameAttack(false, false, false, true);
+                        int reflectDame = (int) ((long) myDame * reflectPercent / 100);
+                        if (reflectDame <= 0) {
+                            reflectDame = 1;
+                        }
+                        short hp = (short) mobAttack.injured(playerTarget, reflectDame, false, true, false);
                         if (hp > 0) {
                             sendSubHpByBuffInfluence(mobAttack, hp);
                         }
@@ -145,9 +153,17 @@ public class BuffService {
         switch (playerTarget.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.DI_LUC_DAO_CONG)) {
-                    short percentDamage = playerTarget.getSkillBuff().getPercentDame(BuffConst.DI_LUC_DAO_CONG);
-                    if (Util.isTrue((double) percentDamage, 100.0)) {
-                        short hp = (short) playerAttack.injured((int) (damage * percentDamage / 100), true, ItemEquipConst.DAMAGE_NONE, false);
+                    // Cơ chế phản đòn mới PvP: 10% (+5%/cấp) tỷ lệ phản bằng 50% (+10%/cấp) sát thương bản thân
+                    byte lvSkill = playerTarget.getSkill().getLevelSkill()[5];
+                    int rate = 10 + (lvSkill > 0 ? (lvSkill - 1) * 5 : 0);
+                    if (Util.isTrue((double) rate, 100.0)) {
+                        int reflectPercent = 50 + (lvSkill > 0 ? (lvSkill - 1) * 10 : 0);
+                        int myDame = playerTarget.getPoint().getDameAttack(false, false, false, false);
+                        int reflectDame = (int) ((long) myDame * reflectPercent / 100);
+                        if (reflectDame <= 0) {
+                            reflectDame = 1;
+                        }
+                        short hp = (short) playerAttack.injured(reflectDame, true, ItemEquipConst.DAMAGE_PHYSIC, false);
                         if (hp > 0) {
                             sendSubHpByBuffInfluence(playerAttack, hp);
                         }
