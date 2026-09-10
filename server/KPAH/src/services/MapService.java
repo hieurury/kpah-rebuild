@@ -423,6 +423,7 @@ public class MapService {
             pl.getPoint().initPoint();
             MapService.instance.onLevelUp(pl);
             Service.instance.sendMainCharInfo(pl);
+            utils.ServerLog.levelUp(pl.getName(), pl.getIdPlayer(), pl.getInfo().getLevel());
         }
     }
 

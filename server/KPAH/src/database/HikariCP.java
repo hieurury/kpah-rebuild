@@ -15,7 +15,7 @@ import manager.Settings;
  */
 public class HikariCP {
 
-    private static final String DB_URL = "jdbc:mysql://" + Settings.HOST + "/" + Settings.DATABASE + "?useUnicode=true&characterEncoding=utf-8";
+    private static final String DB_URL = "jdbc:mysql://" + Settings.HOST + "/" + Settings.DATABASE + "?useUnicode=true&characterEncoding=utf-8&useSSL=false&autoReconnect=true";
     private static final HikariConfig config = new HikariConfig();
     private static final HikariDataSource dataSource;
 

@@ -70,6 +70,16 @@ public class ChatService {
         pl.getSession().sendMessage(msg);
     }
 
+    public void sendServerNotice(String chat) {
+        try {
+            Message msg = new Message(CommandMessage.MESSAGE_WORLD);
+            msg.writer().writeUTF(String.format("[HỆ THỐNG]: %s", chat));
+            Service.instance.sendAllPlayer(msg);
+        } catch (Exception e) {
+            utils.ServerLog.error("Lỗi gửi thông báo hệ thống: " + e.getMessage());
+        }
+    }
+
     private boolean processChatAdmin(@NonNull Player pl, String chat) throws IOException {
         if (chat.startsWith("m ")) {
             ChangeMapService.instance.changeMap(pl, Short.parseShort(chat.replace("m ", "")), (short) -1, (short) -1);

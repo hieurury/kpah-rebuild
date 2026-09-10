@@ -34,7 +34,7 @@ public class TopManager {
                 while (true) {
                     dispose();
                     loadTop();
-                    Printer.printRed("Load Top Data");
+                    utils.ServerLog.system("Đã làm mới dữ liệu Bảng xếp hạng Top Clan & Top Cao thủ.");
                     saveDataClan();
                     TimeUnit.MINUTES.sleep(5);
                 }

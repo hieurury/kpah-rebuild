@@ -15,4 +15,17 @@
 
 ---
 
-*(Chưa có task mới trong Phần 09)*
+## [2026-09-10 15:58] — Task #81: Nâng Cấp Toàn Diện Hệ Thống Log Server KPAH & Bộ Lệnh Console Admin
+
+**Yêu cầu:** Log server trực quan, dễ nhìn hơn, hiển thị thông tin chi tiết và dễ kiểm soát hơn.
+**Files thay đổi:**
+- `server/KPAH/src/database/HikariCP.java` — Thêm `&useSSL=false&autoReconnect=true` loại bỏ hoàn toàn cảnh báo SSL spam của MySQL Connector.
+- `server/KPAH/src/utils/ServerLog.java` — Nâng cấp Native ANSI escape codes đa nền tảng (Termux/SSH/Linux Terminal), bộ badge màu sắc trực quan, tự động lọc sạch ANSI khi lưu file log trên đĩa, bổ sung cờ toggle và chu kỳ cho Heartbeat.
+- `server/KPAH/src/manager/TopManager.java` — Thay thế log in thô `Printer.printRed("Load Top Data")` bằng `ServerLog.system`.
+- `server/KPAH/src/services/ChatService.java` — Bổ sung method `sendServerNotice(String chat)` để gửi thông báo từ console tới toàn server.
+- `server/KPAH/src/services/MapService.java` — Ghi log thăng cấp nhân vật qua `ServerLog.levelUp`.
+- `server/KPAH/src/server/Server.java` — Xóa các log in thô duplicate, nâng cấp Heartbeat hiển thị % RAM và tên người chơi online, mở rộng bộ lệnh Admin Console (`help`, `status`, `online`/`players`, `kick`, `say`/`chat`, `hb on|off|<sec>`, `gc`, `clear`/`cls`, `baotri`).
+**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant jar`.
+**Ghi chú:** Đã tạo backup đầy đủ trong `_backup/` của từng thư mục tương ứng.
+
+---
