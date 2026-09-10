@@ -170,8 +170,87 @@ public class ModController {
 			}
 		}
 
+		handleAutoSupportSkills(gameScreen, gameScreen != null ? gameScreen.q : null);
 		doAutoGame();
 		handleAutoCombatRoaming();
+	}
+
+	private static long lastSupportBuffCheck = 0;
+
+	/**
+	 * Tự động kích hoạt và duy trì tất cả các kỹ năng hỗ trợ/buff được gán ở trang Hỗ Trợ (page 1).
+	 * Hỗ trợ dùng đồng thời nhiều kỹ năng buff chủ động (ví dụ: Pháp Sư vừa bật Hồi công lực đan vừa bật Song hộ công thủ).
+	 */
+	private static void handleAutoSupportSkills(class_abj gameScreen, class_hw player) {
+		if (player == null || player.cV == 3 || player.cW) {
+			return;
+		}
+		long now = System.currentTimeMillis();
+		if (now - lastSupportBuffCheck < 400) {
+			return; // Quét mỗi 400ms
+		}
+		lastSupportBuffCheck = now;
+
+		// Chỉ tự động duy trì buff khi auto đang chạy (au hoặc av)
+		if (!class_abj.au && !class_abj.av) {
+			return;
+		}
+
+		if (class_sc.a != null && class_sc.a.length > 1 && class_sc.a[1] != null) {
+			class_gd[] supportSlots = class_sc.a[1];
+			for (int i = 0; i < supportSlots.length; i++) {
+				class_gd gd = supportSlots[i];
+				if (gd == null) continue;
+				byte skillId = gd.b();
+				if (skillId < 4 || skillId > 7) continue;
+
+				if (class_hw.aS == null || skillId >= class_hw.aS.length || class_hw.aS[skillId] <= 0) {
+					continue;
+				}
+
+				if (class_qz.c == null || player.aO < 0 || player.aO >= class_qz.c.length) continue;
+				byte[] effArray = class_qz.c[player.aO];
+				int effIdx = skillId - 4;
+				if (effIdx < 0 || effIdx >= effArray.length) continue;
+				byte effId = effArray[effIdx];
+
+				// Chỉ áp dụng cho self-buff chủ động (class_qz.d[aO][effIdx] == 0)
+				if (class_qz.d != null && player.aO < class_qz.d.length && effIdx < class_qz.d[player.aO].length) {
+					if (class_qz.d[player.aO][effIdx] != 0) {
+						continue;
+					}
+				}
+
+				// Nếu buff đã active trên người thì không buff lại
+				if (player.e((int) effId)) {
+					continue;
+				}
+
+				// Kiểm tra hồi chiêu
+				if (player.aq != null && player.at != null && skillId < player.aq.length && skillId < player.at.length) {
+					if (now - player.aq[skillId] <= player.at[skillId]) {
+						continue;
+					}
+				}
+
+				// Kiểm tra MP
+				int mpCost = class_qz.b(skillId, (int) class_hw.aS[skillId]);
+				if (player.bz < mpCost) {
+					continue;
+				}
+
+				// Kích hoạt buff: gửi packet 51 lên server
+				class_go.a().a(player.cG, (byte) 0, effId, (short) 0);
+				player.bz -= mpCost;
+				if (player.at != null && skillId < player.at.length) {
+					player.at[skillId] = class_qz.a((byte) skillId, (int) class_hw.aS[skillId]);
+				}
+				if (player.aq != null && skillId < player.aq.length) {
+					player.aq[skillId] = now;
+				}
+				break;
+			}
+		}
 	}
 
 	private static void doAutoGame() {

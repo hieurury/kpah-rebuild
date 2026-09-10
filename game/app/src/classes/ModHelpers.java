@@ -7,6 +7,11 @@ package classes;
 
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
+import classes.class_nu;
+import classes.class_ub;
+import classes.class_yi;
+import classes.class_sc;
+import classes.class_acv;
 
 /**
  *
@@ -90,6 +95,50 @@ public class ModHelpers {
 				}
 			}
 		} catch (Throwable t) {
+		}
+	}
+
+	public static String getPotionTooltip(class_nu ui, int n) {
+		try {
+			if (class_sc.l == null || n < 0 || n >= class_sc.l.length || class_sc.l[n] == null) {
+				return "0Vật phẩm";
+			}
+			class_ub potion = class_sc.l[n];
+			String rawName = potion.g != null ? potion.g : "";
+			int count = 0;
+			if (class_acv.s != null && class_acv.s.q != null && class_acv.s.q.bq != null && n < class_acv.s.q.bq.length) {
+				count = class_acv.s.q.bq[n];
+			} else {
+				count = potion.a;
+			}
+
+			// Với các bình HP/MP cơ bản có sẵn trong bảng hồi phục gốc
+			if (n < 7 || (n >= 14 && n < 20)) {
+				try {
+					if (class_yi.V != null && n < class_yi.V.length && class_yi.V[n] != null) {
+						String s = "0" + rawName + "\nSố lượng: " + count;
+						if (class_yi.V[n].b > 0) {
+							s += "\nHồi phục: " + class_yi.V[n].b + " " + (potion.h != null ? potion.h : "");
+						}
+						return s;
+					}
+				} catch (Throwable ignored) {
+				}
+			}
+
+			// Với Rương Tinh Anh, Tinh Anh Đan, và mọi vật phẩm tùy biến:
+			// Hiển thị tên (đã bao gồm mô tả nhiều dòng) và số lượng
+			StringBuffer sb = new StringBuffer();
+			sb.append("0");
+			sb.append(rawName);
+			sb.append("\nSố lượng: ");
+			sb.append(count);
+			if (ui != null && ui.q) {
+				sb.append("\nKhông thể bán lại");
+			}
+			return sb.toString();
+		} catch (Throwable t) {
+			return "0Vật phẩm";
 		}
 	}
 }

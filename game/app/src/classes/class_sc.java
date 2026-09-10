@@ -325,70 +325,57 @@ extends class_hw {
         if (classChar == 0) { // Kiếm Khách
             switch (n) {
                 case 0:
-                    v.addElement("Chém");
-                    v.addElement("Đòn đánh vật lý cơ bản");
+                    v.addElement("Chém kiếm cơ bản");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: 0.7s");
                     break;
                 case 1:
-                    v.addElement("Kim tinh pháp");
-                    v.addElement("Vận kiếm khí chém đơn mục tiêu");
+                    v.addElement("Vận khí chém đơn thể");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: " + (class_qz.a((byte)n, lv) / 1000.0f) + "s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 2:
-                    v.addElement("Lôi điện pháp");
-                    v.addElement("Kiếm phát tia sét chém đơn mục tiêu");
+                    v.addElement("Kiếm lôi chém đơn thể");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: " + (class_qz.a((byte)n, lv) / 1000.0f) + "s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 3:
-                    v.addElement("Kinh lôi bát thủ");
-                    v.addElement("Tuyệt kỹ kiếm lôi trảm liên hoàn");
+                    v.addElement("Kiếm ảnh lôi trảm");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: " + (class_qz.a((byte)n, lv) / 1000.0f) + "s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 4:
-                    v.addElement("Hộ sát tiến");
-                    v.addElement("Tăng xuyên giáp trên đòn đánh");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    v.addElement("Tăng xuyên giáp đòn đánh");
                     v.addElement("Xuyên giáp: +" + class_qz.a(n, lv));
+                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    v.addElement("Bị động (Không hồi chiêu)");
                     break;
                 case 5:
-                    v.addElement("Dĩ lực đáo công");
-                    v.addElement("Phản sát thương khi bị tấn công");
-                    v.addElement("Hồi chiêu: 90s");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    v.addElement("Vận kiếm khí phản đòn");
                     v.addElement("Tỷ lệ phản: " + (10 + (lv - 1) * 5) + "%");
-                    v.addElement("Sát thương phản: " + (50 + (lv - 1) * 10) + "% công bản thân");
-                    v.addElement("Thời gian duy trì: " + (class_qz.g != null && 5 < class_qz.g.length && lv < class_qz.g[5].length ? class_qz.g[5][lv] : 50) + "s");
+                    v.addElement("Phản công: " + (50 + (lv - 1) * 10) + "%");
+                    v.addElement("Hồi chiêu: 90s | MP: " + class_qz.b(n, lv));
                     break;
                 case 6:
-                    v.addElement("Thiên lôi điện trảm");
-                    v.addElement("Gọi sấm sét tấn công diện rộng");
+                    v.addElement("Gọi sấm sét diện rộng");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Hồi chiêu: 60s");
+                    v.addElement("Hồi chiêu: 5s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Phạm vi: " + class_qz.a((byte)n));
                     break;
                 case 7:
-                    v.addElement("Sấm động dương gian");
-                    v.addElement("Sét liên hoàn chuyền nhiều mục tiêu");
+                    v.addElement("Sét chuyền nhiều kẻ địch");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Hồi chiêu: 120s");
+                    v.addElement("Hồi chiêu: 6s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Phạm vi: " + class_qz.a((byte)n));
                     break;
                 case 8:
-                    v.addElement("Kiếm phi kinh thiên");
-                    v.addElement("Đại kiếm từ trời giáng hủy diệt diện rộng");
+                    v.addElement("Đại kiếm trảm diện rộng");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Hồi chiêu: 300s");
+                    v.addElement("Hồi chiêu: 7s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Phạm vi: " + class_qz.a((byte)n));
                     break;
                 default:
                     return null;
@@ -396,83 +383,66 @@ extends class_hw {
         } else if (classChar == 2) { // Pháp Sư
             switch (n) {
                 case 0:
-                    v.addElement("Đánh");
-                    v.addElement("Chưởng phép thuật cơ bản");
+                    v.addElement("Chưởng phép cơ bản");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: 0.7s");
                     break;
                 case 1:
-                    v.addElement("Thủy giáng minh");
-                    v.addElement("Phép thủy tiễn công kích đơn thể");
+                    v.addElement("Thủy tiễn đơn mục tiêu");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: " + (class_qz.a((byte)n, lv) / 1000.0f) + "s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 2:
-                    v.addElement("Thần long thủy");
-                    v.addElement("Gọi rồng nước công kích đơn thể");
+                    v.addElement("Thủy long đơn mục tiêu");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: " + (class_qz.a((byte)n, lv) / 1000.0f) + "s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 3:
-                    v.addElement("Bát đại hải long");
-                    v.addElement("Kình lực hải long công kích mạnh");
+                    v.addElement("Hải long trảm cực mạnh");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: " + (class_qz.a((byte)n, lv) / 1000.0f) + "s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 4:
-                    v.addElement("Hồi công lực đan");
-                    v.addElement("Gia tăng lượng HP và MP tối đa");
-                    v.addElement("Hồi chiêu: 120s");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Tăng Max HP và MP: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Thời gian duy trì: 90s");
+                    v.addElement("Tăng Max HP/MP: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hồi chiêu: 120s | MP: " + class_qz.b(n, lv));
+                    v.addElement("Duy trì: 90s");
                     break;
                 case 5:
-                    v.addElement("Hồi lực tiến");
-                    v.addElement("Gia tăng sát thương theo mana hiện có");
-                    v.addElement("Tăng công: " + (5 + (lv - 1) * 2) + "% mana hiện tại");
+                    v.addElement("Tăng công theo MP có");
+                    v.addElement("Tăng thêm: " + (5 + (lv - 1) * 2) + "% MP");
+                    v.addElement("Bị động (Không tốn MP)");
                     break;
                 case 6:
-                    v.addElement("Hồi sinh");
-                    v.addElement("Bù HP và MP bản thân hồi sinh đồng đội");
+                    v.addElement("Rút HP/MP cứu đồng đội");
+                    v.addElement("Rút tối đa: 80% HP/MP");
                     v.addElement("Hồi chiêu: " + (180 - (lv - 1) * 10) + "s");
-                    v.addElement("Giới hạn rút: Tối đa 80% HP và MP bản thân");
                     break;
                 case 7:
-                    v.addElement("Song hộ công thủ");
-                    v.addElement("Khiên hấp thu hồi phục mana và máu");
-                    v.addElement("Hồi chiêu: 60s");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Hồi mana khi nhận đòn: " + (10 + (lv - 1) * 5) + "% sát thương");
-                    v.addElement("Hồi máu khi dùng skill: " + (20 + (lv - 1) * 5) + "% mana tiêu hao");
-                    v.addElement("Thời gian duy trì: " + (class_qz.g != null && 6 < class_qz.g.length && lv < class_qz.g[6].length ? class_qz.g[6][lv] : 50) + "s");
+                    v.addElement("Khiên hộ thể hấp thu");
+                    v.addElement("Hồi MP nhận đòn: " + (10 + (lv - 1) * 5) + "%");
+                    v.addElement("Hồi Máu tốn MP: " + (20 + (lv - 1) * 5) + "%");
+                    v.addElement("Hồi chiêu: 60s | MP: " + class_qz.b(n, lv));
                     break;
                 case 8:
-                    v.addElement("Hải long xuất thế");
-                    v.addElement("Sóng rồng nước quét nhiều mục tiêu");
+                    v.addElement("Sóng rồng đánh diện rộng");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: 4s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Phạm vi: " + class_qz.a((byte)n));
                     break;
                 case 9:
-                    v.addElement("Song long thị uy");
-                    v.addElement("Đôi rồng xoáy hủy diệt diện rộng");
+                    v.addElement("Song long xoáy diện rộng");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: 5s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Phạm vi: " + class_qz.a((byte)n));
                     break;
                 case 10:
-                    v.addElement("Hàn băng vũ");
-                    v.addElement("Bão tuyết trút thương băng diện rộng");
+                    v.addElement("Bão tuyết trút thương băng");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
                     v.addElement("Hồi chiêu: 6s");
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Phạm vi: " + class_qz.a((byte)n));
                     break;
                 default:
                     return null;
@@ -495,7 +465,7 @@ extends class_hw {
         }
 
         if (rawLv <= 0) {
-            v.insertElementAt("Tình trạng: Chưa học", 1);
+            v.insertElementAt("Tình trạng: Chưa học", 0);
         }
 
         String[] res = new String[v.size()];

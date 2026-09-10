@@ -24,6 +24,8 @@ public class BuffInfluenceMonster {
     private boolean isPoisoned;
     private short docTo;
     private short secondOfPoisoned;
+    private int percentHpPerTick;
+    private int flatDamagePerTick;
     private long lastTimePoisoned;
     private long lastTimeMinusHp;
 
@@ -33,12 +35,16 @@ public class BuffInfluenceMonster {
 
     @Synchronized
     public void addBuffPoisoned(Player player, short time, short docto) throws IOException {
-        if (isPoisoned) {
-            return;
-        }
+        addBuffPoisoned(player, time, 0, (int) docto);
+    }
+
+    @Synchronized
+    public void addBuffPoisoned(Player player, short time, int percentHp, int flatDamage) throws IOException {
         isPoisoned = true;
         secondOfPoisoned = time;
-        docTo = docto;
+        percentHpPerTick = percentHp;
+        flatDamagePerTick = flatDamage;
+        docTo = (short) flatDamage;
         lastTimePoisoned = System.currentTimeMillis();
         playerUser = player;
         lastTimeMinusHp = System.currentTimeMillis();
@@ -54,13 +60,15 @@ public class BuffInfluenceMonster {
         secondOfPoisoned = 0;
         lastTimePoisoned = 0;
         docTo = 0;
+        percentHpPerTick = 0;
+        flatDamagePerTick = 0;
         playerUser = null;
-        BuffService.instance.sendRemoveBuffInfluence(mob, BuffConst.BUFF_DOC_TO);
+        // Client KPAH tự quản lý thời gian hết độc dựa vào animation/timer, không gửi BUFF_ATTACK (89) để tránh client bị re-poison lặp lại
     }
 
     @Synchronized
     public byte getSecondPosonedLeft() {
-        return (byte) (secondOfPoisoned - Util.getSecondDifference(System.currentTimeMillis(), lastTimePoisoned));
+        return (byte) Math.max(0, (secondOfPoisoned - Util.getSecondDifference(System.currentTimeMillis(), lastTimePoisoned)));
     }
 
     @Synchronized
@@ -87,11 +95,9 @@ public class BuffInfluenceMonster {
     public void clearBuff() throws IOException {
         if (isPoisoned) {
             removeBuffPoisoned();
-            BuffService.instance.sendRemoveBuffInfluence(mob, BuffConst.BUFF_DOC_TO);
         }
         if (isStunned) {
             removeBuffStunned();
-            // Client KPAH tự quản lý thời gian hết choáng dựa vào cZ, không gửi BUFF_ATTACK (89) để tránh client bị re-stun lặp lại
         }
     }
 
@@ -102,9 +108,19 @@ public class BuffInfluenceMonster {
         if (isPoisoned && (Util.canDoWithTime(lastTimePoisoned, secondOfPoisoned * 1000) || mob.isDie())) {
             removeBuffPoisoned();
         }
-        if (isPoisoned && !mob.isDie() && Util.canDoWithTime(lastTimeMinusHp, BuffConst.SECOND_SUB_HP_DOC_TO * 1000)) {
+        // Gây sát thương độc mỗi giây (1000ms)
+        if (isPoisoned && !mob.isDie() && Util.canDoWithTime(lastTimeMinusHp, 1000L)) {
             lastTimeMinusHp = System.currentTimeMillis();
-            short dame = (short) mob.injured(playerUser, docTo, false, true, false);
+            int maxHp = mob.getMaxHp();
+            int damageAmount = 0;
+            if (percentHpPerTick > 0) {
+                damageAmount += (int) (maxHp * (percentHpPerTick / 100.0f));
+            }
+            damageAmount += flatDamagePerTick;
+            if (damageAmount <= 0) {
+                damageAmount = Math.max(1, (int) docTo);
+            }
+            short dame = (short) mob.injured(playerUser, damageAmount, false, true, false);
             if (dame > 0) {
                 BuffService.instance.sendSubHpByBuffInfluence(mob, dame);
             }

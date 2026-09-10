@@ -626,8 +626,17 @@ public class Monster implements Cloneable {
                                         // 25% Gây Choáng 2s (Stun)
                                         target.getBuffInfluence().addBuffStunned((short) 2);
                                     } else if (randSkill <= 55) {
-                                        // 30% Gây Trúng Độc cực mạnh theo cấp độ quái (Poison)
-                                        target.getBuffInfluence().addBuffPoisoned((short) 5, (short) (template.getLevel() * 6));
+                                        // 30% Gây Trúng Độc Quái Tinh Anh (2-5% HP tối đa mỗi giây, duy trì 10s)
+                                        int mobLv = template.getLevel();
+                                        int percentHp = 2;
+                                        if (mobLv > 60) {
+                                            percentHp = 5;
+                                        } else if (mobLv > 40) {
+                                            percentHp = 4;
+                                        } else if (mobLv > 20) {
+                                            percentHp = 3;
+                                        }
+                                        target.getBuffInfluence().addBuffPoisoned((short) 10, percentHp, mobLv * 2);
                                     } else if (randSkill <= 75) {
                                         // 20% Thiêu đốt (Burn: trừ trực tiếp MP người chơi khiến khó dùng skill)
                                         if (target.getPoint() != null) {

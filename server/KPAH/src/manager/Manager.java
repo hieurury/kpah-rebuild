@@ -420,6 +420,9 @@ public class Manager {
         if (clazz == Const.PHAP_SU && skillType == 4) {
             return 90; // Hồi công lực đan cố định 90s mọi cấp theo thiết kế
         }
+        if (clazz == Const.PHAP_SU && skillType == 7) {
+            return 60; // Song hộ công thủ cố định 60s mọi cấp theo thiết kế
+        }
         return getTimeLifeBuffSkill(skillType, skillLevel);
     }
 
@@ -432,7 +435,24 @@ public class Manager {
     }
 
     public static long getSkillCooldown(byte clazz, byte skillType, byte level) {
-        return (level > 0) ? SKILL_COOLDOWN[clazz][skillType][level] : 0;
+        if (level <= 0) {
+            return 0;
+        }
+        if (clazz == Const.PHAP_SU) {
+            if (skillType == 4) return 120000L; // Hồi công lực đan 120s
+            if (skillType == 6) return Math.max(10000L, (180 - (level - 1) * 10) * 1000L); // Hồi sinh 180s - 10s/cấp
+            if (skillType == 7) return 60000L; // Song hộ công thủ 60s
+            if (skillType == 8) return 4000L;  // Hải long xuất thế 4s
+            if (skillType == 9) return 5000L;  // Song long thị uy 5s
+            if (skillType == 10) return 6000L; // Hàn băng vũ 6s
+        }
+        if (clazz == Const.KIEM_KHACH) {
+            if (skillType == 5) return 90000L; // Dĩ lực đáo công 90s
+            if (skillType == 6) return 5000L;  // Thiên lôi điện trảm 5s
+            if (skillType == 7) return 6000L;  // Sấm động dương gian 6s
+            if (skillType == 8) return 7000L;  // Kiếm phi kinh thiên 7s
+        }
+        return SKILL_COOLDOWN[clazz][skillType][level];
     }
 
     public static short getSkillRange(byte clazz, byte skillType) {

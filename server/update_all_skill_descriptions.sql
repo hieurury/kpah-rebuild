@@ -2,15 +2,18 @@
 -- Cập nhật bảng skill_news (hiển thị khi xem kỹ năng tại NPC)
 
 UPDATE `skill_news` SET 
-    `decript` = 'Dùng sức mạnh sấm sét tấn công nhiều mục tiêu trong phạm vi. Hồi chiêu: 60s.'
+    `decript` = 'Dùng sức mạnh sấm sét tấn công nhiều mục tiêu trong phạm vi. Hồi chiêu: 5s.',
+    `cooldown` = 5000
 WHERE `id` = 1;
 
 UPDATE `skill_news` SET 
-    `decript` = 'Dùng vũ khí dẫn truyền tia sét tạo chuỗi liên hoàn giáng vào các kẻ thù gần nhau. Hồi chiêu: 120s.'
+    `decript` = 'Dùng vũ khí dẫn truyền tia sét tạo chuỗi liên hoàn giáng vào các kẻ thù gần nhau. Hồi chiêu: 6s.',
+    `cooldown` = 6000
 WHERE `id` = 2;
 
 UPDATE `skill_news` SET 
-    `decript` = 'Vận kình lực tạo đại kiếm khổng lồ từ không trung giáng xuống hủy diệt diện rộng. Hồi chiêu: 300s.'
+    `decript` = 'Vận kình lực tạo đại kiếm khổng lồ từ không trung giáng xuống hủy diệt diện rộng. Hồi chiêu: 7s.',
+    `cooldown` = 7000
 WHERE `id` = 3;
 
 UPDATE `skill_news` SET 

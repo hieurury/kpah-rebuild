@@ -414,7 +414,7 @@ public class SkillService {
         }
         for (int i = 0; i < 15; i++) {
             for (int j = 0; j < 11; j++) {
-                msg.writer().writeShort(Manager.SKILL_COOLDOWN[pl.getInfo().getClassPlayer()][i][j] / 100);
+                msg.writer().writeShort((short) (Manager.getSkillCooldown(pl.getInfo().getClassPlayer(), (byte) i, (byte) j) / 100));
             }
         }
         for (int i = 0; i < 15; i++) {
@@ -427,7 +427,7 @@ public class SkillService {
         }
         for (int i = 0; i < 15; i++) {
             for (int j = 0; j < 11; j++) {
-                msg.writer().writeShort(Manager.TIME_LIFE_BUFF_SKILL[i][j]);
+                msg.writer().writeShort(Manager.getTimeLifeBuffSkill(pl.getInfo().getClassPlayer(), i, j));
             }
         }
         for (int i = 0; i < 15; i++) {

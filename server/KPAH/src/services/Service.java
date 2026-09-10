@@ -264,7 +264,7 @@ public class Service {
 
             if (player.hasBuffTinhAnh()) {
                 int secLeft = (int) Math.max(0, (player.getTimeEndBuffTinhAnh() - System.currentTimeMillis()) / 1000L);
-                m.writer().writeUTF("+20% dame");
+                m.writer().writeUTF("+20% Công-Thủ-HP");
                 m.writer().writeInt(secLeft);
                 m.writer().writeBoolean(false); // isDebuff
             }

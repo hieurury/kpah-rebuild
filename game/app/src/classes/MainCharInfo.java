@@ -4,6 +4,7 @@ public class MainCharInfo {
 
 	private static long initialCoins = -1;
 	public static long expPlus = 0; // kinh nghiệm được cộng
+	public static long poisonEndTime = 0; // Mốc thời gian kết thúc trúng độc
 
 	public static String getPlayerName() {
 		return class_acv.s.q.a_();
@@ -200,6 +201,18 @@ public class MainCharInfo {
 		customBuffs = buffs;
 	}
 
+	public static boolean hasBuffTinhAnh() {
+		if (customBuffs == null) return false;
+		long now = System.currentTimeMillis();
+		for (int i = 0; i < customBuffs.size(); i++) {
+			CustomBuff cb = (CustomBuff) customBuffs.elementAt(i);
+			if (cb != null && cb.endTime > now && cb.name != null && (cb.name.indexOf("Công-Thủ-HP") >= 0 || cb.name.indexOf("Tinh Anh") >= 0 || cb.name.indexOf("dame") >= 0)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	public static class BuffItem {
 		public String name;
 		public String timeStr;
@@ -252,11 +265,27 @@ public class MainCharInfo {
 				}
 			}
 
-			// 3. Trạng thái Trúng Độc từ dg / dh (Ưu tiên Debuff)
-			if (mainChar.dg > 0 && (now - mainChar.dg) < (long) mainChar.dh * 1000L) {
-				int secPoison = (int) ((long) mainChar.dh - (now - mainChar.dg) / 1000L);
+			// 3. Trạng thái Trúng Độc (Quản lý chuẩn xác bằng poisonEndTime, chống lặp reset 10s vô tận)
+			if (poisonEndTime > now) {
+				int secPoison = (int) ((poisonEndTime - now) / 1000L) + 1;
 				if (secPoison > 0 && !hasBuffNamed(list, "Trúng Độc")) {
-					list.addElement(new BuffItem("Trúng Độc", formatTime(secPoison), secPoison, true, 0xFF1744));
+					list.addElement(new BuffItem("Trúng Độc", formatTime(secPoison), secPoison, true, 0xBA55D3));
+				}
+			} else {
+				poisonEndTime = 0;
+				if (mainChar.dg > 0 || mainChar.dh > 0) {
+					mainChar.dg = 0;
+					mainChar.dh = 0;
+					mainChar.W = 0;
+					mainChar.df = 0;
+					if (mainChar.de != null) {
+						for (int k = mainChar.de.size() - 1; k >= 0; k--) {
+							Object obj = mainChar.de.elementAt(k);
+							if (obj instanceof class_zx && ((class_zx) obj).h == 22 && mainChar.aJ != 2) {
+								mainChar.de.removeElementAt(k);
+							}
+						}
+					}
 				}
 			}
 
@@ -292,18 +321,20 @@ public class MainCharInfo {
 									color = 0x00E676;
 									break;
 								case 22:
-									// Hiệu ứng 22: Nếu đang bị dính độc (dg > 0) hoặc không phải Cung Thủ thì là Debuff Trúng Độc
-									if (mainChar.dg > 0 || mainChar.aJ != 2) {
+									// Hiệu ứng 22: Chỉ hiển thị Trúng Độc khi còn thời gian poisonEndTime
+									if (poisonEndTime > now || (mainChar.aJ != 2 && mainChar.dg > 0)) {
 										name = "Trúng Độc";
-										color = 0xFF1744;
+										color = 0xBA55D3;
 										isDebuff = true;
-									} else {
+									} else if (mainChar.aJ == 2) {
 										name = "Tẩm Độc";
 										color = 0x00E676;
+									} else {
+										continue;
 									}
 									break;
 								case 23:
-									name = "+Công & Giáp";
+									name = "Song Hộ";
 									color = 0x00E676;
 									break;
 								case 24:

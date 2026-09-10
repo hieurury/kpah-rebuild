@@ -23,6 +23,8 @@ public class BuffInfluencePlayer {
     private boolean isPoisoned;
     private short docTo;
     private short secondOfPoisoned;
+    private int percentHpPerTick;
+    private int flatDamagePerTick;
     private long lastTimePoisoned;
     private long lastTimeMinusHp;
 
@@ -32,12 +34,16 @@ public class BuffInfluencePlayer {
 
     @Synchronized
     public void addBuffPoisoned(short time, short docto) throws IOException {
-        if (isPoisoned) {
-            return;
-        }
+        addBuffPoisoned(time, 0, (int) docto);
+    }
+
+    @Synchronized
+    public void addBuffPoisoned(short time, int percentHp, int flatDamage) throws IOException {
         isPoisoned = true;
         secondOfPoisoned = time;
-        docTo = docto;
+        percentHpPerTick = percentHp;
+        flatDamagePerTick = flatDamage;
+        docTo = (short) flatDamage;
         lastTimePoisoned = System.currentTimeMillis();
         lastTimeMinusHp = System.currentTimeMillis();
         BuffService.instance.sendAddBuffInfluence(this.player, BuffConst.BUFF_DOC_TO);
@@ -52,12 +58,14 @@ public class BuffInfluencePlayer {
         secondOfPoisoned = 0;
         lastTimePoisoned = 0;
         docTo = 0;
-        BuffService.instance.sendRemoveBuffInfluence(this.player, BuffConst.BUFF_DOC_TO);
+        percentHpPerTick = 0;
+        flatDamagePerTick = 0;
+        // Client KPAH tự quản lý thời gian hết độc dựa vào animation/timer, không gửi BUFF_ATTACK (89) để tránh client bị re-poison lặp lại
     }
 
     @Synchronized
     public byte getSecondPosonedLeft() {
-        return (byte) (secondOfPoisoned - Util.getSecondDifference(System.currentTimeMillis(), lastTimePoisoned));
+        return (byte) Math.max(0, (secondOfPoisoned - Util.getSecondDifference(System.currentTimeMillis(), lastTimePoisoned)));
     }
 
     @Synchronized
@@ -93,9 +101,19 @@ public class BuffInfluencePlayer {
         if (isPoisoned && (Util.canDoWithTime(lastTimePoisoned, secondOfPoisoned * 1000) || player.isDie())) {
             removeBuffPoisoned();
         }
-        if (isPoisoned && !player.isDie() && Util.canDoWithTime(lastTimeMinusHp, BuffConst.SECOND_SUB_HP_DOC_TO * 1000)) {
+        // Gây sát thương độc mỗi giây (1000ms)
+        if (isPoisoned && !player.isDie() && Util.canDoWithTime(lastTimeMinusHp, 1000L)) {
             lastTimeMinusHp = System.currentTimeMillis();
-            short dame = (short) player.injured(docTo, true, ItemEquipConst.DAMAGE_MAGIC, false);
+            int maxHp = player.getPoint() != null ? player.getPoint().getHpMax() : 1000;
+            int damageAmount = 0;
+            if (percentHpPerTick > 0) {
+                damageAmount += (int) (maxHp * (percentHpPerTick / 100.0f));
+            }
+            damageAmount += flatDamagePerTick;
+            if (damageAmount <= 0) {
+                damageAmount = Math.max(1, (int) docTo);
+            }
+            short dame = (short) player.injured(damageAmount, true, ItemEquipConst.DAMAGE_MAGIC, false);
             if (dame > 0) {
                 BuffService.instance.sendSubHpByBuffInfluence(player, dame);
             }

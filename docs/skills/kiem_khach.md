@@ -16,9 +16,9 @@
 | **3** | **Kinh lôi bát thủ** | Đơn thể | Lv 17 – 42 | 200% – 300% | 1.9s – 2.5s | 2 – 6 | Đòn kiếm chém nhanh |
 | **4** | **Hộ sát tiến** | Bị động | Lv 3 – 32 | — | Không có | 8 – 12 | Xuyên giáp: +10 đến +80 điểm |
 | **5** | **Dĩ lực đáo công** | Buff chủ động | Lv 3 – 32 | — | 90s | 100 – 550 | Phản đòn: Tỷ lệ 10% – 55%, Sát thương phản 50% – 140% |
-| **6** | **Thiên lôi điện trảm** | Đánh lan | Lv 25 – 41 | Đánh lan | 60s | 10 – 55 | Sấm sét tấn công nhiều mục tiêu |
-| **7** | **Sấm động dương gian** | Đánh lan | Lv 30 – 46 | Đánh lan | 120s | 10 – 55 | Sét chuyền qua các mục tiêu xung quanh |
-| **8** | **Kiếm phi kinh thiên** | Đánh lan | Lv 45 – 61 | Đánh lan | 300s | 10 – 80 | Kiếm khổng lồ rơi xuống diện rộng |
+| **6** | **Thiên lôi điện trảm** | Đánh lan | Lv 25 – 41 | Đánh lan | 5s | 10 – 55 | Sấm sét tấn công nhiều mục tiêu |
+| **7** | **Sấm động dương gian** | Đánh lan | Lv 30 – 46 | Đánh lan | 6s | 10 – 55 | Sét chuyền qua các mục tiêu xung quanh |
+| **8** | **Kiếm phi kinh thiên** | Đánh lan | Lv 45 – 61 | Đánh lan | 7s | 10 – 80 | Kiếm khổng lồ rơi xuống diện rộng |
 
 ---
 
@@ -108,7 +108,7 @@
 ### Skill 6: Thiên lôi điện trảm
 * **Tên chiêu:** Thiên lôi điện trảm
 * **Mô tả:** Triệu hồi sấm sét giáng xuống từ trời, công kích nhiều mục tiêu trong vùng ảnh hưởng.
-* **Hồi chiêu:** 60s
+* **Hồi chiêu:** 5s
 * **Mana tiêu hao:** `10, 15, 20, 25, 30, 35, 40, 45, 50, 55`
 * **Cơ chế:** Đánh lan diện rộng
 * **Cấp độ yêu cầu:** Lv 25 – 41 (`[25, 27, 29, 31, 33, 35, 37, 39, 41, 41]`)
@@ -118,7 +118,7 @@
 ### Skill 7: Sấm động dương gian
 * **Tên chiêu:** Sấm động dương gian
 * **Mô tả:** Truyền lôi điện qua vũ khí tạo luồng sét liên hoàn nhảy lan qua các kẻ thù lân cận.
-* **Hồi chiêu:** 120s
+* **Hồi chiêu:** 6s
 * **Mana tiêu hao:** `10, 15, 20, 25, 30, 35, 40, 45, 50, 55`
 * **Cơ chế:** Đánh lan diện rộng
 * **Cấp độ yêu cầu:** Lv 30 – 46 (`[30, 32, 34, 36, 38, 40, 42, 44, 46, 46]`)
@@ -128,7 +128,7 @@
 ### Skill 8: Kiếm phi kinh thiên
 * **Tên chiêu:** Kiếm phi kinh thiên
 * **Mô tả:** Ngưng tụ kình lực thành cự kiếm từ không trung cắm thẳng xuống đất tiêu diệt diện rộng.
-* **Hồi chiêu:** 300s
+* **Hồi chiêu:** 7s
 * **Mana tiêu hao:** `10, 40, 45, 50, 55, 60, 65, 70, 75, 80`
 * **Cơ chế:** Đánh lan diện rộng
 * **Cấp độ yêu cầu:** Lv 45 – 61 (`[45, 47, 49, 51, 53, 55, 57, 59, 61, 61]`)

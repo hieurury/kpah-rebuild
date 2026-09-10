@@ -1,7 +1,7 @@
-# KPAH Project — Task Log (Phần 09: Hiện Tại)
+# KPAH Project — Task Log (Phần 10: Hiện Tại)
 
 > **Quy tắc bắt buộc:** Mỗi file `TASK.md` chỉ ghi nhận tối đa **10 task**. 
-> Khi đủ 10 task (đạt task #90), tiến hành lưu trữ file thành `tasks/TASK_09.md` và mở file `TASK.md` mới (không cộng dồn làm file quá lớn).
+> Khi đủ 10 task (đạt task #100), tiến hành lưu trữ file thành `tasks/TASK_10.md` và mở file `TASK.md` mới (không cộng dồn làm file quá lớn).
 >
 > **Lịch sử các phần trước:**
 > - [Phần 01 (Task 1 - 10)](tasks/TASK_01.md)
@@ -12,191 +12,48 @@
 > - [Phần 06 (Task 51 - 60)](tasks/TASK_06.md)
 > - [Phần 07 (Task 61 - 70)](tasks/TASK_07.md)
 > - [Phần 08 (Task 71 - 80)](tasks/TASK_08.md)
+> - [Phần 09 (Task 81 - 90)](tasks/TASK_09.md)
 
 ---
 
-## [2026-09-10 15:58] — Task #81: Nâng Cấp Toàn Diện Hệ Thống Log Server KPAH & Bộ Lệnh Console Admin
-
-**Yêu cầu:** Log server trực quan, dễ nhìn hơn, hiển thị thông tin chi tiết và dễ kiểm soát hơn.
-**Files thay đổi:**
-- `server/KPAH/src/database/HikariCP.java` — Thêm `&useSSL=false&autoReconnect=true` loại bỏ hoàn toàn cảnh báo SSL spam của MySQL Connector.
-- `server/KPAH/src/utils/ServerLog.java` — Nâng cấp Native ANSI escape codes đa nền tảng (Termux/SSH/Linux Terminal), bộ badge màu sắc trực quan, tự động lọc sạch ANSI khi lưu file log trên đĩa, bổ sung cờ toggle và chu kỳ cho Heartbeat.
-- `server/KPAH/src/manager/TopManager.java` — Thay thế log in thô `Printer.printRed("Load Top Data")` bằng `ServerLog.system`.
-- `server/KPAH/src/services/ChatService.java` — Bổ sung method `sendServerNotice(String chat)` để gửi thông báo từ console tới toàn server.
-- `server/KPAH/src/services/MapService.java` — Ghi log thăng cấp nhân vật qua `ServerLog.levelUp`.
-- `server/KPAH/src/server/Server.java` — Xóa các log in thô duplicate, nâng cấp Heartbeat hiển thị % RAM và tên người chơi online, mở rộng bộ lệnh Admin Console (`help`, `status`, `online`/`players`, `kick`, `say`/`chat`, `hb on|off|<sec>`, `gc`, `clear`/`cls`, `baotri`).
-**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant jar`.
-**Ghi chú:** Đã tạo backup đầy đủ trong `_backup/` của từng thư mục tương ứng.
-
-## [2026-09-10 16:50] — Task #82: Rà Soát & Khắc Phục Lỗi Level Ràng Buộc Kỹ Năng 5 Lớp Nghề KPAH
-
-**Yêu cầu:** Rà soát toàn bộ các lớp nghề và kỹ năng, khắc phục sai level học kỹ năng và các vấn đề liên quan.
-**Files thay đổi:**
-- `server/KPAH/src/manager/Manager.java` — Nâng cấp toàn diện phương thức `getLevelAddSkill`:
-  - Khắc phục bug nghiêm trọng `lvSkill > 0`: Khi `lvSkill == 0`, server trả về 0 khiến nhân vật level 1 có thể nâng tất cả skill ngay lập tức và client hiển thị sai "Lv yêu cầu: 0".
-  - Bổ sung level ràng buộc chuẩn xác cho skill buff của từng phái (theo nguyên bản `class_qz.c` client KPAH): Kiếm Khách (skill 4: base 20, skill 5: base 24), Chiến Binh (skill 4: base 20, skill 5: base 21), Pháp Sư (skill 4: base 25, skill 5: base 30, skill 6: base 27 - Hồi sinh, skill 7: base 23 - Khiên MP), Đấu Sĩ (skill 4: base 19, skill 5: base 20), Cung Thủ (skill 4: base 22, skill 5: base 19).
-  - Chuẩn hóa ánh xạ 3 kỹ năng AoE mới (cấp 25, 30, 45) cho 4 phái thường (skill 6, 7, 8) và Pháp Sư (skill 8, 9, 10).
-- `server/KPAH/src/services/SkillService.java` — Sửa `learnNewSkill`: Chỉnh sửa `levelRequest` kiểm tra `lvSkill = 0` (mức học ban đầu) thay vì `1`, giúp học skill AoE 1 đúng cấp 25, AoE 2 đúng cấp 30 và AoE 3 đúng cấp 45 (thay vì bị đội lên cấp 27, 32).
-- `server/kpah.sql` — Cập nhật mảng `LEVEL_ADD_SKILL` trong bảng `others` cho 3 skill AoE mới (Row 6 base 25, Row 7 base 30, Row 8 base 45) đồng bộ giữa client và server.
-- `server/update_skills_level.sql` — Tạo script migration cập nhật trực tiếp bảng `others` trong MySQL database.
-**Kết quả:** ✅ Thành công. Toàn bộ server biên dịch sạch 100% bằng `ant clean jar` với Java 21, tạo mới `dist/KPAH.jar`.
-**Ghi chú:** Đã tạo backup đầy đủ tại `server/KPAH/src/manager/_backup/`, `server/KPAH/src/services/_backup/`, và `server/_backup/`.
-
----
-## [2026-09-10 17:43] — Task #83: Sửa Lỗi Logic Level Ràng Buộc Skill Buff Kiếm Khách
-
-**Yêu cầu:** Rà soát và sửa lỗi level yêu cầu học skill buff của lớp Kiếm Khách phát sinh từ Task #82.
-**Nguyên nhân:** Trong task #82, code Kiếm Khách (skill 4 & 5) được viết để đọc từ `LEVEL_ADD_SKILL[4][lvSkill]` và `LEVEL_ADD_SKILL[5][lvSkill]` (hàng DB chung có base lv 3), thay vì dùng công thức `base + Math.min(lvSkill, 9)` đúng với thiết kế (base lv 20 và 24). Lỗi logic nên không bị bắt khi build, nhưng gây ra việc Kiếm Khách học skill buff từ cấp 3 — thấp hơn rất nhiều so với nguyên bản.
-**Files thay đổi:**
-- `server/KPAH/src/manager/Manager.java` — Sửa `getLevelAddSkill` nhánh Kiếm Khách:
-  - `case 4`: Đổi từ đọc `LEVEL_ADD_SKILL[4][lvSkill]` (base lv 3) → `(short)(20 + Math.min(lvSkill, 9))` (base lv 20).
-  - `case 5`: Đổi từ đọc `LEVEL_ADD_SKILL[5][lvSkill]` (base lv 3) → `(short)(24 + Math.min(lvSkill, 9))` (base lv 24).
-  - Nhất quán với `EFF_BUFF_SKILL[KIEM_KHACH] = {20, 24}` và nguyên bản `class_qz.c` client KPAH.
-**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21), chỉ có 2 warning Lombok cũ không liên quan.
-**Ghi chú:** Backup tạo tại `server/KPAH/src/manager/_backup/Manager.java.bak.20260910_17XX`.
-
----
-
-## [2026-09-10 19:04] — Task #84: Điều Chỉnh Skill 4 & 5 Kiếm Khách (MP / Cooldown)
+## [2026-09-10 22:12] — Task #91: Điều Chỉnh Hồi Chiêu 3 Kỹ Năng Cuối Kiếm Khách Thành 5s, 6s, 7s
 
 **Yêu cầu:**
-1. Hoàn nguyên level học skill 4 & 5 Kiếm Khách về lv3 (Manager.java — task #83 sai thiết kế).
-2. Skill 4 (xuyên giáp passive): Nhân đôi MP hao hụt.
-3. Skill 5 (phản dame): Nhân 10 lần MP hao hụt + cooldown 90s. Cơ chế phản đòn: 10%(+5%/cấp) cơ hội phản 50%(+10%/cấp) dame bản thân (code đã có trong BuffService, giữ nguyên).
+- Điều chỉnh thời gian hồi chiêu (cooldown) của 3 kỹ năng AoE cuối cùng của phái Kiếm Khách (Kiếm Sĩ) lần lượt thành:
+  - Skill 6 (Thiên lôi điện trảm - AoE lv 25): **5s** (`5000ms`)
+  - Skill 7 (Sấm động dương gian - AoE lv 30): **6s** (`6000ms`)
+  - Skill 8 (Kiếm phi kinh thiên - AoE lv 45): **7s** (`7000ms`)
 
-**Phạm vi thay đổi:**
-- `server/KPAH/src/manager/Manager.java` — Hoàn nguyên Kiếm Khách skill 4 & 5 về base lv 3.
-- `server/kpah.sql` — Cập nhật `SKILL_MP[0]` và `SKILL_COOLDOWN[0]`.
-- `server/update_skills_kiem_khach.sql` — Script migration chạy trên DB thực.
-
-**Giá trị mục tiêu:**
-- Skill 4 MP: `[4,4,4,5,5,5,6,6,6,6,6]` → `[8,8,8,10,10,10,12,12,12,12,12]`
-- Skill 5 MP: `[10,15,20,25,30,35,40,45,50,55,55]` → `[100,150,200,250,300,350,400,450,500,550,550]`
-- Skill 5 CD: `[5000,60000,...×10]` → `[0,90000,90000,...×10]` (index 1-10 = 90s)
-
-**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21). Chỉ có 2 warning Lombok cũ không liên quan.
 **Files thay đổi:**
-- `server/KPAH/src/manager/Manager.java` — Hoàn nguyên skill 4 & 5 Kiếm Khách về base lv3 đúng thiết kế gốc.
-- `server/kpah.sql` — Cập nhật `SKILL_MP[KIEM_KHACH]` skill 4 & 5; `SKILL_COOLDOWN[KIEM_KHACH]` skill 5.
-- `server/update_skills_kiem_khach.sql` — Tạo script migration chạy trên DB thực.
-**Ghi chú:** Backup tại `server/KPAH/src/manager/_backup/Manager.java.bak.20260910_1906`, `server/_backup/kpah.sql.bak.20260910_1907`.
+- `server/KPAH/src/manager/Manager.java` — Sửa `getSkillCooldown` cho `KIEM_KHACH`: skill 6 trả về `5000L`, skill 7 trả về `6000L`, skill 8 trả về `7000L`.
+- `game/app/src/classes/class_sc.java` — Sửa mô tả tooltip kỹ năng trong bảng Kỹ Năng Client cho Kiếm Khách: skill 6 hồi chiêu 5s, skill 7 hồi chiêu 6s, skill 8 hồi chiêu 7s.
+- `server/kpah.sql` — Cập nhật `skill_news` ID 1 (CD 5000), ID 2 (CD 6000), ID 3 (CD 7000) và mô tả hiển thị.
+- `server/update_all_skill_descriptions.sql` — Cập nhật script migration MySQL cho 3 kỹ năng mới của Kiếm Khách.
+- `docs/skills/kiem_khach.md` — Cập nhật bảng tổng quan và chi tiết hồi chiêu của Skill 6, 7, 8 thành 5s, 6s, 7s.
+- `server/dist/KPAH.jar` & `game/build/dist/KPAH_PROD.jar` — Biên dịch sạch 100% bằng ant.
+- Giả lập MicroEmulator đã được khởi động lại với bản build mới (`task-1292`).
 
-## [2026-09-10 20:35] — Task #85: Điều Chỉnh Bộ Kỹ Năng Pháp Sư & Tạo Tài Liệu Chiêu Thức
-
-**Yêu cầu:**
-1. Mốc level học:
-   - Skill 4 (Hồi công lực đan) & Skill 5 (Hồi lực tiến): Base học lv 3.
-   - Skill 6 (Hồi sinh) & Skill 7 (Song hộ công thủ): Base học lv 6.
-2. Skill 5 (Hồi lực tiến): Bị động tăng dame theo lượng MP đang có (cấp 1: 5% MP, tăng 2%/cấp).
-3. Skill 4 (Hồi công lực đan): MP x10, Cooldown 120s, thời gian buff cố định 90s.
-4. Skill 6 (Hồi sinh): Rút 80% HP và MP của bản thân khi hồi sinh đồng đội, Cooldown 3 phút (180s).
-5. Skill 7 (Song hộ công thủ): MP x10, khi bị tấn công hồi mana = 10% (+5%/cấp) dame nhận vào; hồi máu = 20% (+5%/cấp) mana tiêu hao.
-6. 3 chiêu AoE cuối (Skill 8, 9, 10): Giảm cooldown hợp lý (20s / 40s / 60s).
-7. Tài liệu hóa: Tạo thư mục `docs/skills/` với 2 file markdown chi tiết cho Pháp Sư và Kiếm Khách.
-
-**Kế hoạch thực hiện:**
-1. Backup các file liên quan: `Manager.java`, `BuffService.java`, `Point.java`, `kpah.sql`.
-2. Cập nhật `Manager.java`: `getLevelAddSkill`, `getTimeLifeBuffSkill`.
-3. Cập nhật `Point.java`: Skill 5 nội tại tăng dame theo MP đang có cho Pháp Sư.
-4. Cập nhật `BuffService.java`: Cơ chế hồi sinh rút 80% HP/MP và Song hộ công thủ hồi mana/hồi máu.
-5. Cập nhật `kpah.sql` & tạo script migration `update_skills_phap_su.sql`: `SKILL_MP`, `SKILL_COOLDOWN`, `skill_news`.
-6. Biên dịch server bằng `ant clean jar` để verify 100%.
-7. Tạo tài liệu `docs/skills/phap_su.md` và `docs/skills/kiem_khach.md`.
-8. Cập nhật trạng thái hoàn thành vào `TASK.md`.
-
-**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21).
-**Files thay đổi:**
-- `server/KPAH/src/manager/Manager.java` — Mốc level học (Skill 4, 5 base 3; Skill 6, 7 base 6), overload `getTimeLifeBuffSkill` cố định 90s cho skill 4 Pháp Sư.
-- `server/KPAH/src/player/Point.java` — Skill 5 (Hồi lực tiến) nội tại tăng sát thương trực tiếp theo lượng MP đang có (cấp 1: 5%, +2%/cấp).
-- `server/KPAH/src/services/BuffService.java` — Skill 6 (Hồi sinh) rút 80% HP và MP hiện tại của bản thân; Skill 7 (Song hộ công thủ) hồi mana = 10% (+5%/cấp) sát thương nhận vào, hồi máu = 20% (+5%/cấp) mana tiêu hao.
-- `server/KPAH/src/services/SkillService.java` — Hồi máu từ mana tiêu hao khi có buff Song hộ công thủ trong cả tấn công quái lẫn người chơi.
-- `server/kpah.sql` — Cập nhật `SKILL_MP`, `SKILL_COOLDOWN` và `skill_news` (AoE CD: 20s/40s/60s).
-- `server/update_skills_phap_su.sql` — Script migration chạy trên database thực tế (Termux/MySQL).
-- `docs/skills/phap_su.md` — Tài liệu chi tiết toàn bộ 11 kỹ năng lớp Pháp Sư.
-- `docs/skills/kiem_khach.md` — Tài liệu chi tiết toàn bộ 9 kỹ năng lớp Kiếm Khách.
-**Ghi chú:** Backup tại `_backup/` của từng thư mục tương ứng.
-
-## [2026-09-10 20:42] — Task #86: Tinh Chỉnh Cơ Chế Rút HP/MP Chiêu Hồi Sinh & Cập Nhật CD 3 Chiêu AoE Pháp Sư
-
-**Yêu cầu:**
-1. Chiêu Hồi Sinh (Skill 6):
-   - Rút HP và Mana của bản thân để truyền sang hồi sinh cho mục tiêu: cần ít thì rút ít, cần nhiều thì rút nhiều, nếu lượng cần quá cao thì tối đa chỉ rút 80% HP và MP của bản thân (không theo cấp chiêu, giữ tối thiểu 1 HP).
-   - Thời gian hồi chiêu: Cấp 1 là 180s, giảm 10s mỗi cấp (Cấp 1: 180s, Cấp 2: 170s, ..., Cấp 10: 90s).
-2. 3 chiêu AoE:
-   - Skill 8 (Hải long xuất thế): Hồi chiêu (CD) là **4s** (`4000ms`).
-   - Skill 9 (Song long thị uy): Hồi chiêu (CD) là **5s** (`5000ms`).
-   - Skill 10 (Hàn băng vũ): Hồi chiêu (CD) là **6s** (`6000ms`).
-3. Cập nhật `docs/skills/phap_su.md`, `kpah.sql`, `update_skills_phap_su.sql` và biên dịch lại server.
-
-**Kế hoạch thực hiện:**
-1. Cập nhật `MapService.java`: Thêm overload `revivePlayer(Player player, int hpPlus, int mpPlus)`.
-2. Cập nhật `BuffService.java`: Tính lượng HP/MP mục tiêu cần, rút tương ứng từ bản thân (tối đa 80% HP/MP) và truyền sang cho mục tiêu.
-3. Cập nhật `kpah.sql` & `update_skills_phap_su.sql`: Đặt CD skill 6 giảm 10s mỗi cấp (180s -> 90s), CD skill 8, 9, 10 trong `SKILL_COOLDOWN` và `skill_news` thành 4s, 5s, 6s.
-4. Biên dịch server bằng `ant clean jar` để verify code Java.
-5. Cập nhật tài liệu `docs/skills/phap_su.md`.
-6. Cập nhật kết quả vào `TASK.md`.
-
-**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21).
-**Files thay đổi:**
-- `server/KPAH/src/services/MapService.java` — Thêm overload `revivePlayer(Player, int, int)`.
-- `server/KPAH/src/services/BuffService.java` — Cập nhật logic Hồi Sinh: lấy đầy đủ HpMax và MpMax của mục tiêu để bù đắp (không theo cấp chiêu), trích từ HP/MP bản thân (tối đa 80%), người nhận nhận đúng lượng Pháp Sư trao cho.
-- `server/kpah.sql` — Cập nhật `SKILL_COOLDOWN` cho skill 6 (180s giảm 10s/cấp) và skill 8 (4s), skill 9 (5s), skill 10 (6s).
-- `server/update_skills_phap_su.sql` — Cập nhật script migration với cooldown skill 6 (180s - 90s) và AoE mới (4s / 5s / 6s).
-- `docs/skills/phap_su.md` — Cập nhật mô tả chiêu Hồi Sinh (rút HP/MP, cooldown 180s - 90s) và thời gian hồi chiêu 3 chiêu AoE.
-**Ghi chú:** Đã kiểm tra logic chuyển đổi HP/MP đảm bảo an toàn (không gây tử vong cho người dùng chiêu, luôn giữ lại tối thiểu 1 HP).
+**Kết quả:** ✅ Thành công. Toàn bộ logic hồi chiêu Kiếm Khách được cập nhật đồng bộ 100% giữa Server, Client, Database và Tài liệu.
 
 ---
 
-## [2026-09-10 21:02] — Task #87: Cập Nhật Toàn Diện Mô Tả Kỹ Năng Client & Database Cho Kiếm Khách & Pháp Sư
-
-**Yêu cầu:** Sửa đổi toàn bộ mô tả kỹ năng (in-game client & database) phản ánh chính xác các cơ chế và hồi chiêu mới đã được chỉnh sửa.
-**Files thay đổi:**
-- `game/app/src/classes/class_sc.java` — Nâng cấp phương thức `j(int n)` hiển thị tooltip mô tả kỹ năng trong giao diện Kỹ Năng của client:
-  - **Kiếm Khách:**
-    - Skill 4 (Hộ sát tiến): Hiển thị "Hộ sát tiến (Bị động)", tăng điểm xuyên giáp `+x`, không hồi chiêu.
-    - Skill 5 (Dĩ lực đáo công): Hiển thị "Dĩ lực đáo công (Phản đòn)", tỷ lệ phản `10% (+5%/cấp)`, lượng phản `50% (+10%/cấp) dame bản thân`, thời gian buff, hồi chiêu 90s.
-    - Skill 6, 7, 8 (AoE): Hiển thị tên kỹ năng kèm nhãn `(Lan)` và thời gian hồi chiêu cụ thể (60s / 120s / 300s).
-  - **Pháp Sư:**
-    - Skill 4 (Hồi công lực đan): Tăng Max HP & MP `x%`, thời gian cố định 90s, hồi chiêu 120s.
-    - Skill 5 (Hồi lực tiến): "Hồi lực tiến (Bị động)", tăng sát thương `5% (+2%/cấp)` theo MP hiện có, không hồi chiêu.
-    - Skill 6 (Hồi sinh): "Hồi sinh đồng đội", rút HP/MP bù cho mục tiêu (tối đa 80% bản thân), hồi chiêu `180s` ở cấp 1 giảm `10s` mỗi cấp (`180s - 90s`).
-    - Skill 7 (Song hộ công thủ): Hồi MP khi bị đánh `10% (+5%/cấp)` dame, hồi máu khi dùng skill `20% (+5%/cấp)` mana tiêu hao, thời gian buff, hồi chiêu 60s.
-    - Skill 8, 9, 10 (AoE): Hiển thị tên kỹ năng `(Lan)` và thời gian hồi chiêu chuẩn xác (Hải long xuất thế: 4s / Song long thị uy: 5s / Hàn băng vũ: 6s).
-  - **Kỹ năng chưa học:** Vẫn hiển thị tên và mô tả tóm tắt kỹ năng kèm điều kiện Lv yêu cầu để người chơi nắm rõ công dụng trước khi học.
-- `server/kpah.sql` — Cập nhật cột `des` và `cooldown` trong bảng `skill_news` cho 15 kỹ năng mới (đặc biệt là Kiếm Khách ID 1, 2, 3 và Pháp Sư ID 7, 8, 9) đồng bộ nội dung và thời gian hồi chiêu.
-- `server/update_all_skill_descriptions.sql` — Tạo script migration cập nhật mô tả kỹ năng bảng `skill_news` trực tiếp trên MySQL.
-- `game/build/dist/KPAH_PROD.jar` & `game/build/dist/kpah_mod_v1.0.0.1.jar` — Biên dịch thành công 100% bằng Java 8 (`ant dist-prod`).
-**Kết quả:** ✅ Thành công. Mô tả kỹ năng trong client và database đồng bộ hoàn toàn với logic thực tế.
-**Ghi chú:** Backup tạo tại `game/app/src/classes/_backup/class_sc.java.bak.20260910_2100` và `server/_backup/kpah.sql.bak.20260910_2100`.
-
-
----
-
-## [2026-09-10 21:12] — Task #88: Chuẩn Hóa Mô Tả Kỹ Năng Trực Quan (Kiếm Khách & Pháp Sư)
+## [2026-09-10 22:45] — Task #92: Sửa Lỗi Lặp 10s Độc, Nâng Cấp Cơ Chế Độc DoT Mỗi Giây, Quái Tinh Anh Phân Cấp Độc 2-5% HP và Nhảy Dame Màu Tím
 
 **Yêu cầu:**
-1. Bỏ toàn bộ các dạng mở ngoặc công thức như `(+5%/cấp)`, `(+10%/cấp)`, `(+2%/cấp)`... khỏi mô tả kỹ năng; cấp bao nhiêu tính toán và hiển thị trực tiếp con số bấy nhiêu cho trực quan.
-2. Chuẩn hóa hình thức mô tả của toàn bộ kỹ năng cho 2 phái Kiếm Khách và Pháp Sư theo cấu trúc thống nhất:
-   - Tên chiêu
-   - Mô tả
-   - Lực công: value (nếu có)
-   - Hồi chiêu: value (nếu có)
-   - Mana tiêu hao: value (nếu có)
-   - Chỉ số buff hoặc cơ chế hiện tại
-   - Cấp độ yêu cầu (nếu chưa đạt max cấp)
-3. Đồng bộ mô tả chuẩn hóa vào Client game, Database MySQL và các tài liệu kỹ năng.
+- Khắc phục triệt để lỗi Client liên tục bị reset thời gian 10s độc khi dính đạn của quái tinh anh dù thực tế không còn trúng.
+- Nâng cấp toàn diện cơ chế trúng độc: độc gây sát thương mỗi giây (1s/tick DoT) và duy trì trong thời gian cấu hình (hỗ trợ cả % HP tối đa và sát thương phẳng).
+- Quái Tinh Anh có độc dược mạnh yếu theo cấp độ: gây rút 2% - 5% HP tối đa mỗi giây duy trì 10s (Lv 1-20: 2%, Lv 21-40: 3%, Lv 41-60: 4%, Lv > 60: 5%).
+- Nhất quán thuộc tính độc và cơ chế độc của game.
+- Số sát thương độc (Poison Damage) hiển thị nhảy bay lên màu tím rực rỡ (Neon Purple: `0xDF5FFF`) với viền đổ bóng đậm (`0x2B003B`), phân biệt rõ ràng với sát thương vật lý/phép thông thường.
 
 **Files thay đổi:**
-- `game/app/src/classes/class_sc.java` — Triển khai `formatSkillDescription(int classChar, int n)`:
-  - Kiếm Khách (Skill 0 – 8) & Pháp Sư (Skill 0 – 10): Định dạng đồng nhất theo mẫu người dùng cung cấp.
-  - Tính toán trực tiếp con số thực tế cho từng cấp độ (Cấp 1 đến Cấp 10), loại bỏ triệt để các ghi chú `+5%/cấp`.
-  - Hiển thị linh hoạt: Kỹ năng đã học hiển thị chỉ số của cấp hiện tại; kỹ năng chưa học hiển thị "Tình trạng: Chưa học", chỉ số cơ bản cấp 1 và cấp độ yêu cầu để người chơi xem trước.
-- `docs/skills/kiem_khach.md` — Chuẩn hóa bảng tổng quan và chi tiết từng chiêu theo mẫu mới, liệt kê bảng chỉ số chi tiết từng cấp không dùng công thức trong ngoặc.
-- `docs/skills/phap_su.md` — Chuẩn hóa bảng tổng quan và chi tiết từng chiêu theo mẫu mới, bảng chỉ số cụ thể từng cấp cho các skill 4, 5, 6, 7 và hồi chiêu chuẩn 4s, 5s, 6s cho skill AoE 8, 9, 10.
-- `server/kpah.sql` & `server/update_all_skill_descriptions.sql` — Cập nhật `des` và `cooldown` bảng `skill_news` trong database.
-- `game/build/dist/KPAH_PROD.jar` & `game/build/dist/kpah_mod_v1.0.0.1.jar` — Biên dịch sạch 100% bằng Java 8 (`ant dist-prod`).
+- `server/KPAH/src/skill/BuffInfluencePlayer.java` — Mở rộng `addBuffPoisoned` nhận `percentHp` và `flatDamage`, tick DoT chu kỳ 1000ms (1s/lần), bỏ lệnh gửi `BUFF_ATTACK` khi hết độc để chống client bị re-poison.
+- `server/KPAH/src/skill/BuffInfluenceMonster.java` — Đồng bộ hoá cấu trúc DoT 1000ms, nhận % HP và sát thương phẳng.
+- `server/KPAH/src/map/Monster.java` — Quái Tinh Anh khi bắn đạn gây trúng độc 10s với 2-5% Max HP mỗi giây tùy cấp độ quái.
+- `game/app/src/classes/MainCharInfo.java` — Thêm `poisonEndTime` quản lý đếm ngược tuyệt đối theo timestamp thực; khi hết thời gian, tự động dọn dẹp sạch `dg`, `dh`, `W` và xóa hiệu ứng `class_zx 22`, triệt tiêu hoàn toàn vòng lặp đếm lùi vô hạn. Đổi màu badge sang tím `0xBA55D3`.
+- `game/app/src/classes/Paint.java` — Thêm `PoisonPopup`, method `addPoisonDamage(damage, x, y)` và `paintPoisonPopups(g)` render số sát thương bay lên màu tím neon trên màn hình.
+- `game/app/src/classes/MsgHandler.java` — Bắt gói tin `BUFF_ATTACK` (cmd 89): khi nhận DoT tick (`b4 == -1`), gọi `Paint.addPoisonDamage` nhảy số màu tím và trừ HP, ngăn không cho render chữ trắng/đỏ đè lên. Khi nhận `b4 == 4`, cập nhật `MainCharInfo.poisonEndTime`.
+- Backup files: Lưu tại `_backup/` trong thư mục tương ứng theo quy định.
 
-**Kết quả:** ✅ Thành công. Mô tả kỹ năng trực quan, rõ ràng, đồng bộ 100% giữa Client, Database và Tài liệu.
-**Ghi chú:** Backup tạo tại `docs/skills/_backup/kiem_khach.md.bak.20260910_2110` và `docs/skills/_backup/phap_su.md.bak.20260910_2110`.
+**Kết quả:** ✅ Thành công. Cả Server (`server/dist/KPAH.jar`) và Client (`game/build/dist/KPAH_PROD.jar`) đã được biên dịch thành công và emulator đã được khởi động lại.
 
----
