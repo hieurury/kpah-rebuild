@@ -15,6 +15,7 @@ import network.Message;
 import template.SkillNewTemplate;
 import utils.CommandMessage;
 import consts.Const;
+import consts.BuffConst;
 import consts.ItemEquipConst;
 import utils.Util;
 
@@ -67,6 +68,16 @@ public class SkillService {
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);
+            if (pl.getInfo().getClassPlayer() == Const.PHAP_SU && pl.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
+                byte lvSkill7 = pl.getSkill().getLevelSkill()[7];
+                int percentHpHeal = 20 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                int hpHeal = (int) ((long) skillMP * percentHpHeal / 100);
+                if (hpHeal > 0) {
+                    pl.getPoint().plusHp(hpHeal);
+                    UseItemService.instance.onPlusHp(pl, (short) hpHeal);
+                    MapService.instance.onNewHpMp(pl);
+                }
+            }
         }
         onPlayerAttackPlayer(pl, playerTarget);
         pl.getSkill().getTimeLastUseSkills()[typeSkill] = System.currentTimeMillis();
@@ -139,6 +150,16 @@ public class SkillService {
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);
+            if (pl.getInfo().getClassPlayer() == Const.PHAP_SU && pl.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
+                byte lvSkill7 = pl.getSkill().getLevelSkill()[7];
+                int percentHpHeal = 20 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                int hpHeal = (int) ((long) skillMP * percentHpHeal / 100);
+                if (hpHeal > 0) {
+                    pl.getPoint().plusHp(hpHeal);
+                    UseItemService.instance.onPlusHp(pl, (short) hpHeal);
+                    MapService.instance.onNewHpMp(pl);
+                }
+            }
         }
         if (isSkillAeo && !mobTarget.isKhoangSan()) {
             @Cleanup("clear")

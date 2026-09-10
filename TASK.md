@@ -81,4 +81,68 @@
 - `server/update_skills_kiem_khach.sql` — Tạo script migration chạy trên DB thực.
 **Ghi chú:** Backup tại `server/KPAH/src/manager/_backup/Manager.java.bak.20260910_1906`, `server/_backup/kpah.sql.bak.20260910_1907`.
 
+## [2026-09-10 20:35] — Task #85: Điều Chỉnh Bộ Kỹ Năng Pháp Sư & Tạo Tài Liệu Chiêu Thức
+
+**Yêu cầu:**
+1. Mốc level học:
+   - Skill 4 (Hồi công lực đan) & Skill 5 (Hồi lực tiến): Base học lv 3.
+   - Skill 6 (Hồi sinh) & Skill 7 (Song hộ công thủ): Base học lv 6.
+2. Skill 5 (Hồi lực tiến): Bị động tăng dame theo lượng MP đang có (cấp 1: 5% MP, tăng 2%/cấp).
+3. Skill 4 (Hồi công lực đan): MP x10, Cooldown 120s, thời gian buff cố định 90s.
+4. Skill 6 (Hồi sinh): Rút 80% HP và MP của bản thân khi hồi sinh đồng đội, Cooldown 3 phút (180s).
+5. Skill 7 (Song hộ công thủ): MP x10, khi bị tấn công hồi mana = 10% (+5%/cấp) dame nhận vào; hồi máu = 20% (+5%/cấp) mana tiêu hao.
+6. 3 chiêu AoE cuối (Skill 8, 9, 10): Giảm cooldown hợp lý (20s / 40s / 60s).
+7. Tài liệu hóa: Tạo thư mục `docs/skills/` với 2 file markdown chi tiết cho Pháp Sư và Kiếm Khách.
+
+**Kế hoạch thực hiện:**
+1. Backup các file liên quan: `Manager.java`, `BuffService.java`, `Point.java`, `kpah.sql`.
+2. Cập nhật `Manager.java`: `getLevelAddSkill`, `getTimeLifeBuffSkill`.
+3. Cập nhật `Point.java`: Skill 5 nội tại tăng dame theo MP đang có cho Pháp Sư.
+4. Cập nhật `BuffService.java`: Cơ chế hồi sinh rút 80% HP/MP và Song hộ công thủ hồi mana/hồi máu.
+5. Cập nhật `kpah.sql` & tạo script migration `update_skills_phap_su.sql`: `SKILL_MP`, `SKILL_COOLDOWN`, `skill_news`.
+6. Biên dịch server bằng `ant clean jar` để verify 100%.
+7. Tạo tài liệu `docs/skills/phap_su.md` và `docs/skills/kiem_khach.md`.
+8. Cập nhật trạng thái hoàn thành vào `TASK.md`.
+
+**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21).
+**Files thay đổi:**
+- `server/KPAH/src/manager/Manager.java` — Mốc level học (Skill 4, 5 base 3; Skill 6, 7 base 6), overload `getTimeLifeBuffSkill` cố định 90s cho skill 4 Pháp Sư.
+- `server/KPAH/src/player/Point.java` — Skill 5 (Hồi lực tiến) nội tại tăng sát thương trực tiếp theo lượng MP đang có (cấp 1: 5%, +2%/cấp).
+- `server/KPAH/src/services/BuffService.java` — Skill 6 (Hồi sinh) rút 80% HP và MP hiện tại của bản thân; Skill 7 (Song hộ công thủ) hồi mana = 10% (+5%/cấp) sát thương nhận vào, hồi máu = 20% (+5%/cấp) mana tiêu hao.
+- `server/KPAH/src/services/SkillService.java` — Hồi máu từ mana tiêu hao khi có buff Song hộ công thủ trong cả tấn công quái lẫn người chơi.
+- `server/kpah.sql` — Cập nhật `SKILL_MP`, `SKILL_COOLDOWN` và `skill_news` (AoE CD: 20s/40s/60s).
+- `server/update_skills_phap_su.sql` — Script migration chạy trên database thực tế (Termux/MySQL).
+- `docs/skills/phap_su.md` — Tài liệu chi tiết toàn bộ 11 kỹ năng lớp Pháp Sư.
+- `docs/skills/kiem_khach.md` — Tài liệu chi tiết toàn bộ 9 kỹ năng lớp Kiếm Khách.
+**Ghi chú:** Backup tại `_backup/` của từng thư mục tương ứng.
+
+## [2026-09-10 20:42] — Task #86: Tinh Chỉnh Cơ Chế Rút HP/MP Chiêu Hồi Sinh & Cập Nhật CD 3 Chiêu AoE Pháp Sư
+
+**Yêu cầu:**
+1. Chiêu Hồi Sinh (Skill 6):
+   - Rút HP và Mana của bản thân để truyền sang hồi sinh cho mục tiêu: cần ít thì rút ít, cần nhiều thì rút nhiều, nếu lượng cần quá cao thì tối đa chỉ rút 80% HP và MP của bản thân (không theo cấp chiêu, giữ tối thiểu 1 HP).
+   - Thời gian hồi chiêu: Cấp 1 là 180s, giảm 10s mỗi cấp (Cấp 1: 180s, Cấp 2: 170s, ..., Cấp 10: 90s).
+2. 3 chiêu AoE:
+   - Skill 8 (Hải long xuất thế): Hồi chiêu (CD) là **4s** (`4000ms`).
+   - Skill 9 (Song long thị uy): Hồi chiêu (CD) là **5s** (`5000ms`).
+   - Skill 10 (Hàn băng vũ): Hồi chiêu (CD) là **6s** (`6000ms`).
+3. Cập nhật `docs/skills/phap_su.md`, `kpah.sql`, `update_skills_phap_su.sql` và biên dịch lại server.
+
+**Kế hoạch thực hiện:**
+1. Cập nhật `MapService.java`: Thêm overload `revivePlayer(Player player, int hpPlus, int mpPlus)`.
+2. Cập nhật `BuffService.java`: Tính lượng HP/MP mục tiêu cần, rút tương ứng từ bản thân (tối đa 80% HP/MP) và truyền sang cho mục tiêu.
+3. Cập nhật `kpah.sql` & `update_skills_phap_su.sql`: Đặt CD skill 6 giảm 10s mỗi cấp (180s -> 90s), CD skill 8, 9, 10 trong `SKILL_COOLDOWN` và `skill_news` thành 4s, 5s, 6s.
+4. Biên dịch server bằng `ant clean jar` để verify code Java.
+5. Cập nhật tài liệu `docs/skills/phap_su.md`.
+6. Cập nhật kết quả vào `TASK.md`.
+
+**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21).
+**Files thay đổi:**
+- `server/KPAH/src/services/MapService.java` — Thêm overload `revivePlayer(Player, int, int)`.
+- `server/KPAH/src/services/BuffService.java` — Cập nhật logic Hồi Sinh: lấy đầy đủ HpMax và MpMax của mục tiêu để bù đắp (không theo cấp chiêu), trích từ HP/MP bản thân (tối đa 80%), người nhận nhận đúng lượng Pháp Sư trao cho.
+- `server/kpah.sql` — Cập nhật `SKILL_COOLDOWN` cho skill 6 (180s giảm 10s/cấp) và skill 8 (4s), skill 9 (5s), skill 10 (6s).
+- `server/update_skills_phap_su.sql` — Cập nhật script migration với cooldown skill 6 (180s - 90s) và AoE mới (4s / 5s / 6s).
+- `docs/skills/phap_su.md` — Cập nhật mô tả chiêu Hồi Sinh (rút HP/MP, cooldown 180s - 90s) và thời gian hồi chiêu 3 chiêu AoE.
+**Ghi chú:** Đã kiểm tra logic chuyển đổi HP/MP đảm bảo an toàn (không gây tử vong cho người dùng chiêu, luôn giữ lại tối thiểu 1 HP).
+
 ---

@@ -340,10 +340,10 @@ public class Manager {
         // Pháp Sư (11 skills: 0-3 cơ bản, 4-7 buff, 8-10 AoE mới)
         if (clazz == Const.PHAP_SU) {
             return switch (idSkill) {
-                case 4 -> (short) (25 + Math.min(lvSkill, 9)); // Hồi công lực đan (base lv 25)
-                case 5 -> (short) (30 + Math.min(lvSkill, 9)); // Hồi lực tiến (base lv 30)
-                case 6 -> (short) (27 + Math.min(lvSkill, 9)); // Hồi sinh (base lv 27)
-                case 7 -> (short) (23 + Math.min(lvSkill, 9)); // Song hộ công thủ / Khiên MP (base lv 23)
+                case 4 -> (short) (4 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[4].length ? LEVEL_ADD_SKILL[4][lvSkill] : 3); // Hồi công lực đan (base lv 3)
+                case 5 -> (short) (5 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[5].length ? LEVEL_ADD_SKILL[5][lvSkill] : 3); // Hồi lực tiến (base lv 3)
+                case 6 -> (short) (6 + Math.min(lvSkill, 9) * 3); // Hồi sinh (base lv 6, mỗi cấp +3 lv: 6..33)
+                case 7 -> (short) (6 + Math.min(lvSkill, 9) * 3); // Song hộ công thủ (base lv 6, mỗi cấp +3 lv: 6..33)
                 case 8 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Hải long xuất thế (AoE 1, lv 25)
                 case 9 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Song long thị uy (AoE 2, lv 30)
                 case 10 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Hàn băng vũ (AoE 3, lv 45)
@@ -414,6 +414,13 @@ public class Manager {
 
     public static short getTimeLifeBuffSkill(int skillType, int skillLevel) {
         return (skillLevel > 0) ? TIME_LIFE_BUFF_SKILL[skillType][skillLevel] : 0;
+    }
+
+    public static short getTimeLifeBuffSkill(byte clazz, int skillType, int skillLevel) {
+        if (clazz == Const.PHAP_SU && skillType == 4) {
+            return 90; // Hồi công lực đan cố định 90s mọi cấp theo thiết kế
+        }
+        return getTimeLifeBuffSkill(skillType, skillLevel);
     }
 
     public static short getSkillDamPercent(byte clazz, byte skillType, byte skillLevel) {

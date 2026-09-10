@@ -40,6 +40,13 @@ public class MapService {
         player.getSundry().setNewlyRevived(true);
     }
 
+    public void revivePlayer(@NonNull Player player, int hpPlus, int mpPlus) throws IOException {
+        player.getPoint().plusHp(hpPlus);
+        player.getPoint().plusMp(mpPlus);
+        MapService.instance.onNewHpMp(player);
+        player.getSundry().setNewlyRevived(true);
+    }
+
     public void comeHome(@NonNull Player player) throws IOException {
         if (player.getSundry().isComeHome() && Util.canDoWithTime(player.getSundry().getLastTimeComeHome(), 9000)) {
             if (player.getLocation().getZone().getMap().isMapVillage()) {

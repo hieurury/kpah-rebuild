@@ -48,15 +48,51 @@ public class BuffService {
         short percentDamage = Manager.getSkillDamPercent(pl.getInfo().getClassPlayer(), typeSkill, levelSkill);
         pl.getPoint().minusMp(skillMP);
         UseItemService.instance.onPlusMp(pl, (short) -skillMP);
+        if (pl.getInfo().getClassPlayer() == Const.PHAP_SU && (effSkill == BuffConst.SONG_HO_CONG_THU || pl.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU))) {
+            // Song hộ công thủ: hồi máu tương đương 20% (tăng 5% mỗi cấp) mana tiêu hao
+            byte lvSkill7 = pl.getSkill().getLevelSkill()[7];
+            int percentHpHeal = 20 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+            int hpHeal = (int) ((long) skillMP * percentHpHeal / 100);
+            if (hpHeal > 0) {
+                pl.getPoint().plusHp(hpHeal);
+                UseItemService.instance.onPlusHp(pl, (short) hpHeal);
+                MapService.instance.onNewHpMp(pl);
+            }
+        }
         if (typeBuff == BuffConst.ACTIVE_BUFF) {
             if (playerTarget.getIdPlayer() == pl.getIdPlayer() && !pl.getSkillBuff().isExistBuff(effSkill)) {
-                short timeLive = Manager.getTimeLifeBuffSkill(typeSkill, levelSkill);
+                short timeLive = Manager.getTimeLifeBuffSkill(pl.getInfo().getClassPlayer(), typeSkill, levelSkill);
                 pl.getSkillBuff().addBuff(effSkill, timeLive, percentDamage);
                 sendPlayerUseBuff(pl, effSkill, levelSkill, timeLive);
             }
         } else if (typeBuff == BuffConst.REVIVE_BUFF && pl.getInfo().getClassPlayer() == Const.PHAP_SU) {
             if (playerTarget.isDie() && playerTarget.isPlayer() && playerTarget.getIdPlayer() != pl.getIdPlayer()) {
-                MapService.instance.revivePlayer(playerTarget, (byte) percentDamage);
+                // Lượng HP & MP đầy đủ mà mục tiêu cần để hồi phục (không phụ thuộc cấp chiêu)
+                int targetHpNeeded = playerTarget.getPoint().getHpMax();
+                int targetMpNeeded = playerTarget.getPoint().getMpMax();
+
+                // Giới hạn tối đa có thể trích từ bản thân: tối đa 80% HP và 80% MP hiện tại (giữ tối thiểu 1 HP)
+                int maxHpCanGive = (int) ((long) pl.getPoint().getHp() * 80 / 100);
+                if (maxHpCanGive >= pl.getPoint().getHp()) {
+                    maxHpCanGive = Math.max(0, pl.getPoint().getHp() - 1);
+                }
+                int maxMpCanGive = (int) ((long) pl.getPoint().getMp() * 80 / 100);
+
+                // Cần ít rút ít, cần nhiều rút nhiều (tối đa 80% lượng máu/mana của Pháp Sư)
+                int hpGive = Math.min(targetHpNeeded, maxHpCanGive);
+                int mpGive = Math.min(targetMpNeeded, maxMpCanGive);
+                hpGive = Math.max(1, hpGive);
+                mpGive = Math.max(1, mpGive);
+
+                // Trừ HP & MP của Pháp Sư
+                pl.getPoint().minusHp(hpGive);
+                pl.getPoint().minusMp(mpGive);
+                UseItemService.instance.onPlusHp(pl, (short) -hpGive);
+                UseItemService.instance.onPlusMp(pl, (short) -mpGive);
+                MapService.instance.onNewHpMp(pl);
+
+                // Người được hồi sinh nhận đúng lượng HP & MP mà Pháp Sư đã trao cho
+                MapService.instance.revivePlayer(playerTarget, hpGive, mpGive);
                 ChatService.instance.sendChat(playerTarget, String.format("Cảm ơn %s đã hồi sinh", pl.getName()));
             }
         }
@@ -133,8 +169,10 @@ public class BuffService {
             }
             case Const.PHAP_SU -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
-                    short percentDamage = playerTarget.getSkillBuff().getPercentDame(BuffConst.SONG_HO_CONG_THU);
-                    short mpPlus = (short) (damage * percentDamage / 100);
+                    // Cơ chế mới: hồi mana tương đương 10% (tăng 5% mỗi cấp) sát thương nhận vào
+                    byte lvSkill7 = playerTarget.getSkill().getLevelSkill()[7];
+                    int percentMp = 10 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                    short mpPlus = (short) ((long) damage * percentMp / 100);
                     damage -= mpPlus;
                     if (mpPlus > 0) {
                         playerTarget.getPoint().plusMp(mpPlus);
@@ -172,8 +210,10 @@ public class BuffService {
             }
             case Const.PHAP_SU -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
-                    short percentDamage = playerTarget.getSkillBuff().getPercentDame(BuffConst.SONG_HO_CONG_THU);
-                    short mpPlus = (short) (damage * percentDamage / 100);
+                    // Cơ chế mới: hồi mana tương đương 10% (tăng 5% mỗi cấp) sát thương nhận vào
+                    byte lvSkill7 = playerTarget.getSkill().getLevelSkill()[7];
+                    int percentMp = 10 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                    short mpPlus = (short) ((long) damage * percentMp / 100);
                     damage -= mpPlus;
                     if (mpPlus > 0) {
                         playerTarget.getPoint().plusMp(mpPlus);
