@@ -364,7 +364,7 @@ public class SkillService {
         if (templateSkill == null) {
             return;
         }
-        short levelRequest = Manager.getLevelAddSkill(player.getInfo().getClassPlayer(), templateSkill.getIdSkill(), 1);
+        short levelRequest = Manager.getLevelAddSkill(player.getInfo().getClassPlayer(), templateSkill.getIdSkill(), 0);
         if (player.getInfo().getLevel() < levelRequest) {
             Service.instance.sendLogOut(player.getSession(), String.format("Yêu cầu level %s để học kĩ năng %s", levelRequest, templateSkill.getName()));
             return;

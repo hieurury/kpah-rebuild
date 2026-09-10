@@ -28,4 +28,18 @@
 **Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant jar`.
 **Ghi chú:** Đã tạo backup đầy đủ trong `_backup/` của từng thư mục tương ứng.
 
+## [2026-09-10 16:50] — Task #82: Rà Soát & Khắc Phục Lỗi Level Ràng Buộc Kỹ Năng 5 Lớp Nghề KPAH
+
+**Yêu cầu:** Rà soát toàn bộ các lớp nghề và kỹ năng, khắc phục sai level học kỹ năng và các vấn đề liên quan.
+**Files thay đổi:**
+- `server/KPAH/src/manager/Manager.java` — Nâng cấp toàn diện phương thức `getLevelAddSkill`:
+  - Khắc phục bug nghiêm trọng `lvSkill > 0`: Khi `lvSkill == 0`, server trả về 0 khiến nhân vật level 1 có thể nâng tất cả skill ngay lập tức và client hiển thị sai "Lv yêu cầu: 0".
+  - Bổ sung level ràng buộc chuẩn xác cho skill buff của từng phái (theo nguyên bản `class_qz.c` client KPAH): Kiếm Khách (skill 4: base 20, skill 5: base 24), Chiến Binh (skill 4: base 20, skill 5: base 21), Pháp Sư (skill 4: base 25, skill 5: base 30, skill 6: base 27 - Hồi sinh, skill 7: base 23 - Khiên MP), Đấu Sĩ (skill 4: base 19, skill 5: base 20), Cung Thủ (skill 4: base 22, skill 5: base 19).
+  - Chuẩn hóa ánh xạ 3 kỹ năng AoE mới (cấp 25, 30, 45) cho 4 phái thường (skill 6, 7, 8) và Pháp Sư (skill 8, 9, 10).
+- `server/KPAH/src/services/SkillService.java` — Sửa `learnNewSkill`: Chỉnh sửa `levelRequest` kiểm tra `lvSkill = 0` (mức học ban đầu) thay vì `1`, giúp học skill AoE 1 đúng cấp 25, AoE 2 đúng cấp 30 và AoE 3 đúng cấp 45 (thay vì bị đội lên cấp 27, 32).
+- `server/kpah.sql` — Cập nhật mảng `LEVEL_ADD_SKILL` trong bảng `others` cho 3 skill AoE mới (Row 6 base 25, Row 7 base 30, Row 8 base 45) đồng bộ giữa client và server.
+- `server/update_skills_level.sql` — Tạo script migration cập nhật trực tiếp bảng `others` trong MySQL database.
+**Kết quả:** ✅ Thành công. Toàn bộ server biên dịch sạch 100% bằng `ant clean jar` với Java 21, tạo mới `dist/KPAH.jar`.
+**Ghi chú:** Đã tạo backup đầy đủ tại `server/KPAH/src/manager/_backup/`, `server/KPAH/src/services/_backup/`, và `server/_backup/`.
+
 ---

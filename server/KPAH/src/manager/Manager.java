@@ -327,24 +327,80 @@ public class Manager {
     }
 
     public static short getLevelAddSkill(byte clazz, int idSkill, int lvSkill) {
-        if (clazz == Const.PHAP_SU) {
-            if (idSkill == 6) {
-                return (short) (20 + (lvSkill > 0 ? (lvSkill - 1) : 0));
-            }
-            if (idSkill == 7) {
-                return (short) (23 + (lvSkill > 0 ? (lvSkill - 1) : 0));
-            }
-            if (idSkill == 8) {
-                return (short) ((lvSkill > 0 && 6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length) ? LEVEL_ADD_SKILL[6][lvSkill] : 25);
-            }
-            if (idSkill == 9) {
-                return (short) ((lvSkill > 0 && 7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length) ? LEVEL_ADD_SKILL[7][lvSkill] : 30);
-            }
-            if (idSkill == 10) {
-                return (short) ((lvSkill > 0 && 8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length) ? LEVEL_ADD_SKILL[8][lvSkill] : 45);
+        if (lvSkill < 0 || lvSkill > 10) {
+            return 0;
+        }
+        // 4 skill tấn công cơ bản đầu tiên (Skill 0: lv 1..10, Skill 1: lv 6..15, Skill 2: lv 11..20, Skill 3: lv 17..39)
+        if (idSkill >= 0 && idSkill <= 3) {
+            if (idSkill < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[idSkill].length) {
+                return LEVEL_ADD_SKILL[idSkill][lvSkill];
             }
         }
-        return (short) ((lvSkill > 0 && idSkill < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[idSkill].length) ? LEVEL_ADD_SKILL[idSkill][lvSkill] : 0);
+
+        // Pháp Sư (11 skills: 0-3 cơ bản, 4-7 buff, 8-10 AoE mới)
+        if (clazz == Const.PHAP_SU) {
+            return switch (idSkill) {
+                case 4 -> (short) (25 + Math.min(lvSkill, 9)); // Hồi công lực đan (base lv 25)
+                case 5 -> (short) (30 + Math.min(lvSkill, 9)); // Hồi lực tiến (base lv 30)
+                case 6 -> (short) (27 + Math.min(lvSkill, 9)); // Hồi sinh (base lv 27)
+                case 7 -> (short) (23 + Math.min(lvSkill, 9)); // Song hộ công thủ / Khiên MP (base lv 23)
+                case 8 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Hải long xuất thế (AoE 1, lv 25)
+                case 9 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Song long thị uy (AoE 2, lv 30)
+                case 10 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Hàn băng vũ (AoE 3, lv 45)
+                default -> 0;
+            };
+        }
+
+        // Kiếm Khách (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
+        if (clazz == Const.KIEM_KHACH) {
+            return switch (idSkill) {
+                case 4 -> (short) (20 + Math.min(lvSkill, 9)); // Hộ sát tiến / Xuyên giáp (base lv 20)
+                case 5 -> (short) (24 + Math.min(lvSkill, 9)); // Dĩ lực đáo công / Phản đòn (base lv 24)
+                case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Thiên lôi điện trảm (AoE 1, lv 25)
+                case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Sấm động dương gian (AoE 2, lv 30)
+                case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Kiếm phi kinh thiên (AoE 3, lv 45)
+                default -> 0;
+            };
+        }
+
+        // Chiến Binh (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
+        if (clazz == Const.CHIEN_BINH) {
+            return switch (idSkill) {
+                case 4 -> (short) (20 + Math.min(lvSkill, 9)); // Cường thân giáp / Tăng giáp (base lv 20)
+                case 5 -> (short) (21 + Math.min(lvSkill, 9)); // Hộ công tiến / Tăng công (base lv 21)
+                case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Thiên long bạo kích (AoE 1, lv 25)
+                case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Liệt hỏa bạo kích (AoE 2, lv 30)
+                case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Sao băng giáng thế (AoE 3, lv 45)
+                default -> 0;
+            };
+        }
+
+        // Đấu Sĩ (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
+        if (clazz == Const.DAU_SI) {
+            return switch (idSkill) {
+                case 4 -> (short) (19 + Math.min(lvSkill, 9)); // Bất di biến / Gây choáng (base lv 19)
+                case 5 -> (short) (20 + Math.min(lvSkill, 9)); // Hộ thủ tiến / Tăng thủ (base lv 20)
+                case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Kinh thiên động địa (AoE 1, lv 25)
+                case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Sơn Tinh bộ thiên (AoE 2, lv 30)
+                case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Thạch nhũ công tâm (AoE 3, lv 45)
+                default -> 0;
+            };
+        }
+
+        // Cung Thủ (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
+        if (clazz == Const.CUNG_THU) {
+            return switch (idSkill) {
+                case 4 -> (short) (22 + Math.min(lvSkill, 9)); // Độc lưu tiễn / Tẩm độc (base lv 22)
+                case 5 -> (short) (19 + Math.min(lvSkill, 9)); // Hộ độc tiễn / Tăng độc (base lv 19)
+                case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Thập diện tâm tiễn (AoE 1, lv 25)
+                case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Thăng thiên loạn tiễn (AoE 2, lv 30)
+                case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Vạn tiễn quy tâm (AoE 3, lv 45)
+                default -> 0;
+            };
+        }
+
+        // Fallback
+        return (short) ((idSkill < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[idSkill].length) ? LEVEL_ADD_SKILL[idSkill][lvSkill] : 0);
     }
 
     public static boolean isSkillAeo(int cClass, int skill) {
