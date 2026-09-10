@@ -28,6 +28,19 @@ public class MsgHandler {
 				}
 				return;
 			}
+			case -115: {
+				byte count = msg.b().readByte();
+				java.util.Vector list = new java.util.Vector();
+				long now = System.currentTimeMillis();
+				for (int i = 0; i < count; i++) {
+					String name = msg.b().readUTF();
+					int secLeft = msg.b().readInt();
+					boolean isDebuff = msg.b().readBoolean();
+					list.addElement(new MainCharInfo.CustomBuff(name, now + (long) secLeft * 1000L, isDebuff));
+				}
+				MainCharInfo.setCustomBuffs(list);
+				return;
+			}
 			}
 			try {
 				globalMsgHandler.a(msg);

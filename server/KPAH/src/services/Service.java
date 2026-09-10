@@ -246,4 +246,36 @@ public class Service {
         m.writer().writeBoolean(true); // paint hat cho nhân vật chính
         player.getSession().sendMessage(m);
     }
+
+    public void sendCustomBuffs(@NonNull Player player) {
+        try {
+            if (player.getSession() == null) {
+                return;
+            }
+            Message m = new Message(CommandMessage.CMD_CUSTOM_BUFF);
+            int count = 0;
+            if (player.hasBuffTinhAnh()) {
+                count++;
+            }
+            if (player.hasBuffGioVang()) {
+                count++;
+            }
+            m.writer().writeByte(count);
+
+            if (player.hasBuffTinhAnh()) {
+                int secLeft = (int) Math.max(0, (player.getTimeEndBuffTinhAnh() - System.currentTimeMillis()) / 1000L);
+                m.writer().writeUTF("+20% dame");
+                m.writer().writeInt(secLeft);
+                m.writer().writeBoolean(false); // isDebuff
+            }
+            if (player.hasBuffGioVang()) {
+                int secLeft = (int) Math.max(0, (player.getTimeEndBuffGioVang() - System.currentTimeMillis()) / 1000L);
+                m.writer().writeUTF("buff exp " + player.getPercentBuffGioVang() + "%");
+                m.writer().writeInt(secLeft);
+                m.writer().writeBoolean(false); // isDebuff
+            }
+            player.getSession().sendMessage(m);
+        } catch (Exception ignored) {
+        }
+    }
 }

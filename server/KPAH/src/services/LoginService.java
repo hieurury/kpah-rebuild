@@ -83,6 +83,7 @@ public class LoginService {
         MapService.instance.sendXaPhuTemplate(pl);
         SkillService.instance.sendSkillInfo(pl);
         Service.instance.sendMainCharInfo(pl);
+        Service.instance.sendCustomBuffs(pl);
         Service.instance.sendImage(pl, (byte) 1);
         ItemService.instance.sendItemTemplate(pl);
         InventoryService.instance.sendItemBody(pl);

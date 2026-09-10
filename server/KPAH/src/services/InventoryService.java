@@ -106,6 +106,8 @@ public class InventoryService {
                 }
             }
         }
+        player.getPoint().initPoint();
+        Service.instance.sendMainCharInfo(player);
         InventoryService.instance.sendItemBody(player);
         InventoryService.instance.sendItemPotion(player);
         sendSuccessRepairItem(player);
@@ -319,7 +321,7 @@ public class InventoryService {
     public int sumAttributeValueForId(@NonNull Player player, byte attributeId) {
         int sum = 0;
         for (ItemEquip item : player.getInventory().getItemBody()) {
-            if (item != null) {
+            if (item != null && item.getDurable() > 0) {
                 sum += item.getValue(attributeId);
             }
         }

@@ -150,17 +150,21 @@ public class UseItemService {
                     }
                     InventoryService.instance.sendItemBody(player);
                     InventoryService.instance.sendItemPotion(player);
+                    player.getPoint().initPoint();
+                    Service.instance.sendMainCharInfo(player);
                     ChatService.instance.sendChatOnlyMe(player, "Đã dùng Thẻ mua bán sửa chữa toàn bộ trang bị (Trừ " + Util.formatNumber(price) + " xu).");
                 }
                 case 35 -> {
                     player.setBuffGioVang(3600000L, (short) 100);
                     player.getPoint().initPoint();
+                    Service.instance.sendCustomBuffs(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
                     ChatService.instance.sendChatOnlyMe(player, "Đã dùng Vé giờ vàng 1h! Tăng 100% kinh nghiệm trong 1 giờ.");
                 }
                 case 75 -> {
                     player.setBuffGioVang(3 * 3600000L, (short) 100);
                     player.getPoint().initPoint();
+                    Service.instance.sendCustomBuffs(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
                     ChatService.instance.sendChatOnlyMe(player, "Đã dùng Vé giờ vàng 3h! Tăng 100% kinh nghiệm trong 3 giờ.");
                 }
@@ -168,6 +172,7 @@ public class UseItemService {
                     player.setBuffTinhAnh(3600000L); // Hiệu lực 1 giờ
                     player.getPoint().initPoint();
                     Service.instance.sendMainCharInfo(player);
+                    Service.instance.sendCustomBuffs(player);
                     MapService.instance.sendInfoMe(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
                     ChatService.instance.sendChatOnlyMe(player, "Đã dùng Bình tăng lực! Tăng sức mạnh trong 1 giờ.");
@@ -175,6 +180,7 @@ public class UseItemService {
                 case 81 -> {
                     player.setBuffGioVang(3600000L, (short) 150);
                     player.getPoint().initPoint();
+                    Service.instance.sendCustomBuffs(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
                     ChatService.instance.sendChatOnlyMe(player, "Đã dùng Vé giờ vàng! Tăng 150% kinh nghiệm.");
                 }
@@ -185,6 +191,7 @@ public class UseItemService {
                     player.setBuffTinhAnh(180000L); // Hiệu lực 3 phút (180 giây)
                     player.getPoint().initPoint();
                     Service.instance.sendMainCharInfo(player);
+                    Service.instance.sendCustomBuffs(player);
                     MapService.instance.sendInfoMe(player);
                     InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
                     ChatService.instance.sendChatOnlyMe(player, "Đã dùng Tinh Anh Đan! Tăng 20% sát thương, giáp và HP trong 3 phút.");

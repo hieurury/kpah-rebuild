@@ -59,6 +59,7 @@ public class ChangeMapService {
                 MapService.instance.sendNpcServer(pl, npcServer);
             }
         }
+        Service.instance.sendCustomBuffs(pl);
     }
 
     public void changeMapByXaPhu(@NonNull Player pl, byte index, short mapId) throws IOException {

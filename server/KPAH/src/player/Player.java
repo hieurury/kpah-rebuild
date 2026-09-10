@@ -19,6 +19,7 @@ import services.ChatService;
 import services.InventoryService;
 import services.MapService;
 import services.PartyService;
+import services.Service;
 import services.TradeService;
 import skill.BuffInfluencePlayer;
 import consts.BuffConst;
@@ -138,11 +139,26 @@ public class Player {
                     damage = this.point.getHp() - 1;
                 }
             }
+            boolean anyBroken = false;
+            boolean anyDurableChanged = false;
             for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
                 ItemEquip item = this.inventory.getItemBody().get(i);
-                if ((item.getTemplate().getType() == 0 || item.getTemplate().getType() == 1 || item.getTemplate().getType() == 2) && item.getMDurable() > 0) {
-                    item.minusDurable();
+                if (item != null && (item.isArmor() || item.isJewelry() || (item.getTemplate() != null && item.getTemplate().getType() == 19)) && item.getMDurable() > 0) {
+                    short oldDur = item.getDurable();
+                    if (item.minusDurableCheck()) {
+                        anyDurableChanged = true;
+                    }
+                    if (oldDur > 0 && item.getDurable() <= 0) {
+                        anyBroken = true;
+                    }
                 }
+            }
+            if (anyDurableChanged) {
+                InventoryService.instance.sendItemBody(this);
+            }
+            if (anyBroken) {
+                this.point.initPoint();
+                Service.instance.sendMainCharInfo(this);
             }
             if (x2) {
                 this.point.minusHp(damage);

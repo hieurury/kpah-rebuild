@@ -65,6 +65,10 @@ public class SkillService {
         }
         if (weapon.minusDurableCheck()) {
             InventoryService.instance.sendItemBody(pl);
+            if (weapon.getDurable() <= 0) {
+                pl.getPoint().initPoint();
+                Service.instance.sendMainCharInfo(pl);
+            }
         }
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
@@ -112,6 +116,10 @@ public class SkillService {
         }
         if (weapon.minusDurableCheck()) {
             InventoryService.instance.sendItemBody(pl);
+            if (weapon.getDurable() <= 0) {
+                pl.getPoint().initPoint();
+                Service.instance.sendMainCharInfo(pl);
+            }
         }
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
@@ -152,6 +160,8 @@ public class SkillService {
                     short mDurable = weapon.getTemplate().getDurable();
                     weapon.setDurable(mDurable);
                     weapon.setMDurable(mDurable);
+                    pl.getPoint().initPoint();
+                    Service.instance.sendMainCharInfo(pl);
                     InventoryService.instance.sendItemBody(pl);
                     InventoryService.instance.sendItemPotion(pl);
                     ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã được tự động sửa chữa bằng Thẻ mua bán" + (price > 0 ? " (Trừ " + Util.formatNumber(price) + " xu)." : "."));

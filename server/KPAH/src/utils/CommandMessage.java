@@ -355,5 +355,7 @@ public class CommandMessage {
 
     public static final byte SHOP_NEW = -76;
 
+    public static final byte CMD_CUSTOM_BUFF = -115;
+
     public static final byte FULL_SIZE = Byte.MIN_VALUE;
 }

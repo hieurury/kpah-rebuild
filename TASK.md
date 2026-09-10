@@ -164,3 +164,88 @@ Cần cho phép đeo đồng thời 2 chiếc nhẫn với UI menu chọn "Đeo 
 
 ---
 
+## [2026-09-10 14:58] — Cập nhật cơ chế độ bền trang bị hỏng, di dời HUD độ bền chi tiết sang phải & đồng bộ Buffs/Tinh Anh Đan
+
+**Yêu cầu:**
+1. **Kiểm tra và sửa cơ chế độ bền trang bị (Server):** Khi trang bị hỏng (`durable <= 0`), không được cộng bất kỳ chỉ số nào (giáp, công, HP, MP, thuộc tính) vào người chơi. Khi trang bị hỏng trong chiến đấu hoặc khi sửa chữa đồ, tự động tính toán lại chỉ số và cập nhật cho client ngay lập tức.
+2. **Di dời HUD độ bền (Client):** Chuyển từ góc trái sang góc trên bên phải (dưới thanh target mob, `y = 38`), hiển thị chi tiết độ bền của từng món trang bị đang mặc (Vũ khí, Áo, Quần, Nón, Giày, Găng tay, Nhẫn, Dây chuyền, Ngọc bội). Nếu hỏng hiển thị `0 (HỎNG)` màu đỏ nhấp nháy.
+3. **Thiết kế lại HUD bên trái (Client):** Dòng 1 là Tọa độ, dòng 2 là một đường kẻ line ngăn cách, phía dưới line là danh sách Effect:
+   - Màu xanh lá (`class_d.j[1]`): Buff có lợi.
+   - Màu đỏ (`class_d.j[2]`): Debuff bất lợi.
+   - Không hiển thị thời gian hồi chiêu của skill.
+   - Mô tả chi tiết các hiệu ứng được buff hoặc debuff kèm thời gian (ví dụ: `buff exp 100%: 1h20p`, `+20% dame: 3p20s`, `Trúng độc: 20s`, `-10% giáp: 10s`...).
+4. **Đồng bộ hiệu ứng Tinh Anh Đan / Giờ Vàng (Server & Client):** Tạo packet `CMD_CUSTOM_BUFF` (`-115`) đồng bộ thời gian hiệu lực của Tinh Anh Đan (`+20% dame: ...`) và Vé Giờ Vàng khi sử dụng, khi đăng nhập và khi chuyển map, hiển thị trực quan trên HUD.
+
+**Files thay đổi:**
+- `server/KPAH/src/services/InventoryService.java`:
+  - Sửa `sumAttributeValueForId`: chỉ tính chỉ số của item khi `durable > 0`.
+  - Sửa `repairItem`: gọi `initPoint()` và `sendMainCharInfo()` cập nhật chỉ số sau khi sửa đồ.
+- `server/KPAH/src/player/Player.java`:
+  - Trong `injured`: khi độ bền trang bị giáp giảm về 0, tự động re-init point và gửi info mới cho người chơi.
+- `server/KPAH/src/services/SkillService.java`:
+  - Khi vũ khí trừ độ bền về 0, tự động re-init point và gửi info.
+  - Khi tự động sửa chữa vũ khí bằng Thẻ Mua Bán trong `checkWeaponUsable`, re-init point và gửi info.
+- `server/KPAH/src/services/UseItemService.java`:
+  - Khi dùng Thẻ Mua Bán sửa trang bị (case 33): re-init point và gửi info.
+  - Khi dùng Tinh Anh Đan (107), Bình tăng lực (80), Vé giờ vàng (35, 75, 81): gọi `sendCustomBuffs(player)`.
+- `server/KPAH/src/utils/CommandMessage.java` & `server/KPAH/src/services/Service.java`:
+  - Thêm `CMD_CUSTOM_BUFF = -115;` và phương thức `sendCustomBuffs(Player player)`.
+- `server/KPAH/src/services/LoginService.java` & `ChangeMapService.java`:
+  - Gửi `sendCustomBuffs(pl)` khi đăng nhập và khi chuyển map.
+- `game/app/src/classes/MainCharInfo.java`:
+  - Thêm `EquipDurability` và `getEquipDurabilityList()` quét các trang bị đang mặc (Vũ khí, Áo, Quần, Nón, Giày, Găng tay, Nhẫn, Dây chuyền, Ngọc bội).
+  - Thêm model `CustomBuff` nhận danh sách buff từ server.
+  - Cập nhật `getActiveBuffItems()`: phân định màu chuẩn xác (xanh lá cho buff, đỏ cho debuff), lọc bỏ cooldown skill tấn công, định dạng thời gian `XhYp` / `XpYs` / `Xs`.
+- `game/app/src/classes/MsgHandler.java`:
+  - Bắt opcode `-115` (`CMD_CUSTOM_BUFF`) để tiếp nhận buff từ server.
+- `game/app/src/classes/Paint.java`:
+  - Tách hàm `paintRightEquipDurability(g)` vẽ bảng độ bền chi tiết bên phải (y = 38).
+  - Tái cấu trúc `paintLeftInfoAndBuffs(g)`: Dòng 1 Tọa độ $\rightarrow$ Đường line ngăn cách $\rightarrow$ Danh sách Effect chi tiết phân màu xanh lá/đỏ.
+
+**Kết quả:** ✅ Thành công — Cả Server và Client đều biên dịch không lỗi (`BUILD SUCCESSFUL`). Giả lập client MicroEmulator đã được khởi chạy với bản build mới nhất.
+**Ghi chú:**
+- Backup files:
+  - `server/KPAH/src/services/_backup/InventoryService.java.bak.*`
+  - `server/KPAH/src/services/_backup/SkillService.java.bak.*`
+  - `server/KPAH/src/services/_backup/UseItemService.java.bak.*`
+  - `server/KPAH/src/services/_backup/Service.java.bak.*`
+  - `server/KPAH/src/player/_backup/Player.java.bak.*`
+  - `game/app/src/classes/_backup/MainCharInfo.java.bak.*`
+  - `game/app/src/classes/_backup/MsgHandler.java.bak.*`
+  - `game/app/src/classes/_backup/Paint.java.bak.*`
+- Phần 08 hiện có: 7/10 task.
+
+---
+
+## [2026-09-10 15:08] — Sửa hiển thị Debuff Trúng Độc từ Quái Tinh Anh & Sửa lỗi hao mòn độ bền Giày, Găng tay, Nhẫn khi chiến đấu
+
+**Yêu cầu:**
+1. **Hiệu ứng Trúng Độc từ Quái Tinh Anh:** Trước đây bị hiển thị nhầm thành buff "Tẩm Độc" màu xanh lá. Cần sửa lại thành Debuff "Trúng Độc" màu đỏ và rà soát toàn bộ các debuff của quái tinh anh (Choáng, Trúng Độc) đảm bảo hiển thị chuẩn màu đỏ.
+2. **Hao mòn độ bền trang bị (Giày, Găng tay, Nhẫn):** Kiểm tra vì sao khi chiến đấu các trang bị này không thấy bị hư hại/trừ độ bền. Nếu là lỗi thì chỉnh lại.
+
+**Nguyên nhân gốc rễ:**
+1. **Lỗi hiển thị Trúng Độc thành Tẩm Độc:**
+   - Khi quái tinh anh tấn công gây độc (`BUFF_DOC_TO`), client tạo đối tượng `class_zx` có ID là 22 để vẽ hiệu ứng bong bóng độc quanh nhân vật.
+   - Trong `MainCharInfo.java`, switch case 22 đang bị gán cố định là `"Tẩm Độc"` với màu xanh lá buff (`isDebuff = false`).
+   - Do đó khi người chơi bị quái tinh anh tấn công trúng độc, HUD bên trái lại hiển thị dòng chữ "Tẩm Độc: 5s" màu xanh lá (như một buff có lợi).
+2. **Lỗi độ bền Giày, Găng tay, Nhẫn:**
+   - **Với Giày (Type 10) & Găng tay (Type 11):** Nằm trong `item.isArmor()`. Server có trừ độ bền trong `Player.injured()`, NHƯNG Server **chỉ gửi** `sendItemBody` cập nhật cho client khi `anyBroken == true` (độ bền về 0). Khi độ bền giảm dần (100 -> 99 -> 98), Server không hề gửi `sendItemBody`, dẫn đến việc trên HUD của client con số độ bền của Giày và Găng tay đứng im bất động.
+   - **Với Nhẫn (Type 8, và cả Dây chuyền Type 9, Ngọc bội Type 12):** Server chỉ kiểm tra `item.isArmor()` trong `Player.injured()`, loại trừ hoàn toàn các món trang sức (`isJewelry()`), khiến Nhẫn và trang sức không bao giờ bị trừ độ bền khi chịu sát thương.
+
+**Files thay đổi:**
+- `game/app/src/classes/MainCharInfo.java`:
+  - Ưu tiên kiểm tra các trạng thái Debuff khống chế (Choáng từ `cW/cZ`, Trúng Độc từ `dg/dh`) lên trước.
+  - Phân loại chính xác hiệu ứng 22: Nếu đang bị dính độc (`mainChar.dg > 0`) hoặc nhân vật không phải phái Cung thủ (`mainChar.aJ != 2`), hiệu ứng 22 luôn là **Debuff "Trúng Độc"** màu đỏ (`0xFF1744`, `isDebuff = true`).
+  - Kiểm tra hiệu ứng 19: Nếu đang bị Choáng (`mainChar.cW`), luôn là **Debuff "Choáng"** màu đỏ (`0xFF1744`, `isDebuff = true`).
+- `server/KPAH/src/player/Player.java`:
+  - Mở rộng phạm vi trừ độ bền trong `injured()` cho toàn bộ các trang bị giáp và trang sức đang đeo (`item.isArmor() || item.isJewelry() || type == 19`).
+  - Bổ sung biến cờ `anyDurableChanged`: Ngay khi có bất kỳ món trang bị nào bị giảm 1 điểm độ bền (`item.minusDurableCheck() == true`), Server lập tức gửi `InventoryService.instance.sendItemBody(this)` về client để cập nhật số độ bền thời gian thực trên HUD.
+
+**Kết quả:** ✅ Thành công — Cả Client và Server đều build sạch sẽ không lỗi (`BUILD SUCCESSFUL`).
+**Ghi chú:**
+- Backup:
+  - `game/app/src/classes/_backup/MainCharInfo.java.bak.20260910_1506`
+  - `server/KPAH/src/player/_backup/Player.java.bak.20260910_1506`
+- Phần 08 hiện có: 8/10 task.
+
+---
