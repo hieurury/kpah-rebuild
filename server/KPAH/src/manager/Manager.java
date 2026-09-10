@@ -974,7 +974,17 @@ public class Manager {
             // <editor-fold defaultstate="collapsed" desc="Load Skill News Template">
             rs = HikariCP.executeQuery("SELECT * FROM `skill_news`");
             while (rs.next()) {
-                SkillNewTemplate skillNewTemplate = SkillNewTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).decript(rs.getString("des")).idSkill(rs.getByte("idSkill")).classChar(rs.getByte("charClass")).price(rs.getInt("price")).build();
+                String decriptStr = "";
+                try {
+                    decriptStr = rs.getString("decript");
+                } catch (Exception e) {
+                    try {
+                        decriptStr = rs.getString("des");
+                    } catch (Exception ignored) {
+                        decriptStr = "";
+                    }
+                }
+                SkillNewTemplate skillNewTemplate = SkillNewTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).decript(decriptStr).idSkill(rs.getByte("idSkill")).classChar(rs.getByte("charClass")).price(rs.getInt("price")).build();
                 SKILL_NEW_TEMPLATES.put(skillNewTemplate.getId(), skillNewTemplate);
             }
             rs.close();
