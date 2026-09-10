@@ -522,6 +522,10 @@ public class UseItemService {
     }
 
     public void useItemEquipment(@NonNull Player player, short index) throws IOException {
+        useItemEquipment(player, index, (byte) 0);
+    }
+
+    public void useItemEquipment(@NonNull Player player, short index, byte slot) throws IOException {
         if (player.isDie()) {
             return;
         }
@@ -535,16 +539,47 @@ public class UseItemService {
         if (equipment.getClassChar() != -1 && equipment.getClassChar() != player.getInfo().getClassPlayer() && equipment.isWeapon()) {
             return;
         }
-        if (equipment.getLevel() > equipment.getLevel()) {
+        // Sửa lỗi: so sánh level trang bị với level nhân vật
+        if (equipment.getLevel() > player.getInfo().getLevel()) {
             return;
         }
-        ItemEquip hasEquipment = InventoryService.instance.findItemBodyByType(player, equipment.getTemplate().getType());
-        if (hasEquipment != null) {
-            InventoryService.instance.swapItemBagToBody(player, equipment, hasEquipment);
+
+        // Xử lý riêng biệt cho nhẫn (type == 8)
+        if (equipment.getTemplate().getType() == 8) {
+            ItemEquip ringTop = InventoryService.instance.findItemBodyRingBySlot(player, (byte) 1);
+            ItemEquip ringBottom = InventoryService.instance.findItemBodyRingBySlot(player, (byte) 2);
+
+            if (slot == 0) {
+                // Tự động: lấp đầy ô trống trước
+                if (ringTop == null && ringBottom == null) {
+                    slot = 1; // cả 2 trống -> đeo nhẫn trên
+                } else if (ringTop != null && ringBottom == null) {
+                    slot = 2; // nhẫn trên có -> đeo nhẫn dưới
+                } else if (ringTop == null) {
+                    slot = 1; // nhẫn dưới có -> đeo nhẫn trên
+                } else {
+                    slot = 1; // cả 2 đều có -> thay nhẫn trên
+                }
+            }
+
+            ItemEquip targetRing = (slot == 1) ? ringTop : ringBottom;
+            equipment.setViTriVe(slot);
+            if (targetRing != null) {
+                InventoryService.instance.swapItemBagToBody(player, equipment, targetRing);
+            } else {
+                InventoryService.instance.removeItemBagEquipment(player, equipment);
+                InventoryService.instance.addItemBodyEquipment(player, equipment);
+            }
         } else {
-            InventoryService.instance.removeItemBagEquipment(player, equipment);
-            InventoryService.instance.addItemBodyEquipment(player, equipment);
+            ItemEquip hasEquipment = InventoryService.instance.findItemBodyByType(player, equipment.getTemplate().getType());
+            if (hasEquipment != null) {
+                InventoryService.instance.swapItemBagToBody(player, equipment, hasEquipment);
+            } else {
+                InventoryService.instance.removeItemBagEquipment(player, equipment);
+                InventoryService.instance.addItemBodyEquipment(player, equipment);
+            }
         }
+
         InventoryService.instance.sendWeaponImage(player);
         InventoryService.instance.sendItemBag(player);
         InventoryService.instance.sendItemBody(player);

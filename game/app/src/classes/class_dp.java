@@ -41,9 +41,52 @@ public final class class_dp extends class_bg {
 		}
 	}
 
+	private static void wearRing(final class_ql ql, final byte slot) {
+		if (ql == null) {
+			return;
+		}
+		class_yc tmpl = class_yi.b((int) ql.r);
+		if (tmpl == null) {
+			return;
+		}
+		if (tmpl.e != 0 && tmpl.e != class_acv.s.q.ap) {
+			class_acv.a("Vật phẩm này chỉ dành cho " + class_yi.h[tmpl.e] + ".");
+			return;
+		}
+		if (tmpl.f > class_acv.s.q.N) {
+			class_acv.a("Bạn phải đạt cấp " + tmpl.f + " để có thể dùng.");
+			return;
+		}
+		class_go.a().g(ql.i, slot);
+	}
+
 	public final void a(Vector paramVector, int paramInt) {
 		if (paramVector.size() <= 0) {
 			return;
+		}
+
+		if (paramInt == 2 && paramVector.size() > 0) {
+			class_s firstItem = (class_s) paramVector.elementAt(0);
+			if (firstItem != null && firstItem.b instanceof class_ul) {
+				class_ul ul = (class_ul) firstItem.b;
+				final class_ql ql = ul.b;
+				if (ql != null) {
+					final class_yc tmpl = class_yi.b((int) ql.r);
+					if (tmpl != null && tmpl.c == 8) {
+						paramVector.removeElementAt(0);
+						paramVector.insertElementAt(new class_s("Đeo nhẫn dưới", new IAction() {
+							public void perform() {
+								wearRing(ql, (byte) 2);
+							}
+						}), 0);
+						paramVector.insertElementAt(new class_s("Đeo nhẫn trên", new IAction() {
+							public void perform() {
+								wearRing(ql, (byte) 1);
+							}
+						}), 0);
+					}
+				}
+			}
 		}
 
 		for (int i = 0; i < paramVector.size(); i++) {

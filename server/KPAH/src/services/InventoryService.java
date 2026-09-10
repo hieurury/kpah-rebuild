@@ -161,7 +161,11 @@ public class InventoryService {
     }
 
     @Synchronized
-    public void addItemPotion(@NonNull Player player, @NonNull ItemPotion itemPotion) {
+    public void addItemPotion(@NonNull Player player, ItemPotion itemPotion) {
+        // Guard: item null hoặc template null (ID không có trong dữ liệu) -> bỏ qua
+        if (itemPotion == null || itemPotion.getTemplate() == null) {
+            return;
+        }
         ItemPotion haveItem = findItemPotion(player, itemPotion.getTemplate().getId());
         if (haveItem != null) {
             haveItem.plusQuantity(itemPotion.getQuantity());
@@ -299,6 +303,17 @@ public class InventoryService {
 
     public ItemEquip findItemBodyByType(@NonNull Player player, byte type) {
         return player.getInventory().getItemBody().stream().filter(it -> it != null && it.getTemplate().getType() == type).findFirst().orElse(null);
+    }
+
+    /**
+     * Tìm nhẫn đang đeo theo vị trí (viTriVe).
+     * viTriVe == 1: Nhẫn trên (Slot 1)
+     * viTriVe == 2: Nhẫn dưới (Slot 2)
+     */
+    public ItemEquip findItemBodyRingBySlot(@NonNull Player player, byte viTriVe) {
+        return player.getInventory().getItemBody().stream()
+                .filter(it -> it != null && it.getTemplate().getType() == 8 && it.getViTriVe() == viTriVe)
+                .findFirst().orElse(null);
     }
 
     public int sumAttributeValueForId(@NonNull Player player, byte attributeId) {

@@ -234,7 +234,12 @@ public class ItemService {
     }
 
     public ItemPotion createNewItemPotion(short id, int quantity) {
-        ItemPotion item = ItemPotion.builder().template(Manager.getPotionTemplate(id)).quantity(quantity).build();
+        PotionTemplate tpl = Manager.getPotionTemplate(id);
+        if (tpl == null) {
+            // Template không tồn tại -> không tạo item tránh NPE ở downstream
+            return null;
+        }
+        ItemPotion item = ItemPotion.builder().template(tpl).quantity(quantity).build();
         return item;
     }
 
@@ -244,7 +249,7 @@ public class ItemService {
     }
 
     public ItemPotion createNewItemPotion(@NonNull ItemMap itemMap) {
-        ItemPotion item = createNewItemPotion((byte) itemMap.getItemTemplateID(), itemMap.getQuantity());
+        ItemPotion item = createNewItemPotion((short) itemMap.getItemTemplateID(), itemMap.getQuantity());
         return item;
     }
 

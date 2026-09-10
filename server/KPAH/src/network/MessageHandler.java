@@ -602,7 +602,10 @@ public class MessageHandler {
                 case CommandMessage.USE_ITEM -> {
                     if (player != null) {
                         short indexItem = msg.reader().readShort();
-                        UseItemService.instance.useItemEquipment(player, indexItem);
+                        // Đọc slot nhẫn nếu client gửi kèm (byte thứ 3)
+                        // Tương thích ngược: client cũ không gửi slot -> slot = 0 (auto)
+                        byte ringSlot = (msg.reader().available() > 0) ? msg.reader().readByte() : (byte) 0;
+                        UseItemService.instance.useItemEquipment(player, indexItem, ringSlot);
                     }
                 }
                 case CommandMessage.ITEM_INFO -> {

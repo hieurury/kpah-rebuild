@@ -935,6 +935,19 @@ public final class class_go extends class_kr {
 		}
 	}
 
+	public final void g(short var1, byte var2) {
+		class_abs var3 = b((byte) 29);
+
+		try {
+			var3.c().writeShort(var1);
+			var3.c().writeByte(var2);
+			this.a.a(var3);
+			var3.d();
+		} catch (IOException var4) {
+			;
+		}
+	}
+
 	public final void h(short var1) {
 		class_abs var2 = b((byte) 61);
 
