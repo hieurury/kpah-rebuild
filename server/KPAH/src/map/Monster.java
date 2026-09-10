@@ -107,8 +107,14 @@ public class Monster implements Cloneable {
         if (template == null) {
             return false;
         }
-        // template.getType(): 0 = quái thường, 1 = thủ lĩnh/cao cấp, 2 = boss
-        return template.getType() == 0 && !isKhoangSan() && !canNotAttackPlayer() && !playerCanNotAttack();
+        if (isKhoangSan() || canNotAttackPlayer() || playerCanNotAttack()) {
+            return false;
+        }
+        // Boss và quái đặc biệt (level 999 hoặc tên chứa boss)
+        if (template.getLevel() >= 90 || template.getId() >= 113 || (template.getName() != null && template.getName().toLowerCase().contains("boss"))) {
+            return false;
+        }
+        return true;
     }
 
     private boolean isPlayerAttackable(@NonNull Player player) {

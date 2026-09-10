@@ -63,19 +63,40 @@ public class SkillService {
         if (Util.getDistance(pl, playerTarget) > range) {
             return;
         }
-        if (weapon.minusDurableCheck()) {
-            InventoryService.instance.sendItemBody(pl);
-            if (weapon.getDurable() <= 0) {
-                pl.getPoint().initPoint();
-                Service.instance.sendMainCharInfo(pl);
-            }
-        }
+        onAttackWearEquip(pl);
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);
         }
         onPlayerAttackPlayer(pl, playerTarget);
         pl.getSkill().getTimeLastUseSkills()[typeSkill] = System.currentTimeMillis();
+    }
+
+    public void onAttackWearEquip(@NonNull Player pl) throws IOException {
+        boolean anyBroken = false;
+        boolean anyDurableChanged = false;
+        if (pl.getInventory() != null && pl.getInventory().getItemBody() != null) {
+            for (int i = 0; i < pl.getInventory().getItemBody().size(); i++) {
+                ItemEquip item = pl.getInventory().getItemBody().get(i);
+                // Nhóm tấn công: vũ khí (3..7), nhẫn (8), dây chuyền (9), ngọc bội (12)
+                if (item != null && (item.isWeapon() || item.isJewelry()) && item.getMDurable() > 0) {
+                    short oldDur = item.getDurable();
+                    if (item.minusDurableCheck()) {
+                        anyDurableChanged = true;
+                    }
+                    if (oldDur > 0 && item.getDurable() <= 0) {
+                        anyBroken = true;
+                    }
+                }
+            }
+        }
+        if (anyDurableChanged) {
+            InventoryService.instance.sendItemBody(pl);
+        }
+        if (anyBroken) {
+            pl.getPoint().initPoint();
+            Service.instance.sendMainCharInfo(pl);
+        }
     }
 
     public void useSkillToMob(@NonNull Player pl, byte typeSkill, short... idMobs) throws IOException {
@@ -114,13 +135,7 @@ public class SkillService {
         if (Util.getDistance(pl, mobTarget) > range + Settings.DISTANCE_MOB_CAN_ATTACK + 60) {
             return;
         }
-        if (weapon.minusDurableCheck()) {
-            InventoryService.instance.sendItemBody(pl);
-            if (weapon.getDurable() <= 0) {
-                pl.getPoint().initPoint();
-                Service.instance.sendMainCharInfo(pl);
-            }
-        }
+        onAttackWearEquip(pl);
         pl.getPoint().minusMp(skillMP);
         if (skillMP > 0) {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);

@@ -317,10 +317,11 @@ public class MenuOptionService {
                         MapService.instance.onSetXP(player, 50000);
                         InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 8, (short) 1)); // Luyện kim dược
                         InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 1)); // Tinh anh huyết
-                        InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 11, 2)); // Thẻ x1.5 EXP
+                        InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 35, 2)); // 2 Vé giờ vàng 1h (ID 35)
                         InventoryService.instance.sendItemPotion(player);
                         InventoryService.instance.sendItemGem(player);
-                        Service.instance.sendLogOut(player.getSession(), "Điểm danh thành công!\nNhận: 10.000 Xu, 50.000 EXP, 1 Luyện kim dược, 1 Tinh anh huyết và 2 Thẻ x1.5 EXP.");
+                        Service.instance.sendMainCharInfo(player);
+                        Service.instance.sendLogOut(player.getSession(), "Điểm danh thành công!\nNhận: 10.000 Xu, 50.000 EXP, 1 Luyện kim dược, 1 Tinh anh huyết và 2 Vé giờ vàng 1h.");
                     }
                     case 1 -> { // Quà Tân Thủ (Cấp 1 - 10)
                         if (player.getInfo().getLevel() <= 10) {

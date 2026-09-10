@@ -141,9 +141,10 @@ public class Player {
             }
             boolean anyBroken = false;
             boolean anyDurableChanged = false;
+            // Nhóm thủ: các món còn lại (Áo, Quần, Nón, Giày, Găng tay, Phi phong) hao độ bền khi bị tấn công
             for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
                 ItemEquip item = this.inventory.getItemBody().get(i);
-                if (item != null && (item.isArmor() || item.isJewelry() || (item.getTemplate() != null && item.getTemplate().getType() == 19)) && item.getMDurable() > 0) {
+                if (item != null && !item.isWeapon() && !item.isJewelry() && item.getMDurable() > 0) {
                     short oldDur = item.getDurable();
                     if (item.minusDurableCheck()) {
                         anyDurableChanged = true;

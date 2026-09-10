@@ -120,6 +120,8 @@ public class QuestService {
                 player.getInventory().plusXu(3000);
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 1, 10)); // HP nhỏ
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 4, 10)); // MP nhỏ
+                InventoryService.instance.sendItemPotion(player);
+                Service.instance.sendMainCharInfo(player);
                 sendQuestInfo(player);
                 utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Thử thách đầu tiên] -> Nhận 3.000 xu, 10 HP nhỏ, 10 MP nhỏ.", player.getName(), player.getIdPlayer());
                 Service.instance.sendLogOut(player.getSession(), "Làm tốt lắm! Con đã nhận được 3.000 xu và bình máu/mana. Hãy đến gặp Thợ Rèn Thiết Bị để lên đồ nhé!");
@@ -143,6 +145,9 @@ public class QuestService {
                 InventoryService.instance.addItemBagEquipment(player, weapon);
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, 2)); // Tinh Anh Đan
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 2)); // Tinh Anh Huyết
+                InventoryService.instance.sendItemBag(player);
+                InventoryService.instance.sendItemPotion(player);
+                Service.instance.sendMainCharInfo(player);
                 sendQuestInfo(player);
                 utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Tìm kiếm trang bị] -> Nhận Vũ khí Lv6, 2 Tinh Anh Đan, 2 Tinh Anh Huyết.", player.getName(), player.getIdPlayer());
                 Service.instance.sendLogOut(player.getSession(), "Đây là vũ khí cấp 6, Tinh Anh Đan và Tinh Anh Huyết. Giờ hãy đến gặp Dì Út bán thuốc nhé!");
@@ -165,6 +170,8 @@ public class QuestService {
                 player.getInventory().plusXu(5000);
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 2, 20)); // HP vừa
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 5, 20)); // MP vừa
+                InventoryService.instance.sendItemPotion(player);
+                Service.instance.sendMainCharInfo(player);
                 sendQuestInfo(player);
                 utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Tiêu diệt Chuột Cống] -> Nhận 5.000 xu, 20 HP vừa, 20 MP vừa.", player.getName(), player.getIdPlayer());
                 Service.instance.sendLogOut(player.getSession(), "Cảm ơn cháu nhiều lắm! Dì gửi tặng 5.000 xu và 40 bình dược phẩm. Giờ hãy đến thăm Ông Nội ở Làng Sen nhé!");
@@ -181,10 +188,13 @@ public class QuestService {
                 qd.setBeginnerProgress(0);
                 player.getInventory().plusXu(8000);
                 InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 5, (short) 1)); // Đá may mắn 1
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 11, 1)); // Thẻ x1.5 EXP
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 35, 1)); // Vé giờ vàng 1h (ID 35)
+                InventoryService.instance.sendItemGem(player);
+                InventoryService.instance.sendItemPotion(player);
+                Service.instance.sendMainCharInfo(player);
                 sendQuestInfo(player);
-                utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Bí kíp Ngũ Hành - Đạt cấp 10] -> Nhận 8.000 xu, Đá may mắn 1, Thẻ x1.5 EXP.", player.getName(), player.getIdPlayer());
-                Service.instance.sendLogOut(player.getSession(), "Tốt lắm, cháu đã đạt cấp 10 và thấu hiểu đạo ngũ hành! Ta tặng cháu 8.000 xu, Bùa may mắn và Thẻ EXP. Hãy đến tìm Phú Ông để thử thách bản lĩnh!");
+                utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Bí kíp Ngũ Hành - Đạt cấp 10] -> Nhận 8.000 xu, Đá may mắn 1, 1 Vé giờ vàng 1h.", player.getName(), player.getIdPlayer());
+                Service.instance.sendLogOut(player.getSession(), "Tốt lắm, cháu đã đạt cấp 10 và thấu hiểu đạo ngũ hành! Ta tặng cháu 8.000 xu, Bùa may mắn và 1 Vé giờ vàng. Hãy đến tìm Phú Ông để thử thách bản lĩnh!");
             } else {
                 sendQuestInfo(player);
                 Service.instance.sendLogOut(player.getSession(), "Cháu hãy rèn luyện đạt cấp 10 rồi quay lại đây, ta sẽ truyền thụ bí kíp Ngũ Hành và ban thưởng! (Hiện tại: Cấp " + player.getInfo().getLevel() + "/10)");
@@ -197,11 +207,13 @@ public class QuestService {
                 qd.setBeginnerQuestId(5);
                 qd.setBeginnerProgress(0);
                 player.getInventory().plusXu(15000);
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 11, 2)); // Thẻ x1.5 EXP
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 3)); // Tinh Anh Huyết
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 35, 2)); // 2 Vé giờ vàng 1h (ID 35)
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 3)); // 3 Tinh Anh Huyết
+                InventoryService.instance.sendItemPotion(player);
+                Service.instance.sendMainCharInfo(player);
                 sendQuestInfo(player);
-                utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Thử thách Phú Ông - Cấp 15 & 500 Quái] -> Nhận 15.000 xu, 2 Thẻ x1.5 EXP, 3 Tinh Anh Huyết.", player.getName(), player.getIdPlayer());
-                Service.instance.sendLogOut(player.getSession(), "Ha ha, dũng sĩ quả nhiên danh bất hư truyền! Nhận lấy 15.000 xu, Thẻ EXP và Tinh Anh Huyết. Giờ hãy đến tìm Thợ Săn để thử tài săn thú!");
+                utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Thử thách Phú Ông - Cấp 15 & 500 Quái] -> Nhận 15.000 xu, 2 Vé giờ vàng 1h, 3 Tinh Anh Huyết.", player.getName(), player.getIdPlayer());
+                Service.instance.sendLogOut(player.getSession(), "Ha ha, dũng sĩ quả nhiên danh bất hư truyền! Nhận lấy 15.000 xu, 2 Vé giờ vàng và 3 Tinh Anh Huyết. Giờ hãy đến tìm Thợ Săn để thử tài săn thú!");
             } else {
                 sendQuestInfo(player);
                 Service.instance.sendLogOut(player.getSession(), "Để nhận thưởng của ta, ngươi phải đạt cấp 15 và tiêu diệt ít nhất 500 quái vật! (Hiện tại: Cấp " + player.getInfo().getLevel() + "/15, Diệt: " + qd.getTotalMonstersKilled() + "/500)");
@@ -219,12 +231,16 @@ public class QuestService {
                 qd.setBeginnerQuestId(6);
                 qd.setBeginnerProgress(0);
                 player.getInventory().plusXu(25000);
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, 5)); // Tinh Anh Đan
-                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 3)); // Tinh Anh Huyết
-                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 8, (short) 2)); // Luyện kim dược
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 160, 1)); // 1 Rương Tinh Anh Bậc 2
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, 5)); // 5 Tinh Anh Đan
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 3)); // 3 Tinh Anh Huyết
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 8, (short) 2)); // 2 Luyện kim dược
+                InventoryService.instance.sendItemGem(player);
+                InventoryService.instance.sendItemPotion(player);
+                Service.instance.sendMainCharInfo(player);
                 sendQuestInfo(player);
-                utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Tài săn dã thú] -> Nhận 25.000 xu, 5 Tinh Anh Đan, 3 Tinh Anh Huyết, 2 Luyện kim dược.", player.getName(), player.getIdPlayer());
-                Service.instance.sendLogOut(player.getSession(), "Tuyệt vời! Ngươi quả là một thợ săn bậc thầy. Hãy đến diện kiến Lâm Tướng Quân tại doanh trại để nhận lệnh chiêu mộ!");
+                utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Tài săn dã thú] -> Nhận 25.000 xu, 1 Rương Tinh Anh Bậc 2, 5 Tinh Anh Đan, 3 Tinh Anh Huyết, 2 Luyện kim dược.", player.getName(), player.getIdPlayer());
+                Service.instance.sendLogOut(player.getSession(), "Tuyệt vời! Ngươi quả là một thợ săn bậc thầy. Hãy nhận 25.000 xu, 1 Rương Tinh Anh Bậc 2, 5 Tinh Anh Đan, 3 Tinh Anh Huyết và 2 Luyện kim dược. Giờ hãy đến diện kiến Lâm Tướng Quân tại doanh trại để nhận lệnh chiêu mộ!");
             } else {
                 sendQuestInfo(player);
                 Service.instance.sendLogOut(player.getSession(), "Ngươi mới săn được " + (qd.getBeginnerProgress() - 1) + "/50 dã thú hung tợn. Hãy tiếp tục săn lùng!");
@@ -239,6 +255,8 @@ public class QuestService {
                 player.getInventory().plusXu(50000);
                 player.getInventory().plusLuong(20);
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 5)); // Tinh Anh Huyết
+                InventoryService.instance.sendItemPotion(player);
+                Service.instance.sendMainCharInfo(player);
                 sendQuestInfo(player);
                 utils.ServerLog.quest("Nhân vật '%s' (ID: %d) hoàn thành Nhiệm vụ Chính Tuyến: [Chiêu mộ Lâm Tướng Quân - Cấp 20 & Diệt 100 quái cấp >= 18] -> Nhận 50.000 Xu, 20 Lượng và 5 Tinh Anh Huyết.", player.getName(), player.getIdPlayer());
                 Service.instance.sendLogOut(player.getSession(), "Chúc mừng Đại Dũng Sĩ! Ngươi đã hoàn thành toàn bộ chuỗi nhiệm vụ chính tuyến của giang sơn KPAH! Đã nhận: 50.000 Xu, 20 Lượng và 5 Tinh Anh Huyết.");
@@ -320,11 +338,11 @@ public class QuestService {
 
     private String getDailyDesc(int questId, int progress, int target) {
         return switch (questId) {
-            case DAILY_PHU_ONG_MICE -> "Tiêu diệt Chuột cống: " + progress + "/" + target;
-            case DAILY_TUONG_QUAN_TRAVEL -> "Hành quân: " + progress + "/" + target + " px";
-            case DAILY_THO_REN_SELL -> "Bán trang bị (+-2 Lv): " + progress + "/" + target;
-            case DAILY_TUONG_QUAN_KILL -> "Trừ hại cho dân (Diệt quái +-2 Lv): " + progress + "/" + target;
-            case DAILY_THO_SAN_HUNT -> "Săn dã thú (Lv >= 15): " + progress + "/" + target;
+            case DAILY_PHU_ONG_MICE -> "Tiêu diệt Chuột cống: " + progress + "/" + target + " (Thưởng: Xu, EXP, 1 Vé giờ vàng 1h)";
+            case DAILY_TUONG_QUAN_TRAVEL -> "Hành quân: " + progress + "/" + target + " px (Thưởng: Xu, Bình Dược Phẩm)";
+            case DAILY_THO_REN_SELL -> "Bán trang bị (+-2 Lv): " + progress + "/" + target + " (Thưởng: Xu, EXP, 1 Luyện kim dược)";
+            case DAILY_TUONG_QUAN_KILL -> "Trừ hại cho dân (Diệt quái +-2 Lv): " + progress + "/" + target + " (Thưởng: Lượng, EXP, Đá quý & Tinh Anh Huyết)";
+            case DAILY_THO_SAN_HUNT -> "Săn dã thú (Lv >= 15): " + progress + "/" + target + " (Thưởng: Xu, EXP, Đá may mắn & Tinh Anh Huyết)";
             default -> "Nhiệm vụ: " + progress + "/" + target;
         };
     }
@@ -334,6 +352,7 @@ public class QuestService {
             case DAILY_PHU_ONG_MICE -> {
                 player.getInventory().plusXu(250L * target);
                 MapService.instance.onSetXP(player, 300 * target);
+                InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 35, 1)); // 1 Vé giờ vàng 1h từ Phú Ông
             }
             case DAILY_TUONG_QUAN_TRAVEL -> {
                 player.getInventory().plusXu(3L * target);
@@ -345,6 +364,7 @@ public class QuestService {
                 int lv = player.getInfo().getLevel();
                 player.getInventory().plusXu((long) 150 * lv * target);
                 MapService.instance.onSetXP(player, 250 * lv * target);
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 8, (short) 1)); // 1 Luyện kim dược
             }
             case DAILY_TUONG_QUAN_KILL -> {
                 MapService.instance.onSetXP(player, 150 * target);
@@ -367,10 +387,11 @@ public class QuestService {
                 MapService.instance.onSetXP(player, 400 * target);
                 InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 108, 1)); // Tinh Anh Huyết
                 InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 5, (short) 1)); // Đá may mắn 1
-                InventoryService.instance.sendItemPotion(player);
-                InventoryService.instance.sendItemGem(player);
             }
         }
+        InventoryService.instance.sendItemPotion(player);
+        InventoryService.instance.sendItemGem(player);
+        Service.instance.sendMainCharInfo(player);
     }
 
     // --- Triggers ---
@@ -681,7 +702,7 @@ public class QuestService {
                         "Nhiệm vụ: Ngũ Hành (4/7)",
                         NpcConst.ONG_NOI,
                         desc,
-                        "Thưởng: 8.000 xu, 1 Bùa May Mắn, 1 Thẻ x1.5 EXP"
+                        "Thưởng: 8.000 xu, 1 Bùa May Mắn, 1 Vé giờ vàng 1h"
                     ));
                 }
                 case 4 -> { // Phú Ông
@@ -696,7 +717,7 @@ public class QuestService {
                         "Nhiệm vụ: Thử Thách (5/7)",
                         NpcConst.PHU_ONG,
                         desc,
-                        "Thưởng: 15.000 xu, 2 Thẻ x1.5 EXP, 3 Tinh Anh Huyết"
+                        "Thưởng: 15.000 xu, 2 Vé giờ vàng 1h, 3 Tinh Anh Huyết"
                     ));
                 }
                 case 5 -> { // Thợ Săn
@@ -709,7 +730,7 @@ public class QuestService {
                         "Nhiệm vụ: Thợ Săn (6/7)",
                         NpcConst.THO_SAN,
                         desc,
-                        "Thưởng: 25.000 xu, 1 Rương Tinh Anh, 5 Tinh Anh Đan, 2 Luyện Kim Dược"
+                        "Thưởng: 25.000 xu, 1 Rương Tinh Anh, 5 Tinh Anh Đan, 3 Tinh Anh Huyết, 2 Luyện Kim Dược"
                     ));
                 }
                 case 6 -> { // Lâm Tướng Quân
