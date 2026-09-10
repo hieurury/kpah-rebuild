@@ -43,3 +43,42 @@
 **Ghi chú:** Đã tạo backup đầy đủ tại `server/KPAH/src/manager/_backup/`, `server/KPAH/src/services/_backup/`, và `server/_backup/`.
 
 ---
+## [2026-09-10 17:43] — Task #83: Sửa Lỗi Logic Level Ràng Buộc Skill Buff Kiếm Khách
+
+**Yêu cầu:** Rà soát và sửa lỗi level yêu cầu học skill buff của lớp Kiếm Khách phát sinh từ Task #82.
+**Nguyên nhân:** Trong task #82, code Kiếm Khách (skill 4 & 5) được viết để đọc từ `LEVEL_ADD_SKILL[4][lvSkill]` và `LEVEL_ADD_SKILL[5][lvSkill]` (hàng DB chung có base lv 3), thay vì dùng công thức `base + Math.min(lvSkill, 9)` đúng với thiết kế (base lv 20 và 24). Lỗi logic nên không bị bắt khi build, nhưng gây ra việc Kiếm Khách học skill buff từ cấp 3 — thấp hơn rất nhiều so với nguyên bản.
+**Files thay đổi:**
+- `server/KPAH/src/manager/Manager.java` — Sửa `getLevelAddSkill` nhánh Kiếm Khách:
+  - `case 4`: Đổi từ đọc `LEVEL_ADD_SKILL[4][lvSkill]` (base lv 3) → `(short)(20 + Math.min(lvSkill, 9))` (base lv 20).
+  - `case 5`: Đổi từ đọc `LEVEL_ADD_SKILL[5][lvSkill]` (base lv 3) → `(short)(24 + Math.min(lvSkill, 9))` (base lv 24).
+  - Nhất quán với `EFF_BUFF_SKILL[KIEM_KHACH] = {20, 24}` và nguyên bản `class_qz.c` client KPAH.
+**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21), chỉ có 2 warning Lombok cũ không liên quan.
+**Ghi chú:** Backup tạo tại `server/KPAH/src/manager/_backup/Manager.java.bak.20260910_17XX`.
+
+---
+
+## [2026-09-10 19:04] — Task #84: Điều Chỉnh Skill 4 & 5 Kiếm Khách (MP / Cooldown)
+
+**Yêu cầu:**
+1. Hoàn nguyên level học skill 4 & 5 Kiếm Khách về lv3 (Manager.java — task #83 sai thiết kế).
+2. Skill 4 (xuyên giáp passive): Nhân đôi MP hao hụt.
+3. Skill 5 (phản dame): Nhân 10 lần MP hao hụt + cooldown 90s. Cơ chế phản đòn: 10%(+5%/cấp) cơ hội phản 50%(+10%/cấp) dame bản thân (code đã có trong BuffService, giữ nguyên).
+
+**Phạm vi thay đổi:**
+- `server/KPAH/src/manager/Manager.java` — Hoàn nguyên Kiếm Khách skill 4 & 5 về base lv 3.
+- `server/kpah.sql` — Cập nhật `SKILL_MP[0]` và `SKILL_COOLDOWN[0]`.
+- `server/update_skills_kiem_khach.sql` — Script migration chạy trên DB thực.
+
+**Giá trị mục tiêu:**
+- Skill 4 MP: `[4,4,4,5,5,5,6,6,6,6,6]` → `[8,8,8,10,10,10,12,12,12,12,12]`
+- Skill 5 MP: `[10,15,20,25,30,35,40,45,50,55,55]` → `[100,150,200,250,300,350,400,450,500,550,550]`
+- Skill 5 CD: `[5000,60000,...×10]` → `[0,90000,90000,...×10]` (index 1-10 = 90s)
+
+**Kết quả:** ✅ Thành công. Server biên dịch sạch 100% với `ant clean jar` (Java 21). Chỉ có 2 warning Lombok cũ không liên quan.
+**Files thay đổi:**
+- `server/KPAH/src/manager/Manager.java` — Hoàn nguyên skill 4 & 5 Kiếm Khách về base lv3 đúng thiết kế gốc.
+- `server/kpah.sql` — Cập nhật `SKILL_MP[KIEM_KHACH]` skill 4 & 5; `SKILL_COOLDOWN[KIEM_KHACH]` skill 5.
+- `server/update_skills_kiem_khach.sql` — Tạo script migration chạy trên DB thực.
+**Ghi chú:** Backup tại `server/KPAH/src/manager/_backup/Manager.java.bak.20260910_1906`, `server/_backup/kpah.sql.bak.20260910_1907`.
+
+---
