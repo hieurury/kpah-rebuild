@@ -146,3 +146,57 @@
 **Ghi chú:** Đã kiểm tra logic chuyển đổi HP/MP đảm bảo an toàn (không gây tử vong cho người dùng chiêu, luôn giữ lại tối thiểu 1 HP).
 
 ---
+
+## [2026-09-10 21:02] — Task #87: Cập Nhật Toàn Diện Mô Tả Kỹ Năng Client & Database Cho Kiếm Khách & Pháp Sư
+
+**Yêu cầu:** Sửa đổi toàn bộ mô tả kỹ năng (in-game client & database) phản ánh chính xác các cơ chế và hồi chiêu mới đã được chỉnh sửa.
+**Files thay đổi:**
+- `game/app/src/classes/class_sc.java` — Nâng cấp phương thức `j(int n)` hiển thị tooltip mô tả kỹ năng trong giao diện Kỹ Năng của client:
+  - **Kiếm Khách:**
+    - Skill 4 (Hộ sát tiến): Hiển thị "Hộ sát tiến (Bị động)", tăng điểm xuyên giáp `+x`, không hồi chiêu.
+    - Skill 5 (Dĩ lực đáo công): Hiển thị "Dĩ lực đáo công (Phản đòn)", tỷ lệ phản `10% (+5%/cấp)`, lượng phản `50% (+10%/cấp) dame bản thân`, thời gian buff, hồi chiêu 90s.
+    - Skill 6, 7, 8 (AoE): Hiển thị tên kỹ năng kèm nhãn `(Lan)` và thời gian hồi chiêu cụ thể (60s / 120s / 300s).
+  - **Pháp Sư:**
+    - Skill 4 (Hồi công lực đan): Tăng Max HP & MP `x%`, thời gian cố định 90s, hồi chiêu 120s.
+    - Skill 5 (Hồi lực tiến): "Hồi lực tiến (Bị động)", tăng sát thương `5% (+2%/cấp)` theo MP hiện có, không hồi chiêu.
+    - Skill 6 (Hồi sinh): "Hồi sinh đồng đội", rút HP/MP bù cho mục tiêu (tối đa 80% bản thân), hồi chiêu `180s` ở cấp 1 giảm `10s` mỗi cấp (`180s - 90s`).
+    - Skill 7 (Song hộ công thủ): Hồi MP khi bị đánh `10% (+5%/cấp)` dame, hồi máu khi dùng skill `20% (+5%/cấp)` mana tiêu hao, thời gian buff, hồi chiêu 60s.
+    - Skill 8, 9, 10 (AoE): Hiển thị tên kỹ năng `(Lan)` và thời gian hồi chiêu chuẩn xác (Hải long xuất thế: 4s / Song long thị uy: 5s / Hàn băng vũ: 6s).
+  - **Kỹ năng chưa học:** Vẫn hiển thị tên và mô tả tóm tắt kỹ năng kèm điều kiện Lv yêu cầu để người chơi nắm rõ công dụng trước khi học.
+- `server/kpah.sql` — Cập nhật cột `des` và `cooldown` trong bảng `skill_news` cho 15 kỹ năng mới (đặc biệt là Kiếm Khách ID 1, 2, 3 và Pháp Sư ID 7, 8, 9) đồng bộ nội dung và thời gian hồi chiêu.
+- `server/update_all_skill_descriptions.sql` — Tạo script migration cập nhật mô tả kỹ năng bảng `skill_news` trực tiếp trên MySQL.
+- `game/build/dist/KPAH_PROD.jar` & `game/build/dist/kpah_mod_v1.0.0.1.jar` — Biên dịch thành công 100% bằng Java 8 (`ant dist-prod`).
+**Kết quả:** ✅ Thành công. Mô tả kỹ năng trong client và database đồng bộ hoàn toàn với logic thực tế.
+**Ghi chú:** Backup tạo tại `game/app/src/classes/_backup/class_sc.java.bak.20260910_2100` và `server/_backup/kpah.sql.bak.20260910_2100`.
+
+
+---
+
+## [2026-09-10 21:12] — Task #88: Chuẩn Hóa Mô Tả Kỹ Năng Trực Quan (Kiếm Khách & Pháp Sư)
+
+**Yêu cầu:**
+1. Bỏ toàn bộ các dạng mở ngoặc công thức như `(+5%/cấp)`, `(+10%/cấp)`, `(+2%/cấp)`... khỏi mô tả kỹ năng; cấp bao nhiêu tính toán và hiển thị trực tiếp con số bấy nhiêu cho trực quan.
+2. Chuẩn hóa hình thức mô tả của toàn bộ kỹ năng cho 2 phái Kiếm Khách và Pháp Sư theo cấu trúc thống nhất:
+   - Tên chiêu
+   - Mô tả
+   - Lực công: value (nếu có)
+   - Hồi chiêu: value (nếu có)
+   - Mana tiêu hao: value (nếu có)
+   - Chỉ số buff hoặc cơ chế hiện tại
+   - Cấp độ yêu cầu (nếu chưa đạt max cấp)
+3. Đồng bộ mô tả chuẩn hóa vào Client game, Database MySQL và các tài liệu kỹ năng.
+
+**Files thay đổi:**
+- `game/app/src/classes/class_sc.java` — Triển khai `formatSkillDescription(int classChar, int n)`:
+  - Kiếm Khách (Skill 0 – 8) & Pháp Sư (Skill 0 – 10): Định dạng đồng nhất theo mẫu người dùng cung cấp.
+  - Tính toán trực tiếp con số thực tế cho từng cấp độ (Cấp 1 đến Cấp 10), loại bỏ triệt để các ghi chú `+5%/cấp`.
+  - Hiển thị linh hoạt: Kỹ năng đã học hiển thị chỉ số của cấp hiện tại; kỹ năng chưa học hiển thị "Tình trạng: Chưa học", chỉ số cơ bản cấp 1 và cấp độ yêu cầu để người chơi xem trước.
+- `docs/skills/kiem_khach.md` — Chuẩn hóa bảng tổng quan và chi tiết từng chiêu theo mẫu mới, liệt kê bảng chỉ số chi tiết từng cấp không dùng công thức trong ngoặc.
+- `docs/skills/phap_su.md` — Chuẩn hóa bảng tổng quan và chi tiết từng chiêu theo mẫu mới, bảng chỉ số cụ thể từng cấp cho các skill 4, 5, 6, 7 và hồi chiêu chuẩn 4s, 5s, 6s cho skill AoE 8, 9, 10.
+- `server/kpah.sql` & `server/update_all_skill_descriptions.sql` — Cập nhật `des` và `cooldown` bảng `skill_news` trong database.
+- `game/build/dist/KPAH_PROD.jar` & `game/build/dist/kpah_mod_v1.0.0.1.jar` — Biên dịch sạch 100% bằng Java 8 (`ant dist-prod`).
+
+**Kết quả:** ✅ Thành công. Mô tả kỹ năng trực quan, rõ ràng, đồng bộ 100% giữa Client, Database và Tài liệu.
+**Ghi chú:** Backup tạo tại `docs/skills/_backup/kiem_khach.md.bak.20260910_2110` và `docs/skills/_backup/phap_su.md.bak.20260910_2110`.
+
+---
