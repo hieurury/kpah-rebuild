@@ -68,6 +68,31 @@ public class MonsterService {
         msg.writer().writeByte(Const.NONE_EFFECT);
         @Cleanup("clear")
         List<ItemMap> itemsDrop = monster.getItemDrop(plAtt);
+        if (monster.isElite()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append(String.format("Phần thưởng rơi từ Quái Tinh Anh [%s] (%d món) cho '%s': ", monster.getTemplate().getName(), itemsDrop.size(), plAtt.getName()));
+            for (int i = 0; i < itemsDrop.size(); i++) {
+                ItemMap im = itemsDrop.get(i);
+                String itemName = "Không rõ";
+                if (im.getItemCatagory() == Const.CATEGORY_POTION) {
+                    if (im.getItemTemplateID() == 0) {
+                        itemName = im.getQuantity() + " Xu";
+                    } else {
+                        template.PotionTemplate pt = Manager.getPotionTemplate(im.getItemTemplateID());
+                        itemName = (pt != null && pt.getName() != null) ? pt.getName().split("\n")[0] + " x" + im.getQuantity() : "Dược phẩm ID: " + im.getItemTemplateID();
+                    }
+                } else if (im.getItemCatagory() == Const.CATEGORY_ITEM) {
+                    template.ItemEquipTemplate et = Manager.getItemEquipment(im.getItemTemplateID());
+                    itemName = (et != null) ? et.getName() + " (Cấp " + et.getLevel() + ")" : "Trang bị ID: " + im.getItemTemplateID();
+                } else if (im.getItemCatagory() == Const.CATEGORY_GEM_ITEM) {
+                    template.GemTemplate gt = Manager.getGemTemplate(im.getItemTemplateID());
+                    itemName = (gt != null) ? gt.getName() + " x" + im.getQuantity() : "Đá/NL ID: " + im.getItemTemplateID();
+                }
+                sb.append(String.format("[%s (ID: %d)]", itemName, im.getItemTemplateID()));
+                if (i < itemsDrop.size() - 1) sb.append(", ");
+            }
+            utils.ServerLog.combat(sb.toString());
+        }
         msg.writer().writeByte(itemsDrop.size());
         for (int i = 0; i < itemsDrop.size(); i++) {
             ItemMap itemMap = itemsDrop.get(i);

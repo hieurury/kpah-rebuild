@@ -260,6 +260,8 @@ public class UseItemService {
         MapService.instance.checkLevelUp(player);
         MapService.instance.onSetXP(player, expAdd);
         ChatService.instance.sendChatOnlyMe(player, "Bạn nhận được " + Util.formatNumber(expAdd) + " điểm kinh nghiệm!");
+        utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã sử dụng [%s] nhận được %s kinh nghiệm.",
+                player.getName(), player.getIdPlayer(), potion.getTemplate().getName().split("\n")[0], Util.formatNumber(expAdd));
     }
 
     private void openEliteChest(@NonNull Player player, @NonNull ItemPotion chest) throws IOException {
@@ -452,6 +454,8 @@ public class UseItemService {
         // Thông báo kết quả mở rương
         String msg = "Mở Rương Tinh Anh (Bậc " + tier + ") nhận được: " + String.join(", ", rewardNames);
         Service.instance.sendLogOut(player.getSession(), msg);
+        utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã mở [Rương Tinh Anh (Bậc %d)]: %s",
+                player.getName(), player.getIdPlayer(), tier, String.join(", ", rewardNames));
     }
 
     private static short getRandomMaterial(boolean isCaoCap, int minRank, int maxRank) {

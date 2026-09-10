@@ -57,3 +57,110 @@ Cần cho phép đeo đồng thời 2 chiếc nhẫn với UI menu chọn "Đeo 
 **Ghi chú:** Backup: `server/KPAH/src/services/_backup/ItemService.java.bak.20260910_0000`. Phần 08: 2/10 task.
 
 ---
+
+## [2026-09-10 13:13] — Build và khởi chạy Game Client để test
+
+**Yêu cầu:** Chạy game client để test tính năng sau khi cập nhật.
+**Files thay đổi:**
+- `game/build/dist/kpah_mod_v1.0.0.1.jar` — Build client kết nối tới server Dị giới (`bore.pub:19129`).
+- `game/build/dist/kpah_mod_v1.0.0.1_local.jar` — Build client kết nối tới `127.0.0.1:19129`.
+**Kết quả:** ✅ Thành công — Biên dịch thành công với OpenJDK 8, giả lập MicroEmulator đã được khởi chạy hiển thị trực tiếp trên màn hình (`DISPLAY=:0`).
+**Ghi chú:** Phần 08 hiện có: 3/10 task.
+
+## [2026-09-10 13:50] — Sửa lỗi nhặt rương tinh anh, sửa lỗi nhân vật tàng hình và bổ sung log server chi tiết
+
+**Yêu cầu:**
+1. Tiêu diệt quái tinh anh không thấy nhận được Rương Tinh Anh trong túi đồ.
+2. Sửa lỗi sau khi đánh quái tinh anh nhân vật bị biến mất / tàng hình (do client crash ngoại lệ mảng khi nhặt vật phẩm tùy biến).
+3. Thêm log server chi tiết: phần thưởng quái tinh anh rơi ra, người chơi nhặt vật phẩm, mở rương tinh anh, dùng bình exp.
+4. Rà soát, kiểm tra đối chiếu toàn bộ logic và tài nguyên hình ảnh các vật phẩm tự định nghĩa (Rương Tinh Anh Bậc 1-4, Tinh Anh Huyết, Tinh Anh Đan).
+
+**Nguyên nhân gốc rễ:**
+1. `MapService.getPotionFromGround` thiếu gọi `InventoryService.instance.sendItemPotion(player);` sau khi nhặt rương/thuốc → Client không được gửi packet cập nhật túi đồ nên không hiển thị rương mới nhặt.
+2. Ở client game gốc, mảng `bq` (lưu potion nhanh) chỉ có kích thước mặc định 25. Khi nhặt item tự định nghĩa có ID >= 25 (như Rương Tinh Anh ID 106, 160 hoặc Tinh Anh Huyết 108..111), client bị lỗi `ArrayIndexOutOfBoundsException` trong packet 19 (`GET_POTION_FROM_GROUND`) dẫn đến đứt luồng xử lý và nhân vật bị biến mất.
+
+**Files thay đổi:**
+- `server/KPAH/src/services/MapService.java`:
+  - Thêm `InventoryService.instance.sendItemPotion(player);` khi nhặt potion/rương từ đất.
+  - Bổ sung `utils.ServerLog.combat` ghi log chi tiết khi nhặt: Dược phẩm / Rương, Trang bị, Ngọc / Nguyên liệu, và Tiền xu.
+- `server/KPAH/src/services/MonsterService.java`:
+  - Bổ sung `utils.ServerLog.combat` liệt kê chi tiết toàn bộ các vật phẩm rơi ra khi tiêu diệt Quái Tinh Anh (tên item, số lượng, ID, category).
+- `server/KPAH/src/services/UseItemService.java`:
+  - Thêm server log khi mở Rương Tinh Anh (ghi nhận các món đồ nhận được) và khi sử dụng Tinh Anh Huyết.
+- `game/app/src/classes/MsgHandler.java`:
+  - Chặn và mở rộng an toàn mảng `bq` khi nhận Opcode 19 (`GET_POTION_FROM_GROUND`), tránh lỗi `ArrayIndexOutOfBoundsException` đối với các item ID >= 25.
+  - Bỏ re-throw exception để bảo vệ luồng xử lý mạng của client.
+
+**Kết quả:** ✅ Thành công — Cả Client và Server đều build thành công không lỗi.
+**Ghi chú:**
+- Backup files:
+  - `game/app/src/classes/_backup/MsgHandler.java.bak.*`
+  - `server/KPAH/src/services/_backup/MapService.java.bak.*`
+  - `server/KPAH/src/services/_backup/MonsterService.java.bak.*`
+  - `server/KPAH/src/services/_backup/UseItemService.java.bak.*`
+- Phần 08 hiện có: 4/10 task.
+
+---
+
+## [2026-09-10 14:05] — Tối ưu hóa triệt để cơ chế Ưu tiên Quái Tinh Anh (Khắc phục lỗi ghi đè mục tiêu và bỏ dở giữa chừng)
+
+**Yêu cầu:**
+- Khắc phục tình trạng cơ chế ưu tiên quái Tinh Anh bị ghi đè/trùng lặp với bộ chọn mục tiêu gốc của client.
+- Đảm bảo hệ thống ưu tiên đánh quái Tinh Anh trong toàn khu vực map (không bị giới hạn bởi hộp bãi train 130px hay bán kính hẹp).
+- Khắc phục lỗi đang đánh quái Tinh Anh giữa chừng hay bị bỏ qua (do nhặt rác chen ngang, timeout 4.5s đưa vào danh sách đen, hoặc cơ chế điều tiết kéo về tâm).
+
+**Nguyên nhân gốc rễ:**
+1. **Lỗi ghi đè mục tiêu (`this.r = this.z()` mỗi 10 tick):**
+   - Game engine liên tục gọi `z()` quét mục tiêu trong phạm vi hộp nhìn `cb`. `z()` chọn con quái thường gần nhất và ghi đè `this.r`. `ModController` lại phát hiện target quái thường và gán lại Quái Tinh Anh, dẫn đến hai cơ chế liên tục tranh chấp và ghi đè lẫn nhau.
+2. **Lỗi bỏ dở giữa chừng:**
+   - **Nhặt rác chen ngang:** Section B (nhặt đồ) chạy trước kiểm tra quái. Khi quái thường chết rớt đồ, bot lập tức chuyển target sang item và bỏ Quái Tinh Anh.
+   - **Timeout 4.5s:** Quái tinh anh trâu máu/giáp cao, nếu sau 4.5s HP chưa giảm (hoặc đang tiếp cận), code đưa quái vào `ignoredMobs` và bỏ qua 8 giây.
+   - **Hộp bãi train 130px kéo ngược về tâm:** Khi quái tinh anh hoặc người chơi bước ra ngoài phạm vi 130px, `isRegulating` kích hoạt kéo người chơi về tâm và hủy target quái tinh anh.
+3. **Phạm vi nhận diện quá hẹp:**
+   - `findNearestEliteMob` trước đây bị kẹp bởi `isInsideZone` và `MAX_TARGET_DISTANCE` (140px), khiến Quái Tinh Anh xuất hiện ở cự ly xa hơn trong khu vực không được bot phát hiện.
+
+**Files thay đổi:**
+- `game/tools/Patcher.java`:
+  - Thêm can thiệp trực tiếp vào đầu method `class_abj.z()`: Khi `isPrioritizeElite` bật, gọi `ModController.getEliteTarget(this)` và trả về ngay Quái Tinh Anh nếu có. Loại bỏ 100% việc `z()` ghi đè target Quái Tinh Anh thành quái thường.
+  - Sửa `b_()`: Không bao giờ đánh dấu Quái Tinh Anh là out-of-zone.
+- `game/app/src/classes/ModController.java`:
+  - Thêm helper `getEliteTarget(gameScreen)`: Khóa chặt mục tiêu Quái Tinh Anh còn sống, không bao giờ nhả target cho đến khi quái chết (`mob.cV == 5 || mob.v <= 0`).
+  - Sửa `findNearestEliteMob`: **Chỉ quét Quái Tinh Anh trong bãi train** (`isInsideZone`), tránh nhân vật chạy loạn xạ khắp bản đồ.
+  - Sửa `shouldChase`: Nếu quái Tinh Anh đã là mục tiêu đang đánh thì dù có chạy ra khỏi bãi train vẫn tiếp tục đuổi theo tiêu diệt.
+  - Sửa `isInsideZone(x, y)`: Giữ nguyên giới hạn tọa độ 4 góc của bãi train.
+  - Tối ưu `handleAutoCombatRoaming`:
+    - Khi có Quái Tinh Anh: Vô hiệu hóa ngay `isRegulating` (không kéo về tâm bãi).
+    - Tạm dừng nhặt rác thường khi đang có Quái Tinh Anh để dồn 100% hỏa lực tiêu diệt.
+    - Loại bỏ hoàn toàn timeout 4.5s và blacklist `ignoredMobs` đối với Quái Tinh Anh.
+    - Chỉ sau khi Quái Tinh Anh bị tiêu diệt hoàn toàn mới nhặt chiến lợi phẩm rơi ra và điều tiết về tâm bãi.
+
+**Kết quả:** ✅ Thành công — Đã biên dịch sạch sẽ `ant dist-prod` tạo file jar `kpah_mod_v1.0.0.1.jar` sẵn sàng thử nghiệm.
+**Ghi chú:**
+- Backup:
+  - `game/tools/_backup/Patcher.java.bak.20260910_1403`
+  - `game/app/src/classes/_backup/ModController.java.bak.20260910_1403`
+- Phần 08 hiện có: 5/10 task.
+
+---
+
+## [2026-09-10 14:34] — Bổ sung cơ chế khoảng cách Level cho Quái Thường (Giảm Dame & Giảm EXP)
+
+**Yêu cầu:**
+- Với quái thường, áp dụng cơ chế khoảng cách level để giảm sức mạnh của quái thường lên người chơi khi người chơi có level cao hơn quái:
+  - Cứ chênh lệch 1 level (`playerLevel - mobLevel > 0`), quái bị giảm **20% sát thương** lên người chơi, **tối đa giảm 80%** (đạt mức trần khi cách >= 4 level).
+  - Cứ chênh lệch 1 level, **kinh nghiệm (EXP)** quái mang lại cho người chơi giảm đi **10%**, **tối đa giảm 50%** (đạt mức trần khi cách >= 5 level) để cân bằng lại game.
+- **Phạm vi áp dụng:** Tuyệt đối KHÔNG áp dụng cho Quái Tinh Anh, Quái Cao Cấp / Thủ Lĩnh, và Quái Boss. CHỈ áp dụng riêng cho Quái Thường.
+
+**Files thay đổi:**
+- `server/KPAH/src/map/Monster.java`:
+  - Thêm phương thức `isNormalMonster()`: Xác định chính xác quái thường (`!isElite && template.getType() == 0 && !isKhoangSan() && !canNotAttackPlayer()`).
+  - Cập nhật `getDameAttack(Player pl)`: Khi người chơi cao cấp hơn quái thường (`diffLevel > 0`), giảm sát thương tịnh (`netDmg`) theo tỷ lệ `Math.min(80, diffLevel * 20)%`.
+  - Cập nhật `calculatePowerPlus(Player pl, int damage)`: Khi người chơi cao cấp hơn quái thường (`diffLevel > 0`), giảm lượng EXP nhận được `tnPl` theo tỷ lệ `Math.min(50, diffLevel * 10)%`.
+
+**Kết quả:** ✅ Thành công — Đã biên dịch sạch sẽ bằng Java 21 (`ant jar` tạo `server/KPAH/dist/KPAH.jar`).
+**Ghi chú:**
+- Backup: `server/KPAH/src/map/_backup/Monster.java.bak.20260910_1432`
+- Phần 08 hiện có: 6/10 task.
+
+---
+

@@ -268,7 +268,7 @@ public class ModController {
 		if (context instanceof class_bb) {
 			class_bb mob = (class_bb) context;
 			if (globalConfig.isPrioritizeElite && mob.isElite) {
-				return orig / 10;   // quái Tinh Anh: giảm khoảng cách 10 lần => ưu tiên tối cao
+				return 0;   // quái Tinh Anh: khoảng cách bằng 0 => ưu tiên tối cao tuyệt đối
 			}
 			if (globalConfig.isAutoPickup) {
 				return orig * 4;   // quái vật: tăng khoảng cách => giảm ưu tiên so với nhặt đồ
@@ -367,6 +367,15 @@ public class ModController {
 	public static boolean shouldChase(Object target) {
 		if (!isAutoRunning()) return false;
 		if (target == null) return false;
+
+		// Quái Tinh Anh: Nếu đã là mục tiêu đang đánh thì dù có chạy khỏi bãi cũng đuổi theo!
+		if (globalConfig.isPrioritizeElite && (target instanceof class_bb) && ((class_bb) target).isElite) {
+			class_abj gameScreen = class_acv.s;
+			if (gameScreen != null && gameScreen.r == target) {
+				return true;
+			}
+		}
+
 		// Nếu đang trong trạng thái điều tiết về trung tâm -> không đuổi theo bất kỳ ai
 		if (isRegulating) return false;
 
@@ -596,24 +605,39 @@ public class ModController {
 	// =========================================================================
 	// CÁC HÀM HỖ TRỢ: QUÁI TINH ANH, TỰ ĐỘNG HỒI SINH, TỰ ĐỘNG BÁN ĐỒ CẤP THẤP
 	// =========================================================================
+	public static class_bb getEliteTarget(class_abj gameScreen) {
+		if (!globalConfig.isPrioritizeElite || gameScreen == null) {
+			return null;
+		}
+		// 1. NẾU ĐÃ TARGET QUÁI TINH ANH RỒI:
+		// Dù quái có chạy ra khỏi bãi train thì VẪN ĐUỔI THEO TIÊU DIỆT CHO BẰNG ĐƯỢC!
+		if (gameScreen.r instanceof class_bb) {
+			class_bb currentMob = (class_bb) gameScreen.r;
+			if (currentMob.isElite && currentMob.cV != 5 && currentMob.v > 0) {
+				return currentMob;
+			}
+		}
+		// 2. NẾU CHƯA TARGET: CHỈ quét tìm quái Tinh Anh XUẤT HIỆN TRONG BÃI TRAIN (tránh chạy loạn xạ)
+		class_hw player = gameScreen.q;
+		if (player == null) {
+			return null;
+		}
+		return findNearestEliteMob(gameScreen, autoAnchorX, autoAnchorY, player);
+	}
+
 	public static class_bb findNearestEliteMob(class_abj gameScreen, int originX, int originY, class_hw player) {
 		Vector entityList = gameScreen.l;
 		if (entityList == null) return null;
 		class_bb nearest = null;
 		int minDistance = Integer.MAX_VALUE;
-		long now = System.currentTimeMillis();
 		int size = entityList.size();
 		for (int i = 0; i < size; i++) {
 			Object obj = entityList.elementAt(i);
 			if (obj instanceof class_bb) {
 				class_bb mob = (class_bb) obj;
+				// CHỈ QUÉT QUÁI TINH ANH TRONG BÃI TRAIN (tránh nhân vật chạy loạn xạ khắp bản đồ)
 				if (!mob.isElite || mob.cV == 5 || mob.v <= 0) {
 					continue;
-				}
-				Long expire = (Long) ignoredMobs.get(new Short(mob.cG));
-				if (expire != null) {
-					if (now < expire.longValue()) continue;
-					ignoredMobs.remove(new Short(mob.cG));
 				}
 				if (!isInsideZone((int) mob.cK, (int) mob.cL)) {
 					continue;
@@ -758,10 +782,22 @@ public class ModController {
 			long now = System.currentTimeMillis();
 
 			// =========================================================================
-			// A. NẾU ĐANG TRONG TRẠNG THÁI ĐIỀU TIẾT VỀ TRUNG TÂM:
+			// 0. QUÁI TINH ANH TRONG TOÀN KHU VỰC: ƯU TIÊN TỐI CAO
+			// =========================================================================
+			class_bb eliteTarget = null;
+			if (globalConfig.isPrioritizeElite) {
+				eliteTarget = getEliteTarget(gameScreen);
+				if (eliteTarget != null) {
+					// Khi có Quái Tinh Anh, hủy ngay trạng thái điều tiết về tâm để tập trung săn tinh anh!
+					isRegulating = false;
+				}
+			}
+
+			// =========================================================================
+			// A. NẾU ĐANG TRONG TRẠNG THÁI ĐIỀU TIẾT VỀ TRUNG TÂM (CHỈ KHI KHÔNG CÓ TINH ANH):
 			// "Nếu đã vào trạng thái điều tiết trở lại rồi thì không target thêm thứ gì cho đến khi trở lại xong xuôi."
 			// =========================================================================
-			if (isRegulating) {
+			if (isRegulating && eliteTarget == null) {
 				if (gameScreen.r != null && !isNpc(gameScreen.r)) {
 					gameScreen.r = null; // Tuyệt đối không target quái vật khi đang điều tiết
 				}
@@ -783,10 +819,10 @@ public class ModController {
 
 			// =========================================================================
 			// B. KHI KHÔNG TRONG TRẠNG THÁI ĐIỀU TIẾT:
-			// 0. ƯU TIÊN SỐ 1: TỰ ĐỘNG NHẶT VẬT PHẨM TRONG VÙNG BÃI TRAIN (KÈM VÙNG ĐỆM LOOT)
-			// (Không bỏ lỡ giữa chừng đồ ngon khi đi nhặt)
+			// TỰ ĐỘNG NHẶT VẬT PHẨM (CHỈ KHI KHÔNG CÓ QUÁI TINH ANH ĐANG CẦN ĐÁNH)
+			// (Tránh việc đang đánh Tinh Anh mà rớt thuốc/xu lại bỏ dở chạy đi nhặt rác)
 			// =========================================================================
-			if (globalConfig.isAutoPickup) {
+			if (globalConfig.isAutoPickup && eliteTarget == null) {
 				class_ba nearestItem = findNearestDroppedItem(gameScreen, originX, originY, player);
 				if (nearestItem != null) {
 					gameScreen.r = nearestItem;
@@ -847,11 +883,17 @@ public class ModController {
 			}
 
 			// =========================================================================
-			// C. KIỂM TRA MỤC TIÊU QUÁI VẬT HIỆN TẠI (ĐANG ĐÁNH DỞ)
-			// (Tránh việc người chơi đang đánh quái mà bỏ lỡ giữa chừng)
+			// C. XỬ LÝ MỤC TIÊU QUÁI VẬT (ƯU TIÊN TINH ANH TUYỆT ĐỐI HOẶC TIẾP TỤC ĐÁNH DỞ)
 			// =========================================================================
 			boolean isRanged = (player.aO == 2 || player.aO == 4);
 			int attackRange = isRanged ? 70 : 25;
+
+			// Nếu có Quái Tinh Anh và mục tiêu hiện tại chưa phải là Quái Tinh Anh: CHUYỂN NGAY!
+			if (eliteTarget != null && gameScreen.r != eliteTarget) {
+				gameScreen.r = eliteTarget;
+				lastAttackMobId = -1;
+				((class_sc) player).s = null;
+			}
 
 			class_vh currentTarget = gameScreen.r;
 			if (currentTarget != null) {
@@ -862,61 +904,83 @@ public class ModController {
 					class_bb mob = (class_bb) currentTarget;
 					int distToMob = class_yg.a((int) player.cK, (int) player.cL, (int) mob.cK, (int) mob.cL);
 
-					// ƯU TIÊN QUÁI TINH ANH: Nếu đang đánh quái thường mà có quái Tinh Anh trong bãi, chuyển target ngay!
-					if (globalConfig.isPrioritizeElite && !mob.isElite) {
-						class_bb eliteMob = findNearestEliteMob(gameScreen, originX, originY, player);
-						if (eliteMob != null && eliteMob.cG != mob.cG) {
-							gameScreen.r = eliteMob;
-							currentTarget = eliteMob;
-							mob = eliteMob;
-							distToMob = class_yg.a((int) player.cK, (int) player.cL, (int) mob.cK, (int) mob.cL);
-							lastAttackMobId = -1;
+					// --- XỬ LÝ RIÊNG CHO QUÁI TINH ANH ---
+					if (mob.isElite) {
+						// Quái Tinh Anh chỉ hủy target khi ĐÃ CHẾT!
+						if (mob.cV == 5 || mob.v <= 0) {
+							gameScreen.r = null;
+							currentTarget = null;
 							((class_sc) player).s = null;
-						}
-					}
-
-					// NẾU QUÁI ĐÃ RA NGOÀI 4 GÓC HOẶC ĐÃ CHẾT HOẶC QUÁ XA:
-					// Hủy target ngay lập tức để không bao giờ đuổi theo quái ra khỏi bãi!
-					if (!isInsideZone((int) mob.cK, (int) mob.cL) || mob.cV == 5 || mob.v <= 0 || distToMob > MAX_TARGET_DISTANCE) {
-						gameScreen.r = null;
-						currentTarget = null;
-						((class_sc) player).s = null;
-						lastAttackMobId = -1;
-					} else {
-						// Quái còn sống và nằm trong 4 góc: tiếp tục đánh nốt con quái này
-						if (mob.cG == lastAttackMobId) {
-							if (mob.v < lastMobHp) {
+							lastAttackMobId = -1;
+							eliteTarget = null;
+						} else {
+							// Khóa chặt mục tiêu Quái Tinh Anh: KHÔNG timeout 4.5s vào ignoredMobs, KHÔNG giới hạn cự ly
+							if (mob.cG != lastAttackMobId) {
+								lastAttackMobId = mob.cG;
 								lastMobHp = mob.v;
 								mobAttackStartTime = now;
-							} else if (now - mobAttackStartTime >= 3500L) {
-								if (distToMob > 18) {
+							} else {
+								if (mob.v < lastMobHp) {
+									lastMobHp = mob.v;
+									mobAttackStartTime = now;
+								}
+							}
+
+							if (distToMob > attackRange) {
+								if (((class_sc) player).s == null || now - lastChaseTime >= 400) {
+									lastChaseTime = now;
 									gameScreen.movePlayer((int) mob.cK, (int) mob.cL);
 								}
-								if (now - mobAttackStartTime >= 4500L) {
-									ignoredMobs.put(new Short(mob.cG), new Long(now + 8000L));
-									gameScreen.r = null;
-									currentTarget = null;
-									((class_sc) player).s = null;
-									lastAttackMobId = -1;
-									return;
-								}
+							} else {
+								((class_sc) player).s = null;
+								triggerAutoAttack(gameScreen);
 							}
-						} else {
-							lastAttackMobId = mob.cG;
-							lastMobHp = mob.v;
-							mobAttackStartTime = now;
+							return; // Luôn tập trung đánh Quái Tinh Anh cho đến khi chết hẳn!
 						}
-
-						if (distToMob > attackRange) {
-							if (((class_sc) player).s == null || now - lastChaseTime >= 500) {
-								lastChaseTime = now;
-								gameScreen.movePlayer((int) mob.cK, (int) mob.cL);
-							}
-						} else {
+					} else {
+						// --- XỬ LÝ CHO QUÁI THƯỜNG ---
+						// Nếu quái đã ra ngoài 4 góc hoặc đã chết hoặc quá xa: Hủy target!
+						if (!isInsideZone((int) mob.cK, (int) mob.cL) || mob.cV == 5 || mob.v <= 0 || distToMob > MAX_TARGET_DISTANCE) {
+							gameScreen.r = null;
+							currentTarget = null;
 							((class_sc) player).s = null;
-							triggerAutoAttack(gameScreen);
+							lastAttackMobId = -1;
+						} else {
+							// Quái thường còn sống và nằm trong 4 góc: tiếp tục đánh nốt con quái này
+							if (mob.cG == lastAttackMobId) {
+								if (mob.v < lastMobHp) {
+									lastMobHp = mob.v;
+									mobAttackStartTime = now;
+								} else if (now - mobAttackStartTime >= 3500L) {
+									if (distToMob > 18) {
+										gameScreen.movePlayer((int) mob.cK, (int) mob.cL);
+									}
+									if (now - mobAttackStartTime >= 4500L) {
+										ignoredMobs.put(new Short(mob.cG), new Long(now + 8000L));
+										gameScreen.r = null;
+										currentTarget = null;
+										((class_sc) player).s = null;
+										lastAttackMobId = -1;
+										return;
+									}
+								}
+							} else {
+								lastAttackMobId = mob.cG;
+								lastMobHp = mob.v;
+								mobAttackStartTime = now;
+							}
+
+							if (distToMob > attackRange) {
+								if (((class_sc) player).s == null || now - lastChaseTime >= 500) {
+									lastChaseTime = now;
+									gameScreen.movePlayer((int) mob.cK, (int) mob.cL);
+								}
+							} else {
+								((class_sc) player).s = null;
+								triggerAutoAttack(gameScreen);
+							}
+							return; // Đang đánh dở quái, không ngắt quãng giữa chừng
 						}
-						return; // Đang đánh dở quái, không ngắt quãng giữa chừng
 					}
 				}
 			}
@@ -924,9 +988,9 @@ public class ModController {
 			// =========================================================================
 			// D. HOẠT ĐỘNG ĐIỀU TIẾT VỀ TRUNG TÂM (LÀM SAU CÙNG)
 			// Sau khi không còn nhặt đồ dở và không còn đánh quái dở:
-			// Nếu người chơi đang ở ngoài phạm vi 4 góc -> Kích hoạt điều tiết về tâm bãi!
+			// CHỈ kích hoạt khi KHÔNG có Quái Tinh Anh và người chơi ở ngoài 4 góc bãi train!
 			// =========================================================================
-			if (!isInsideZone((int) player.cK, (int) player.cL)) {
+			if (eliteTarget == null && !isInsideZone((int) player.cK, (int) player.cL)) {
 				isRegulating = true;
 				if (gameScreen.r != null && !isNpc(gameScreen.r)) {
 					gameScreen.r = null;
@@ -939,46 +1003,53 @@ public class ModController {
 			}
 
 			// =========================================================================
-			// E. NGƯỜI CHƠI ĐANG Ở TRONG 4 GÓC: QUÉT TÌM QUÁI MỚI TRONG 4 GÓC
+			// E. TÌM QUÁI MỚI (ƯU TIÊN TINH ANH, NẾU KHÔNG CÓ THÌ QUÉT QUÁI THƯỜNG TRONG 4 GÓC)
 			// =========================================================================
+			if (eliteTarget != null) {
+				gameScreen.r = eliteTarget;
+				((class_sc) player).s = null;
+				lastAttackMobId = -1;
+				int distToMob = class_yg.a((int) player.cK, (int) player.cL, (int) eliteTarget.cK, (int) eliteTarget.cL);
+				if (distToMob > attackRange) {
+					lastChaseTime = now;
+					gameScreen.movePlayer((int) eliteTarget.cK, (int) eliteTarget.cL);
+				} else {
+					triggerAutoAttack(gameScreen);
+				}
+				return;
+			}
+
 			Vector entityList = gameScreen.l;
 			if (entityList != null) {
 				class_bb nearestMob = null;
-				// ƯU TIÊN SỐ 1: Quét tìm quái Tinh Anh trong bãi trước!
-				if (globalConfig.isPrioritizeElite) {
-					nearestMob = findNearestEliteMob(gameScreen, originX, originY, player);
-				}
+				int minDistance = Integer.MAX_VALUE;
 
-				if (nearestMob == null) {
-					int minDistance = Integer.MAX_VALUE;
-
-					int size = entityList.size();
-					for (int i = 0; i < size; i++) {
-						Object obj = entityList.elementAt(i);
-						if (obj instanceof class_bb) {
-							class_bb mob = (class_bb) obj;
-							if (mob.cV == 5 || mob.v <= 0) {
+				int size = entityList.size();
+				for (int i = 0; i < size; i++) {
+					Object obj = entityList.elementAt(i);
+					if (obj instanceof class_bb) {
+						class_bb mob = (class_bb) obj;
+						if (mob.cV == 5 || mob.v <= 0) {
+							continue;
+						}
+						Long expire = (Long) ignoredMobs.get(new Short(mob.cG));
+						if (expire != null) {
+							if (now < expire.longValue()) {
 								continue;
+							} else {
+								ignoredMobs.remove(new Short(mob.cG));
 							}
-							Long expire = (Long) ignoredMobs.get(new Short(mob.cG));
-							if (expire != null) {
-								if (now < expire.longValue()) {
-									continue;
-								} else {
-									ignoredMobs.remove(new Short(mob.cG));
-								}
-							}
+						}
 
-							// BẮT BUỘC QUÁI PHẢI NẰM TRONG VÙNG 4 GÓC CỦA BÃI TRAIN
-							if (!isInsideZone((int) mob.cK, (int) mob.cL)) {
-								continue;
-							}
+						// BẮT BUỘC QUÁI PHẢI NẰM TRONG VÙNG 4 GÓC CỦA BÃI TRAIN
+						if (!isInsideZone((int) mob.cK, (int) mob.cL)) {
+							continue;
+						}
 
-							int distToPlayer = class_yg.a((int) mob.cK, (int) mob.cL, (int) player.cK, (int) player.cL);
-							if (distToPlayer <= MAX_TARGET_DISTANCE && distToPlayer < minDistance) {
-								minDistance = distToPlayer;
-								nearestMob = mob;
-							}
+						int distToPlayer = class_yg.a((int) mob.cK, (int) mob.cL, (int) player.cK, (int) player.cL);
+						if (distToPlayer <= MAX_TARGET_DISTANCE && distToPlayer < minDistance) {
+							minDistance = distToPlayer;
+							nearestMob = mob;
 						}
 					}
 				}

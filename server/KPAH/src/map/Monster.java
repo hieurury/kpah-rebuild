@@ -100,6 +100,17 @@ public class Monster implements Cloneable {
         return template.getId() >= 85 && template.getId() <= 89;
     }
 
+    public boolean isNormalMonster() {
+        if (isElite) {
+            return false;
+        }
+        if (template == null) {
+            return false;
+        }
+        // template.getType(): 0 = quái thường, 1 = thủ lĩnh/cao cấp, 2 = boss
+        return template.getType() == 0 && !isKhoangSan() && !canNotAttackPlayer() && !playerCanNotAttack();
+    }
+
     private boolean isPlayerAttackable(@NonNull Player player) {
         return !player.getSundry().isNewlyRevived() && !player.isDie() && ClientManager.containsPlayers(player) && player.getLocation().getZone().equals(this.zone) && Util.getDistance(player, this) <= Settings.DISTANCE_MOB_CAN_ATTACK;
     }
@@ -262,8 +273,22 @@ public class Monster implements Cloneable {
             minScratch = Math.max(25, (int) (mobLv * 3.5 + 15));
         }
 
-        // 4. Đảm bảo người chơi nhận sát thương hợp lý khi trừ giáp trong Player.injured()
-        int finalDmg = plDef + Math.max(baseAtk - plDef, minScratch);
+        int netDmg = Math.max(baseAtk - plDef, minScratch);
+
+        // 4. Cơ chế khoảng cách level cho quái thường:
+        // Cứ cách 1 lv (người chơi cao hơn quái) thì quái bị giảm 20% dame lên người chơi, tối đa 80%.
+        // Không áp dụng cho quái tinh anh, cao cấp và các loại boss.
+        if (isNormalMonster() && pl != null && pl.getInfo() != null) {
+            int playerLevel = pl.getInfo().getLevel();
+            int diffLevel = playerLevel - mobLv;
+            if (diffLevel > 0) {
+                int dmgReductionPercent = Math.min(80, diffLevel * 20);
+                netDmg = Math.max(1, (int) (netDmg * (100 - dmgReductionPercent) / 100.0));
+            }
+        }
+
+        // 5. Đảm bảo người chơi nhận sát thương hợp lý khi trừ giáp trong Player.injured()
+        int finalDmg = plDef + netDmg;
 
         return Math.max(1, finalDmg);
     }
@@ -302,6 +327,18 @@ public class Monster implements Cloneable {
         // Quái tinh anh cho kinh nghiệm khổng lồ gấp 60 lần
         if (isElite) {
             tnPl *= 60;
+        }
+
+        // Cơ chế khoảng cách level cho quái thường:
+        // Cứ cách 1 lv (người chơi cao hơn quái) thì kinh nghiệm quái cho người chơi giảm đi 10%, tối đa 50%.
+        // Không áp dụng cho quái tinh anh, cao cấp và các loại boss.
+        if (isNormalMonster() && pl != null && pl.getInfo() != null) {
+            int playerLevel = pl.getInfo().getLevel();
+            int diffLevel = playerLevel - level;
+            if (diffLevel > 0) {
+                int expReductionPercent = Math.min(50, diffLevel * 10);
+                tnPl = Math.max(1, (int) (tnPl * (100 - expReductionPercent) / 100.0));
+            }
         }
 
         // Áp dụng % thưởng từ người chơi (thú cưỡi, sự kiện, item, etc.)

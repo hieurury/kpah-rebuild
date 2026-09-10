@@ -62,6 +62,12 @@ public class Patcher {
         // === Patch 1+2: hàm z() – ưu tiên item trong danh sách mục tiêu, mở rộng bán kính quét quái khi auto, và chặn tuyệt đối mục tiêu ngoài 4 góc hoặc khi đang điều tiết ===
         CtMethod zMethod = cc.getDeclaredMethod("z", new CtClass[0]);
         zMethod.insertBefore(
+            "if (au && classes.ModController.globalConfig.isPrioritizeElite) {" +
+            "    classes.class_vh elite = classes.ModController.getEliteTarget(this);" +
+            "    if (elite != null) {" +
+            "        return elite;" +
+            "    }" +
+            "}" +
             "if (classes.ModController.isRegulating) {" +
             "    return null;" +
             "}" +
@@ -91,7 +97,13 @@ public class Patcher {
                     );
                 } else if (mc.getMethodName().equals("b_")) {
                     mc.replace(
-                        "if (au && !($0 instanceof classes.class_ba) && !classes.ModController.isInsideZone((int)((classes.class_vh)$0).cK, (int)((classes.class_vh)$0).cL)) {" +
+                        "if (au && classes.ModController.globalConfig.isPrioritizeElite && ($0 instanceof classes.class_bb) && ((classes.class_bb)$0).isElite) {" +
+                        "    if (this.r == $0 || classes.ModController.isInsideZone((int)((classes.class_vh)$0).cK, (int)((classes.class_vh)$0).cL)) {" +
+                        "        $_ = false;" +
+                        "    } else {" +
+                        "        $_ = true;" +
+                        "    }" +
+                        "} else if (au && !($0 instanceof classes.class_ba) && !classes.ModController.isInsideZone((int)((classes.class_vh)$0).cK, (int)((classes.class_vh)$0).cL)) {" +
                         "    $_ = true;" +
                         "} else if (classes.ModController.globalConfig.isAutoPickup && ($0 instanceof classes.class_ba)) {" +
                         "    if (classes.ModController.isInsideLootZone((int)((classes.class_vh)$0).cK, (int)((classes.class_vh)$0).cL)) {" +

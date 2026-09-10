@@ -128,6 +128,8 @@ public class MapService {
         ItemService.instance.removeItemEquipmentFromGround(player, itemMap, equipment);
         services.QuestService.instance.onPickUpEquipment(player);
         ChatService.instance.sendChatOnlyMe(player, "Bạn nhặt được " + equipment.getTemplate().getName());
+        utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã nhặt được trang bị [%s (Cấp %d)] (ID: %d) từ mặt đất.",
+                player.getName(), player.getIdPlayer(), equipment.getTemplate().getName(), equipment.getTemplate().getLevel(), equipment.getTemplate().getId());
     }
 
     public void getGemFromGround(@NonNull Player player, short id) throws IOException {
@@ -168,6 +170,10 @@ public class MapService {
         ItemService.instance.removeItemGemFromGround(player, itemMap);
         InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(itemMap.getItemTemplateID(), itemMap.getQuantity()));
         InventoryService.instance.sendItemGem(player);
+        template.GemTemplate gt = Manager.getGemTemplate(itemMap.getItemTemplateID());
+        String gemName = (gt != null) ? gt.getName() : ("Đá/Nguyên liệu ID: " + itemMap.getItemTemplateID());
+        utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã nhặt được [%s x%d] (ID: %d) từ mặt đất.",
+                player.getName(), player.getIdPlayer(), gemName, itemMap.getQuantity(), itemMap.getItemTemplateID());
     }
 
     public void getPotionFromGround(@NonNull Player player, short id) throws IOException {
@@ -206,7 +212,8 @@ public class MapService {
             ItemService.instance.removeItemPotionFromGround(player, itemMap);
             player.getInventory().plusXu(itemMap.getQuantity());
             Service.instance.sendMainCharInfo(player);
-            // Không hiện chat khi nhặt xu
+            utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã nhặt được %s Xu từ mặt đất.",
+                    player.getName(), player.getIdPlayer(), Util.formatNumber(itemMap.getQuantity()));
             return;
         }
         if (player.getInventory().isFullInventory()) {
@@ -215,10 +222,14 @@ public class MapService {
         }
         ItemService.instance.removeItemPotionFromGround(player, itemMap);
         InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(itemMap));
+        InventoryService.instance.sendItemPotion(player);
         template.PotionTemplate pt = Manager.getPotionTemplate(itemMap.getItemTemplateID());
+        String itemName = (pt != null && pt.getName() != null) ? pt.getName().split("\n")[0] : ("Dược phẩm ID: " + itemMap.getItemTemplateID());
         if (pt != null && pt.getName() != null && pt.getName().toLowerCase().contains("rương")) {
-            ChatService.instance.sendChatOnlyMe(player, "Bạn nhận được " + pt.getName().split("\n")[0]);
+            ChatService.instance.sendChatOnlyMe(player, "Bạn nhận được " + itemName);
         }
+        utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã nhặt được [%s x%d] (ID: %d) từ mặt đất.",
+                player.getName(), player.getIdPlayer(), itemName, itemMap.getQuantity(), itemMap.getItemTemplateID());
     }
 
     public void onNewHpMp(@NonNull Player pl) throws IOException {
