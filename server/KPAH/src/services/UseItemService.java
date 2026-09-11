@@ -366,27 +366,18 @@ public class UseItemService {
         rewardNames.add(lkdQty + " " + (lkdId == 69 ? Manager.getPotionTemplate(lkdId).getName() : Manager.getGemTemplate(lkdId).getName()));
 
         // 5. PHẦN THƯỞNG ĐẶC BIỆT THEO BẬC RƯƠNG:
+        short[] rawMatList = {67, 74, 81, 88, 95}; // Sợi bông, Quặng sắt, Ngọc thô, Gỗ thường thô, Da mềm thô
+        short[] scMatList = {68, 75, 82, 89, 96};   // Vải, Sắt, Ngọc, Gỗ thường, Da mềm
+        short[] ccMatList = {103, 110, 117, 124, 131}; // Tơ lụa, Bạc, Thủy tinh, Gỗ sưa, Da cứng
+
         if (tier <= 2) {
-            // Rương Tinh Anh Bậc 1 & 2 (Cấp < 20): Rơi gói Nguyên Liệu Sơ Cấp & Cao Cấp từ bậc 1 đến 6
-            int minMatRank = (tier == 1) ? 1 : 2;
-            int maxMatRank = (tier == 1) ? 3 : 5;
-
-            // Nguyên liệu sơ cấp: 2-3 loại
-            int numScTypes = (tier == 1) ? 2 : 3;
-            for (int k = 0; k < numScTypes; k++) {
-                short scId = getRandomMaterial(false, minMatRank, maxMatRank);
-                short scQty = (short) (tier == 1 ? Util.nextInt(3, 6) : Util.nextInt(4, 8));
-                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(scId, scQty));
-                rewardNames.add(scQty + " " + Manager.getGemTemplate(scId).getName());
-            }
-
-            // Nguyên liệu cao cấp: 1-2 loại
-            int numCcTypes = (tier == 1) ? 1 : 2;
-            for (int k = 0; k < numCcTypes; k++) {
-                short ccId = getRandomMaterial(true, minMatRank, maxMatRank);
-                short ccQty = (short) (tier == 1 ? Util.nextInt(2, 4) : Util.nextInt(3, 6));
-                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(ccId, ccQty));
-                rewardNames.add(ccQty + " " + Manager.getGemTemplate(ccId).getName());
+            // Rương Tinh Anh Bậc 1 & 2: Rơi nguyên liệu thô
+            int numRawTypes = (tier == 1) ? 2 : 3;
+            for (int k = 0; k < numRawTypes; k++) {
+                short rawId = rawMatList[Util.nextInt(0, rawMatList.length - 1)];
+                short rawQty = (short) (tier == 1 ? Util.nextInt(3, 8) : Util.nextInt(5, 12));
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(rawId, rawQty));
+                rewardNames.add(rawQty + " " + Manager.getGemTemplate(rawId).getName());
             }
 
             // Đá ngũ hợp
@@ -397,14 +388,41 @@ public class UseItemService {
                 rewardNames.add(nhQty + " " + Manager.getGemTemplate(nhId).getName());
             }
         } else {
-            // Rương Tinh Anh Bậc 3 & 4 (Cấp 20+): Rơi Nguyên Liệu Cấp Cao + TRANG BỊ CHẾ TẠO HOÀN MỸ CÓ PHẨM CẤP
-            // Nguyên liệu cao cấp bậc 3..6
-            short ccId = getRandomMaterial(true, (tier == 3 ? 3 : 4), 6);
-            short ccQty = (short) (tier == 3 ? Util.nextInt(4, 8) : Util.nextInt(6, 12));
-            InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(ccId, ccQty));
-            rewardNames.add(ccQty + " " + Manager.getGemTemplate(ccId).getName());
+            // Rương Tinh Anh Bậc 3 & 4: Rơi Nguyên Liệu Thô + Sơ Cấp + Cao Cấp + Ngọc Rèn + TRANG BỊ CHẾ TẠO
+            // 1. Nguyên liệu thô (2 loại)
+            for (int k = 0; k < 2; k++) {
+                short rawId = rawMatList[Util.nextInt(0, rawMatList.length - 1)];
+                short rawQty = (short) (tier == 3 ? Util.nextInt(5, 10) : Util.nextInt(8, 15));
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(rawId, rawQty));
+                rewardNames.add(rawQty + " " + Manager.getGemTemplate(rawId).getName());
+            }
 
-            // Đá ngũ hợp cao cấp / tinh khiết (lv 3..6)
+            // 2. Nguyên liệu sơ cấp (1-2 loại)
+            int numScTypes = (tier == 3) ? 1 : 2;
+            for (int k = 0; k < numScTypes; k++) {
+                short scId = scMatList[Util.nextInt(0, scMatList.length - 1)];
+                short scQty = (short) (tier == 3 ? Util.nextInt(1, 3) : Util.nextInt(2, 5));
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(scId, scQty));
+                rewardNames.add(scQty + " " + Manager.getGemTemplate(scId).getName());
+            }
+
+            // 3. Cơ hội nhận Nguyên liệu cao cấp (Tier 3: 50%, Tier 4: 80%)
+            int ccChance = (tier == 3) ? 50 : 80;
+            if (Util.isTrue(ccChance, 100)) {
+                short ccId = ccMatList[Util.nextInt(0, ccMatList.length - 1)];
+                short ccQty = (short) (tier == 3 ? 1 : Util.nextInt(1, 2));
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem(ccId, ccQty));
+                rewardNames.add(ccQty + " " + Manager.getGemTemplate(ccId).getName());
+            }
+
+            // 4. Ngọc rèn (ID 268) (Tier 3: 1-2 cái, Tier 4: 2-4 cái)
+            short nrQty = (short) (tier == 3 ? Util.nextInt(1, 2) : Util.nextInt(2, 4));
+            if (Manager.getGemTemplate((short) 268) != null) {
+                InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 268, nrQty));
+                rewardNames.add(nrQty + " " + Manager.getGemTemplate((short) 268).getName());
+            }
+
+            // 5. Đá ngũ hợp cao cấp / tinh khiết (lv 3..6)
             short nhId = (short) (tier == 3 ? Util.nextInt(145, 151) : Util.nextInt(149, 154));
             short nhQty = (short) (tier == 3 ? Util.nextInt(2, 3) : Util.nextInt(3, 5));
             if (Manager.getGemTemplate(nhId) != null) {
@@ -412,7 +430,7 @@ public class UseItemService {
                 rewardNames.add(nhQty + " " + Manager.getGemTemplate(nhId).getName());
             }
 
-            // 100% NHẬN TRANG BỊ CHẾ TẠO HOÀN MỸ CÓ PHẨM CẤP (Ngũ phẩm -> Nhất phẩm)
+            // 6. 100% NHẬN TRANG BỊ CHẾ TẠO HOÀN MỸ CÓ PHẨM CẤP (Ngũ phẩm -> Nhất phẩm)
             if (!player.getInventory().isFullInventory()) {
                 ItemEquip craftItem = ItemService.instance.createCraftedEquipment((byte) tier, playerLv, classChar);
                 if (craftItem != null) {
@@ -443,15 +461,6 @@ public class UseItemService {
         Service.instance.sendLogOut(player.getSession(), msg);
         utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã mở [Rương Tinh Anh (Bậc %d)]: %s",
                 player.getName(), player.getIdPlayer(), tier, String.join(", ", rewardNames));
-    }
-
-    private static short getRandomMaterial(boolean isCaoCap, int minRank, int maxRank) {
-        short[] baseIds = isCaoCap
-                ? new short[]{103, 110, 117, 124, 131} // Tơ lụa, Bạc, Thủy tinh, Gỗ sưa, Da cứng
-                : new short[]{68, 75, 82, 89, 96};     // Vải, Sắt, Ngọc, Gỗ, Da mềm
-        short base = baseIds[Util.nextInt(0, baseIds.length - 1)];
-        int rank = Util.nextInt(minRank, maxRank);
-        return (short) (base + (rank - 1));
     }
 
     private static String getRankName(byte rank) {

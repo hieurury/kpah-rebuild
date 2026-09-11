@@ -99,7 +99,7 @@ public class NpcService {
             case NpcConst.THO_HOP_THANH_SO_CAP ->
                 MenuOptionService.instance.sendMenuThoHopThanhSoCap(player);
             case NpcConst.THO_HOP_THANH_CAO_CAP ->
-                MenuOptionService.instance.sendMenuThoHopThanhCaoCap(player);
+                ShopService.instance.openNpcShop(player, "GEM_SHOP", ItemEquipConst.DAMAGE_NONE);
             case NpcConst.DAU_TRUONG ->
                 MenuOptionService.instance.sendMenuDauTruong(player);
             case NpcConst.TONG_QUAN ->

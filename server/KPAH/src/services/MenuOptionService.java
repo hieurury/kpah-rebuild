@@ -12,6 +12,7 @@ import consts.NpcConst;
 import item.ItemAnimal;
 import item.Attribute;
 import item.ItemPotion;
+import item.ItemGem;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.Cleanup;
@@ -32,6 +33,8 @@ public class MenuOptionService {
     private static final byte THAY_NGU_HANH = 2;
     private static final byte THO_HOP_THANH_CAO_CAP = 3;
     private static final byte THO_HOP_THANH_SO_CAP = 4;
+    public static final byte THO_LUYEN_KIM_CHOOSE_MAT = 24;
+    public static final byte THO_LUYEN_KIM_CHOOSE_QTY = 25;
     private static final byte TONG_QUAN = 5;
     public static final byte THO_REN_THAN_BI = 20;
     public static final byte THO_REN_CHOOSE_CLASS = 21;
@@ -89,6 +92,29 @@ public class MenuOptionService {
             }
             case THO_REN_DISMANTLE -> {
                 CraftService.instance.onSelectDismantleItem(player, selected);
+            }
+            case THO_HOP_THANH_SO_CAP -> {
+                switch (selected) {
+                    case 0 -> { // Ghép nguyên liệu
+                        sendOptionMenu(player, THO_LUYEN_KIM_CHOOSE_MAT,
+                                "Sợi bông -> Vải",
+                                "Quặng sắt -> Sắt",
+                                "Ngọc thô -> Ngọc",
+                                "Gỗ thường thô -> Gỗ thường",
+                                "Da mềm thô -> Da mềm");
+                    }
+                    case 1 -> { // Mua vé vào khu mỏ (50.000 xu)
+                        buyMiningTicket(player);
+                    }
+                }
+            }
+            case THO_LUYEN_KIM_CHOOSE_MAT -> {
+                player.getSundry().setCraftMatIndex(selected);
+                sendOptionMenu(player, THO_LUYEN_KIM_CHOOSE_QTY, "Ghép 1 cái (1.000 xu)", "Ghép 10 cái (10.000 xu)", "Ghép tất cả");
+            }
+            case THO_LUYEN_KIM_CHOOSE_QTY -> {
+                byte matIdx = player.getSundry().getCraftMatIndex();
+                processRefineMaterial(player, matIdx, selected);
             }
             case MENU_NPC_DYNAMIC -> {
                 byte npcId = player.getSundry().getIdNpcOpen();
@@ -533,7 +559,90 @@ public class MenuOptionService {
     }
 
     public void sendMenuThoHopThanhSoCap(@NonNull Player player) throws IOException {
-        sendOptionMenu(player, THO_HOP_THANH_SO_CAP, "Nguyên liệu thường", "Nguyên liệu khóa", "Ngọc huyền minh", "Ngọc huyền minh khóa", "Bột thường", "Bột khóa");
+        sendOptionMenu(player, THO_HOP_THANH_SO_CAP, "Ghép nguyên liệu", "Mua vé vào khu mỏ (50.000 xu)");
+    }
+
+    public void buyMiningTicket(@NonNull Player player) throws IOException {
+        int cost = 50000;
+        if (!player.getInventory().minusXu(cost)) {
+            Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu để mua Vé vào mỏ!", Util.formatNumber(cost)));
+            return;
+        }
+        ItemPotion ticket = ItemService.instance.createNewItemPotion((short) 91, 1);
+        if (ticket != null) {
+            InventoryService.instance.addItemPotion(player, ticket);
+            InventoryService.instance.sendItemPotion(player);
+            Service.instance.sendMainCharInfo(player);
+            Service.instance.sendLogOut(player.getSession(), "Mua thành công 1 Vé vào khu mỏ!");
+            utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Vé vào mỏ (ID: 91) với giá %s xu từ Thợ Luyện Kim.",
+                    player.getName(), player.getIdPlayer(), Util.formatNumber(cost));
+        }
+    }
+
+    public void processRefineMaterial(@NonNull Player player, byte matIdx, byte qtyOption) throws IOException {
+        short rawId;
+        short targetId;
+        String rawName;
+        String targetName;
+        switch (matIdx) {
+            case 0 -> { rawId = 67; targetId = 68; rawName = "Sợi bông"; targetName = "Vải"; }
+            case 1 -> { rawId = 74; targetId = 75; rawName = "Quặng sắt"; targetName = "Sắt"; }
+            case 2 -> { rawId = 81; targetId = 82; rawName = "Ngọc thô"; targetName = "Ngọc"; }
+            case 3 -> { rawId = 88; targetId = 89; rawName = "Gỗ thường thô"; targetName = "Gỗ thường"; }
+            case 4 -> { rawId = 95; targetId = 96; rawName = "Da mềm thô"; targetName = "Da mềm"; }
+            default -> { return; }
+        }
+
+        int totalRaw = CraftService.countGem(player, rawId);
+        int maxCanCraft = totalRaw / 5;
+        if (maxCanCraft <= 0) {
+            Service.instance.sendLogOut(player.getSession(), String.format("Bạn không đủ 5 %s để ghép 1 %s!", rawName, targetName));
+            return;
+        }
+
+        int craftQty = switch (qtyOption) {
+            case 0 -> 1;
+            case 1 -> 10;
+            default -> maxCanCraft;
+        };
+
+        if (craftQty > maxCanCraft) {
+            craftQty = maxCanCraft;
+        }
+
+        int feePerUnit = 1000;
+        int totalFee = craftQty * feePerUnit;
+        if (player.getInventory().getXu() < totalFee) {
+            int canAfford = (int) (player.getInventory().getXu() / feePerUnit);
+            if (canAfford <= 0) {
+                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu để ghép nguyên liệu (1.000 xu/cái)!", Util.formatNumber(totalFee)));
+                return;
+            }
+            craftQty = Math.min(craftQty, canAfford);
+            totalFee = craftQty * feePerUnit;
+        }
+
+        if (!player.getInventory().minusXu(totalFee)) {
+            Service.instance.sendLogOut(player.getSession(), "Không đủ xu để thực hiện!");
+            return;
+        }
+
+        int rawNeeded = craftQty * 5;
+        CraftService.deductGem(player, rawId, rawNeeded);
+
+        ItemGem craftedGem = ItemService.instance.createNewItemGem(targetId, (short) craftQty);
+        InventoryService.instance.addItemGem(player, craftedGem);
+
+        InventoryService.instance.sendItemGem(player);
+        InventoryService.instance.sendItemGemLock(player);
+        Service.instance.sendMainCharInfo(player);
+
+        String msg = String.format("Ghép thành công %d %s (tiêu tốn %d %s và %s xu)!",
+                craftQty, targetName, rawNeeded, rawName, Util.formatNumber(totalFee));
+        Service.instance.sendLogOut(player.getSession(), msg);
+        ChatService.instance.sendChatOnlyMe(player, msg);
+        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) luyện kim: %d %s -> %d %s (phí %s xu).",
+                player.getName(), player.getIdPlayer(), rawNeeded, rawName, craftQty, targetName, Util.formatNumber(totalFee));
     }
 
     public void sendMenuThoHopThanhCaoCap(@NonNull Player player) throws IOException {

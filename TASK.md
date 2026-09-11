@@ -210,3 +210,92 @@
 **Kết quả:** ✅ Thành công. Hệ thống Chế tạo trang bị dạng Gian hàng 5 phẩm cấp và Phân rã trang bị tại Thợ Rèn Thần Bí hoạt động trơn tru, đồng bộ giữa Server và Client.
 
 ---
+
+## [2026-09-12 01:25] — Task #98: Tái Thiết Lập Toàn Diện Hệ Thống Chế Tạo Trang Bị: Chuẩn 10 Nguyên Liệu (5 Sơ Cấp & 5 Cao Cấp), Tinh Chỉnh Cột Mốc Cấp Độ, Điều Hướng UI & Roll Dòng Phụ
+
+**Yêu cầu:**
+1. **Chuẩn 10 loại nguyên liệu kinh điển của KPAH**:
+   - 5 nguyên liệu Sơ cấp (ghép từ 5 nguyên liệu thô từ khu mỏ): Vải (68), Sắt (75), Gỗ thường (89), Da mềm (96), Ngọc (82).
+   - 5 nguyên liệu Cao cấp (không farm được, nhận từ rương/nhiệm vụ/mua Phú Ông): Tơ lụa (103), Bạc (110), Gỗ sưa (124), Da cứng (131), Thủy tinh (117).
+   - Bỏ toàn bộ cơ chế phẩm cấp nguyên liệu cũ. Chỉ sử dụng 10 loại nguyên liệu cố định kết hợp cùng Ngọc rèn (ID 268) và Phí Xu.
+2. **Quy tắc phân bổ nguyên liệu theo cấu tạo trang bị**:
+   - Vũ khí cận chiến (Kiếm, Đao, Búa): Sắt (75) + Gỗ thường (89); Cao cấp: Bạc (110) + Gỗ sưa (124).
+   - Vũ khí tầm xa / phép (Bút, Cung): Gỗ thường (89) + Sắt (75); Cao cấp: Gỗ sưa (124) + Bạc (110).
+   - Áo & Quần: Vải (68) + Da mềm (96); Cao cấp: Tơ lụa (103) + Da cứng (131).
+   - Nón, Giày & Găng tay: Da mềm (96) + Vải (68); Cao cấp: Da cứng (131) + Tơ lụa (103).
+   - Nhẫn & Dây chuyền: Ngọc (82) + Sắt (75); Cao cấp: Thủy tinh (117) + Bạc (110).
+   - Bội ngọc (Ngọc): Ngọc (82) + Gỗ thường (89); Cao cấp: Thủy tinh (117) + Gỗ sưa (124).
+3. **Quy tắc tiêu hao nguyên liệu**:
+   - Ngũ phẩm & Tứ phẩm: CHỈ tiêu hao nguyên liệu Sơ cấp 1, Sơ cấp 2, Ngọc rèn và Xu (Không yêu cầu nguyên liệu Cao cấp).
+   - Tam phẩm, Nhị phẩm, Nhất phẩm: Tiêu hao cả 2 loại Sơ cấp, 2 loại Cao cấp, Ngọc rèn và Xu.
+   - Số lượng Sơ cấp: `(level / 5) * (rankIndex + 1) * 3` (loại 1) và `* 2` (loại 2).
+   - Số lượng Cao cấp: `(rankIndex - 1) * 2` (loại 1) và `* 1` (loại 2).
+   - Ngọc rèn: `rankIndex + 1` (1 đến 5 viên).
+   - Phí xu: `level * 1000 * (rankIndex + 1)`.
+4. **Giới hạn mốc cấp độ trang bị chế tạo**:
+   - Vũ khí: Chỉ chế tạo các mốc cấp độ 21, 26, 31, 36 (đủ 5 phái: Kiếm, Đao, Cung, Bút, Búa).
+   - Trang bị (Áo, Quần, Nón, Giày, Găng, Nhẫn, Dây chuyền, Bội ngọc): Chỉ chế tạo các mốc cấp độ 20, 25, 30, 35 (Áo, Quần, Nón có đầy đủ cả Nam & Nữ).
+5. **Roll dòng thuộc tính ẩn (Bonus Attributes)**:
+   - Tỷ lệ chỉ số cơ bản theo phẩm cấp: Ngũ (1.1x), Tứ (1.2x), Tam (1.35x), Nhị (1.55x), Nhất (1.8x).
+   - Nhóm A (14 thuộc tính chung): % HP (7: 2-5%), % MP (8: 2-5%), HP (33: 1000-5000), MP (34: 1000-5000), % Thủ (88: 2-5%), Thủ vật (1: 50-100), Thủ ma (6: 50-100), % Công (30: 2-5%), Công (0: 50-100), Sức mạnh (10: 5-10), Tinh thần (12: 5-10), Khéo léo (11: 5-10), Sức khỏe (13: 5-10), May mắn (9: 5-10).
+   - Nhóm B (6 thuộc tính đặc quyền Nhất phẩm - chọn 2 dòng không trùng lặp): Giảm sát thương (118: 2-5%), Tăng sát thương (30: 2-5%), Né tránh (2: 2-5%), Chí mạng (4: 5-10%), Xuyên giáp (31: 2-5%), Tăng ST chí mạng (41: 10-20%).
+   - Số lượng dòng thuộc tính: Ngũ phẩm (1 dòng Nhóm A), Tứ phẩm (2 dòng Nhóm A), Tam phẩm (3 dòng Nhóm A), Nhị phẩm (4 dòng Nhóm A), Nhất phẩm (5 dòng Nhóm A + 2 dòng Nhóm B = 7 dòng thuộc tính).
+6. **Cải tiến giao diện & điều hướng phím/touch (`CraftShopScreen`)**:
+   - Phân định rõ 2 trạng thái tiêu điểm: `FOCUS_TAB` (chọn Tab phẩm cấp) và `FOCUS_ITEM` (chọn trang bị).
+   - Khi ở `FOCUS_ITEM`: Phím Trái/Phải chuyển trang bị, Phím Lên chuyển lên Tab; khi ở `FOCUS_TAB`: Phím Trái/Phải chuyển Tab phẩm cấp, Phím Xuống chuyển xuống danh sách trang bị.
+   - Hỗ trợ cuộn ngang mượt mà (`scrollX`) cho dải icon trang bị, viền vàng nổi bật ô đang chọn.
+   - Cập nhật tooltip hiển thị tên tiếng Việt của 10 loại nguyên liệu, số lượng có/cần (xanh nếu đủ, đỏ nếu thiếu) và "Cao cấp: Không yêu cầu" với Ngũ/Tứ phẩm.
+
+**Files thay đổi:**
+- `server/KPAH/src/services/CraftService.java` — Thêm `CraftRecipe` & `getRecipe()`, cấu hình chuẩn 10 loại nguyên liệu, giới hạn mốc cấp độ trang bị (vũ khí 21-36, đồ mặc 20-35 kèm nam/nữ), kiểm tra và trừ nguyên liệu theo công thức mới, triển khai thuật toán roll dòng thuộc tính Nhóm A (14 dòng) và Nhóm B (6 dòng đặc quyền cho Nhất phẩm).
+- `game/app/src/classes/CraftShopScreen.java` — Bổ sung cơ chế `focusMode` (tab vs item), hệ thống cuộn ngang mượt mà `scrollX`, cập nhật hiển thị công thức 10 nguyên liệu chuẩn kèm kiểm tra số lượng và phí xu.
+- Database (`item_attribute`): Đồng bộ thuộc tính ID 7 (% HP), ID 8 (% MP), ID 9 (May mắn).
+- `server/KPAH/dist/KPAH.jar` — Biên dịch sạch 100% bằng ant với JDK 21.
+- `game/build/dist/KPAH_PROD.jar` — Biên dịch sạch 100% bằng ant với JDK 8.
+- Khởi động lại Server và Client trên giả lập MicroEmulator.
+- Backup files: Lưu tại `_backup/` trong các thư mục tương ứng theo quy định.
+
+**Kết quả:** ✅ Thành công. Toàn bộ hệ thống Chế tạo trang bị 10 nguyên liệu, điều hướng UI và roll thuộc tính đã được cập nhật trơn tru, đồng bộ 100% giữa Server và Client.
+
+## [2026-09-12 02:15] — Task #99: Tái Thiết Toàn Diện Hệ Thống Nguyên Liệu, NPC Luyện Kim & Thương Nhân, Rương Tinh Anh & Cơ Chế Phân Rã Trang Bị Chế Tạo
+
+**Yêu cầu:**
+1. **Tái thiết cấu trúc nguyên liệu**:
+   - Loại bỏ hoàn toàn sự phân cấp 1-6 của nguyên liệu trong game; giờ chỉ còn 1 dạng duy nhất cho mỗi loại.
+   - Giữ nguyên 5 nguyên liệu thô (67: Sợi bông, 74: Quặng sắt, 81: Ngọc thô, 88: Gỗ thường thô, 95: Da mềm thô).
+   - 5 nguyên liệu sơ cấp (68: Vải, 75: Sắt, 82: Ngọc, 89: Gỗ thường, 96: Da mềm) và 5 nguyên liệu cao cấp (103: Tơ lụa, 110: Bạc, 117: Thủy tinh, 124: Gỗ sưa, 131: Da cứng) mang hình ảnh đại diện phẩm cấp 5 hoàn mỹ (hào quang vàng rực rỡ, không có số vẽ đè).
+   - Tự động chuyển đổi và gộp số lượng các nguyên liệu cũ (cấp 2-6) trong hành trang người chơi về ID chuẩn khi đăng nhập.
+2. **NPC Thương nhân nguyên liệu (NPC 4 / Cũ: Thợ hợp thành cao cấp)**:
+   - Giao tiếp mở trực tiếp Gian hàng nguyên liệu (`GEM_SHOP`).
+   - Bán 5 nguyên liệu sơ cấp (2 Lượng/cái), 5 nguyên liệu cao cấp (5 Lượng/cái) và Ngọc rèn ID 268 (10.000 Xu/viên).
+   - Ẩn toàn bộ các nguyên liệu bậc 2-6 cũ khỏi shop (`isSell = 0`). Sửa lỗi `ShopService` tính chuẩn tổng tiền theo số lượng mua.
+3. **NPC Thợ luyện kim (NPC 5 / Cũ: Thợ hợp thành sơ cấp)**:
+   - Tùy chọn 1: *"Ghép nguyên liệu"* (Cứ 5 nguyên liệu thô + 1.000 xu phí luyện kim = 1 nguyên liệu sơ cấp tương ứng). Hỗ trợ menu chọn nhanh: 1 lần, 10 lần, hoặc Tất cả.
+   - Tùy chọn 2: *"Mua vé vào khu mỏ (50.000 xu)"* -> Trừ 50.000 xu và trao ngay Vé vào mỏ (Potion ID 91).
+4. **Cơ chế rơi từ Rương Tinh Anh**:
+   - Rương Tinh Anh Bậc 1 & 2: Rơi 2-3 loại nguyên liệu thô (mỗi loại 3-12 cái) và Đá ngũ hợp.
+   - Rương Tinh Anh Bậc 3 & 4: Rơi nguyên liệu thô (5-15 cái) + nguyên liệu sơ cấp (1-5 cái) + cơ hội rơi nguyên liệu cao cấp (1-2 cái) + Ngọc rèn (1-4 cái) + Đá ngũ hợp + 100% trang bị chế tạo hoàn mỹ có phẩm cấp mang ấn *"Sinh ra từ thiên địa"*.
+5. **Cơ chế Phân rã trang bị**:
+   - Cho phép phân rã TẤT CẢ trang bị có bản chất là trang bị chế tạo (chế tạo từ Thợ Rèn Thần Bí, mở từ Rương Tinh Anh có ấn thiên địa, hoặc thuộc danh mục template trang bị chế tạo).
+   - Chặn phân rã trang bị mua shop hoặc rơi quái thông thường không có phẩm cấp (`rank == 0`).
+6. **Đồng bộ Database & Migration Script Termux**:
+   - Bổ sung toàn bộ câu lệnh SQL vào `server/update_termux_latest.sql` (Mục 5) sẵn sàng chạy trên Termux.
+
+**Files thay đổi:**
+- `server/KPAH/src/daos/PlayerDAO.java` — Thêm `getCanonicalGemId()` chuyển đổi các ID 69-73->68, 76-80->75, 83-87->82, 90-94->89, 97-101->96, 104-108->103, 111-115->110, 118-122->117, 125-129->124, 132-136->131 và tự động gộp số lượng trong `loadDataItemGem()`.
+- `server/KPAH/src/services/ShopService.java` — Sửa công thức tính tiền `buyItemNpcShop` cho `CATEGORY_GEM_ITEM`: nhân `gemTemplate.getPrice() * item.getQuantity()`.
+- `server/KPAH/src/services/NpcService.java` — Chuyển `THO_HOP_THANH_CAO_CAP` sang mở `GEM_SHOP`.
+- `server/KPAH/src/player/Sundry.java` — Thêm `craftMatIndex` lưu loại nguyên liệu thô đang chọn để ghép.
+- `server/KPAH/src/services/MenuOptionService.java` — Thêm menu Thợ luyện kim (chọn nguyên liệu, số lượng 1x/10x/All), xử lý trừ 5 thô + 1.000 xu tạo 1 sơ cấp; thêm chức năng mua vé vào mỏ 50.000 xu.
+- `server/KPAH/src/services/UseItemService.java` — Cập nhật bảng rơi Rương Tinh Anh tier 1-4 với nguyên liệu thô, sơ cấp, cao cấp, ngọc rèn theo đúng thiết kế mới.
+- `server/KPAH/src/services/ItemService.java` — Đặt ấn `nameCharSeal = "Sinh ra từ thiên địa"` cho trang bị chế tạo rơi từ rương tinh anh.
+- `server/KPAH/src/services/CraftService.java` — Thêm `isCraftedEquipment()` và lọc trang bị phân rã, cho phép phân rã toàn bộ đồ chế tạo (kể cả từ rương tinh anh) và chặn đồ thường.
+- `game/app/src/classes/MsgHandler.java` — Thêm `updateMaterialVisuals()` gán `item.s = 1` cho 10 loại nguyên liệu sơ cấp & cao cấp hiển thị hào quang vàng phẩm cấp 5 trên client.
+- `server/update_termux_latest.sql` — Bổ sung mục 5 với đầy đủ các lệnh SQL cập nhật `gem_template` và `npc_actor`.
+- `server/KPAH/dist/KPAH.jar` & `game/build/dist/KPAH_PROD.jar` — Biên dịch sạch sẽ 100% bằng ant với JDK 21 (server) và JDK 8 (client). Khởi động lại server và giả lập emulator.
+- Backup files: Tạo tại `_backup/` trong các thư mục tương ứng theo quy định.
+
+**Kết quả:** ✅ Thành công. Toàn bộ hệ thống nguyên liệu chuẩn hóa 10 loại, shop nguyên liệu, thợ luyện kim, rương tinh anh và cơ chế phân rã trang bị hoạt động hoàn hảo, đồng bộ 100%.
+
+---
+

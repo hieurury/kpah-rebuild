@@ -36,7 +36,14 @@ public class CraftShopScreen extends class_aae {
 	public static final int[] TAB_RANKS = { 5, 4, 3, 2, 1 };
 	public static final int[] RANK_COLORS = { 0, 1, 3, 4, 5 }; // White, Green, Blue, Yellow, Violet
 	public static final double[] STAT_MULTS = { 1.10, 1.20, 1.35, 1.55, 1.80 };
-	public static final int[] BONUS_ATTRS = { 1, 2, 3, 4, 5 };
+	public static final int[] BONUS_ATTRS = { 1, 2, 3, 4, 7 };
+
+	public static final int FOCUS_TAB = 0;
+	public static final int FOCUS_ITEM = 1;
+	public int focusMode = FOCUS_ITEM;
+
+	public int scrollX = 0;
+	public int targetScrollX = 0;
 
 	private int winX, winY, winW, winH;
 
@@ -46,6 +53,9 @@ public class CraftShopScreen extends class_aae {
 		this.items = items != null ? items : new Vector();
 		this.currentTab = 0;
 		this.selectedIndex = 0;
+		this.focusMode = FOCUS_ITEM;
+		this.scrollX = 0;
+		this.targetScrollX = 0;
 
 		this.ba = new class_s("Chế tạo", new IAction() {
 			public void perform() {
@@ -80,28 +90,59 @@ public class CraftShopScreen extends class_aae {
 	}
 
 	public void b() {
-		// Update logic
+		if (scrollX != targetScrollX) {
+			int diff = targetScrollX - scrollX;
+			if (Math.abs(diff) <= 2) {
+				scrollX = targetScrollX;
+			} else {
+				scrollX += diff / 2;
+			}
+		}
+	}
+
+	private void updateScrollTarget() {
+		if (winW <= 0) return;
+		int itemSlotW = 26;
+		int viewW = winW - 20;
+		int selectedX = selectedIndex * itemSlotW;
+		if (selectedX - targetScrollX < 0) {
+			targetScrollX = selectedX;
+		} else if (selectedX + itemSlotW - targetScrollX > viewW) {
+			targetScrollX = selectedX + itemSlotW - viewW;
+		}
+		int maxScroll = Math.max(0, items.size() * itemSlotW - viewW);
+		if (targetScrollX < 0) targetScrollX = 0;
+		if (targetScrollX > maxScroll) targetScrollX = maxScroll;
 	}
 
 	public void c() {
 		if (class_acv.q != this) return;
 
-		// Phím trái / phải: chuyển Tab
-		if (class_acv.b(4)) {
-			currentTab--;
-			if (currentTab < 0) currentTab = TAB_NAMES.length - 1;
-		} else if (class_acv.b(6)) {
-			currentTab++;
-			if (currentTab >= TAB_NAMES.length) currentTab = 0;
-		}
-
-		// Phím lên / xuống: chọn trang bị
-		if (class_acv.b(2)) {
-			selectedIndex--;
-			if (selectedIndex < 0) selectedIndex = Math.max(0, items.size() - 1);
-		} else if (class_acv.b(8)) {
-			selectedIndex++;
-			if (selectedIndex >= items.size()) selectedIndex = 0;
+		if (focusMode == FOCUS_TAB) {
+			// Phím trái / phải: chuyển Tab
+			if (class_acv.b(4)) {
+				currentTab--;
+				if (currentTab < 0) currentTab = TAB_NAMES.length - 1;
+			} else if (class_acv.b(6)) {
+				currentTab++;
+				if (currentTab >= TAB_NAMES.length) currentTab = 0;
+			} else if (class_acv.b(8)) { // Phím xuống: chuyển tiêu điểm xuống danh sách trang bị
+				focusMode = FOCUS_ITEM;
+			}
+		} else {
+			// FOCUS_ITEM
+			// Phím trái / phải: chọn trang bị
+			if (class_acv.b(4)) {
+				selectedIndex--;
+				if (selectedIndex < 0) selectedIndex = Math.max(0, items.size() - 1);
+				updateScrollTarget();
+			} else if (class_acv.b(6)) {
+				selectedIndex++;
+				if (selectedIndex >= items.size()) selectedIndex = 0;
+				updateScrollTarget();
+			} else if (class_acv.b(2)) { // Phím lên: chuyển tiêu điểm lên Tab
+				focusMode = FOCUS_TAB;
+			}
 		}
 
 		// Phím chọn (Fire / Key 5)
@@ -116,6 +157,7 @@ public class CraftShopScreen extends class_aae {
 
 			// Touch nút tab trái/phải
 			if (touchY >= winY + 6 && touchY <= winY + 28) {
+				focusMode = FOCUS_TAB;
 				if (touchX >= winX + 6 && touchX <= winX + 35) {
 					currentTab--;
 					if (currentTab < 0) currentTab = TAB_NAMES.length - 1;
@@ -132,14 +174,16 @@ public class CraftShopScreen extends class_aae {
 			// Touch vào danh sách item
 			int itemAreaY = winY + 32;
 			int itemSlotW = 26;
-			int startX = winX + 12;
+			int startX = winX + 10;
 			for (int i = 0; i < items.size(); i++) {
-				int ix = startX + i * itemSlotW;
+				int ix = startX + i * itemSlotW - scrollX;
 				if (touchX >= ix && touchX <= ix + itemSlotW && touchY >= itemAreaY && touchY <= itemAreaY + 26) {
+					focusMode = FOCUS_ITEM;
 					if (selectedIndex == i) {
 						onCraftClicked();
 					} else {
 						selectedIndex = i;
+						updateScrollTarget();
 					}
 					class_acv.g = false;
 					return;
@@ -177,7 +221,11 @@ public class CraftShopScreen extends class_aae {
 		int headerH = 22;
 		g.setColor(0x181818);
 		g.fillRect(winX + 4, winY + 5, winW - 8, headerH);
-		g.setColor(0x6b6b6b);
+		if (focusMode == FOCUS_TAB) {
+			g.setColor(0xffd700);
+		} else {
+			g.setColor(0x6b6b6b);
+		}
 		g.drawRect(winX + 4, winY + 5, winW - 8, headerH);
 
 		// Mũi tên trái / phải
@@ -189,21 +237,33 @@ public class CraftShopScreen extends class_aae {
 		int tabColor = RANK_COLORS[currentTab];
 		class_d.j[tabColor].a(g, TAB_NAMES[currentTab], winX + winW / 2, winY + 8, 2);
 
-		// Danh sách trang bị (Hàng icon ngang)
+		// Danh sách trang bị (Hàng icon ngang có scroll)
 		int itemRowY = winY + 32;
 		int itemSlotW = 26;
 		int startX = winX + 10;
 
+		int clipX = g.getClipX();
+		int clipY = g.getClipY();
+		int clipW = g.getClipWidth();
+		int clipH = g.getClipHeight();
+
+		g.setClip(winX + 6, itemRowY - 2, winW - 12, 28);
+
 		for (int i = 0; i < items.size(); i++) {
 			CraftItem it = (CraftItem) items.elementAt(i);
-			int ix = startX + i * itemSlotW;
-			if (ix + itemSlotW > winX + winW - 5) break;
+			int ix = startX + i * itemSlotW - scrollX;
+			if (ix + itemSlotW < winX - 20 || ix > winX + winW + 20) continue;
 
 			// Khung item slot
-			if (i == selectedIndex) {
+			if (i == selectedIndex && focusMode == FOCUS_ITEM) {
 				g.setColor(0xffd700);
 				g.fillRect(ix, itemRowY, 22, 22);
 				g.setColor(0x000000);
+				g.fillRect(ix + 1, itemRowY + 1, 20, 20);
+			} else if (i == selectedIndex) {
+				g.setColor(0xffffff);
+				g.fillRect(ix, itemRowY, 22, 22);
+				g.setColor(0x222222);
 				g.fillRect(ix + 1, itemRowY + 1, 20, 20);
 			} else {
 				g.setColor(0x3a3a3a);
@@ -218,6 +278,8 @@ public class CraftShopScreen extends class_aae {
 			// Level badge
 			class_d.j[0].a(g, String.valueOf(it.level), ix + 11, itemRowY + 12, 2);
 		}
+
+		g.setClip(clipX, clipY, clipW, clipH);
 
 		// Khung chi tiết trang bị được chọn
 		if (items.size() > 0 && selectedIndex >= 0 && selectedIndex < items.size()) {
@@ -238,7 +300,6 @@ public class CraftShopScreen extends class_aae {
 		int tabColor = RANK_COLORS[currentTab];
 		double mult = STAT_MULTS[currentTab];
 		int rank = TAB_RANKS[currentTab];
-		int k = 6 - rank; // Ngũ phẩm = 1, Tứ phẩm = 2, Tam phẩm = 3, Nhị phẩm = 4, Nhất phẩm = 5
 
 		// 1. Tên trang bị (Kèm Phẩm và Màu sắc tương ứng)
 		class_d.j[tabColor].a(g, it.name + " (" + TAB_NAMES[currentTab] + ")", boxX + 6, curY, 0);
@@ -272,51 +333,145 @@ public class CraftShopScreen extends class_aae {
 		g.drawLine(boxX + 4, curY, boxX + boxW - 4, curY);
 		curY += 3;
 
-		// 4. Nguyên liệu cần để chế tạo
-		int tier = getMaterialTier(it.level);
-		short mat1Id = getMaterial1Id(it.type, tier);
-		short mat2Id = getMaterial2Id(it.type, tier);
-		short daId = getDaNguHopId((byte) rank, tier);
-		short ngocRenId = 268;
+		// 4. Nguyên liệu cần để chế tạo theo chuẩn 10 nguyên liệu
+		RecipeData recipe = getRecipe(it.type, it.level, rank);
 
-		int mat1Need = 5 * k;
-		int mat2Need = 5 * k;
-		int daNeed = k;
-		int ngocRenNeed = k;
-		long xuFee = (long) it.level * 1000L * (long) k;
-
-		int mat1Have = countMaterial(mat1Id);
-		int mat2Have = countMaterial(mat2Id);
-		int daHave = countMaterial(daId);
-		int ngocRenHave = countMaterial(ngocRenId);
+		int sc1Have = countMaterial(recipe.soCap1Id);
+		int sc2Have = countMaterial(recipe.soCap2Id);
+		int cc1Have = countMaterial(recipe.caoCap1Id);
+		int cc2Have = countMaterial(recipe.caoCap2Id);
+		int ngocRenHave = countMaterial(recipe.ngocRenId);
 		long xuHave = class_acv.s != null && class_acv.s.q != null ? class_acv.s.q.br : 0;
 
-		// Dòng 1: Mat 1
-		String mat1Name = getGemName(mat1Id, "Nguyên liệu 1");
-		int col1 = mat1Have >= mat1Need ? 1 : 2; // 1 = Green, 2 = Red
-		class_d.j[col1].a(g, mat1Name + ": " + mat1Have + "/" + mat1Need, boxX + 6, curY, 0);
-		curY += 13;
+		// Dòng 1: Sơ cấp 1
+		int colSc1 = sc1Have >= recipe.soCap1Need ? 1 : 2; // 1: Green, 2: Red
+		class_d.j[colSc1].a(g, getMaterialName(recipe.soCap1Id) + ": " + sc1Have + "/" + recipe.soCap1Need, boxX + 6, curY, 0);
+		curY += 12;
 
-		// Dòng 2: Mat 2
-		String mat2Name = getGemName(mat2Id, "Nguyên liệu 2");
-		int col2 = mat2Have >= mat2Need ? 1 : 2;
-		class_d.j[col2].a(g, mat2Name + ": " + mat2Have + "/" + mat2Need, boxX + 6, curY, 0);
-		curY += 13;
+		// Dòng 2: Sơ cấp 2
+		int colSc2 = sc2Have >= recipe.soCap2Need ? 1 : 2;
+		class_d.j[colSc2].a(g, getMaterialName(recipe.soCap2Id) + ": " + sc2Have + "/" + recipe.soCap2Need, boxX + 6, curY, 0);
+		curY += 12;
 
-		// Dòng 3: Ngọc rèn
-		int colNgoc = ngocRenHave >= ngocRenNeed ? 1 : 2;
-		class_d.j[colNgoc].a(g, "Ngọc rèn: " + ngocRenHave + "/" + ngocRenNeed, boxX + 6, curY, 0);
-		curY += 13;
+		// Dòng 3 & 4: Cao cấp (hoặc Không yêu cầu nếu Ngũ/Tứ phẩm)
+		if (rank <= 3) {
+			int colCc1 = cc1Have >= recipe.caoCap1Need ? 1 : 2;
+			class_d.j[colCc1].a(g, getMaterialName(recipe.caoCap1Id) + ": " + cc1Have + "/" + recipe.caoCap1Need, boxX + 6, curY, 0);
+			curY += 12;
 
-		// Dòng 4: Đá ngũ hợp
-		String daName = getGemName(daId, "Đá ngũ hợp");
-		int colDa = daHave >= daNeed ? 1 : 2;
-		class_d.j[colDa].a(g, daName + ": " + daHave + "/" + daNeed, boxX + 6, curY, 0);
-		curY += 13;
+			int colCc2 = cc2Have >= recipe.caoCap2Need ? 1 : 2;
+			class_d.j[colCc2].a(g, getMaterialName(recipe.caoCap2Id) + ": " + cc2Have + "/" + recipe.caoCap2Need, boxX + 6, curY, 0);
+			curY += 12;
+		} else {
+			class_d.j[0].a(g, "Cao cấp: Không yêu cầu", boxX + 6, curY, 0);
+			curY += 12;
+		}
 
-		// Dòng 5: Phí xu
-		int colXu = xuHave >= xuFee ? 1 : 2;
-		class_d.j[colXu].a(g, "Phí xu: " + formatXu(xuFee) + " xu", boxX + 6, curY, 0);
+		// Dòng 5: Ngọc rèn
+		int colNgoc = ngocRenHave >= recipe.ngocRenNeed ? 1 : 2;
+		class_d.j[colNgoc].a(g, "Ngọc rèn: " + ngocRenHave + "/" + recipe.ngocRenNeed, boxX + 6, curY, 0);
+		curY += 12;
+
+		// Dòng 6: Phí xu
+		int colXu = xuHave >= recipe.xuFee ? 1 : 2;
+		class_d.j[colXu].a(g, "Phí: " + formatXu(recipe.xuFee) + " xu", boxX + 6, curY, 0);
+	}
+
+	public static class RecipeData {
+		public short soCap1Id;
+		public int soCap1Need;
+		public short soCap2Id;
+		public int soCap2Need;
+		public short caoCap1Id;
+		public int caoCap1Need;
+		public short caoCap2Id;
+		public int caoCap2Need;
+		public short ngocRenId = 268;
+		public int ngocRenNeed;
+		public long xuFee;
+	}
+
+	public static RecipeData getRecipe(byte type, int level, int rank) {
+		RecipeData r = new RecipeData();
+		int rankIndex = 5 - rank; // 0 to 4
+		int levelFactor = level / 5;
+		r.soCap1Need = levelFactor * (rankIndex + 1) * 3;
+		r.soCap2Need = levelFactor * (rankIndex + 1) * 2;
+		r.ngocRenNeed = rankIndex + 1;
+		r.xuFee = (long) level * 1000L * (long) (rankIndex + 1);
+
+		if (rank <= 3) {
+			r.caoCap1Need = (rankIndex - 1) * 2;
+			r.caoCap2Need = (rankIndex - 1);
+		} else {
+			r.caoCap1Need = 0;
+			r.caoCap2Need = 0;
+		}
+
+		switch (type) {
+			case 3: // Kiếm
+			case 4: // Đao
+			case 7: // Búa
+				r.soCap1Id = 75;   // Sắt
+				r.soCap2Id = 89;   // Gỗ thường
+				r.caoCap1Id = 110; // Bạc
+				r.caoCap2Id = 124; // Gỗ sưa
+				break;
+			case 5: // Cung
+			case 6: // Bút
+				r.soCap1Id = 89;   // Gỗ thường
+				r.soCap2Id = 75;   // Sắt
+				r.caoCap1Id = 124; // Gỗ sưa
+				r.caoCap2Id = 110; // Bạc
+				break;
+			case 0: // Áo
+			case 1: // Quần
+				r.soCap1Id = 68;   // Vải
+				r.soCap2Id = 96;   // Da mềm
+				r.caoCap1Id = 103; // Tơ lụa
+				r.caoCap2Id = 131; // Da cứng
+				break;
+			case 2:  // Nón
+			case 11: // Giày
+			case 10: // Găng tay
+				r.soCap1Id = 96;   // Da mềm
+				r.soCap2Id = 68;   // Vải
+				r.caoCap1Id = 131; // Da cứng
+				r.caoCap2Id = 103; // Tơ lụa
+				break;
+			case 8: // Nhẫn
+			case 9: // Dây chuyền
+				r.soCap1Id = 82;   // Ngọc
+				r.soCap2Id = 75;   // Sắt
+				r.caoCap1Id = 117; // Thủy tinh
+				r.caoCap2Id = 110; // Bạc
+				break;
+			case 12: // Bội ngọc
+			default:
+				r.soCap1Id = 82;   // Ngọc
+				r.soCap2Id = 89;   // Gỗ thường
+				r.caoCap1Id = 117; // Thủy tinh
+				r.caoCap2Id = 124; // Gỗ sưa
+				break;
+		}
+		return r;
+	}
+
+	public static String getMaterialName(short id) {
+		switch (id) {
+			case 68: return "Vải";
+			case 75: return "Sắt";
+			case 89: return "Gỗ thường";
+			case 96: return "Da mềm";
+			case 82: return "Ngọc";
+			case 103: return "Tơ lụa";
+			case 110: return "Bạc";
+			case 124: return "Gỗ sưa";
+			case 131: return "Da cứng";
+			case 117: return "Thủy tinh";
+			case 268: return "Ngọc rèn";
+			default: return "NL " + id;
+		}
 	}
 
 	public static int countMaterial(short templateId) {
@@ -338,92 +493,6 @@ public class CraftShopScreen extends class_aae {
 			}
 		}
 		return total;
-	}
-
-	public static String getGemName(short id, String def) {
-		if (id == 268) return "Ngọc rèn";
-		try {
-			class_xv info = class_yi.a(id);
-			if (info != null && info.j != null && info.j.trim().length() > 0) {
-				return info.j.trim();
-			}
-		} catch (Exception ignored) {
-		}
-		return def;
-	}
-
-	public static int getMaterialTier(int level) {
-		if (level < 30) return 1;
-		if (level < 40) return 2;
-		if (level < 50) return 3;
-		if (level < 60) return 4;
-		if (level < 70) return 5;
-		return 6;
-	}
-
-	public static short getMaterial1Id(byte type, int tier) {
-		int offset = tier - 1;
-		switch (type) {
-			case 0:
-			case 1:
-				return (short) (68 + offset);      // Vải
-			case 2:
-			case 10:
-			case 11:
-				return (short) (96 + offset);      // Da mềm
-			case 3:
-			case 4:
-			case 5:
-			case 6:
-			case 7:
-				return (short) (75 + offset);      // Sắt
-			case 8:
-			case 9:
-				return (short) (110 + offset);     // Bạc
-			case 12:
-				return (short) (82 + offset);      // Ngọc
-			default:
-				return (short) (75 + offset);
-		}
-	}
-
-	public static short getMaterial2Id(byte type, int tier) {
-		int offset = tier - 1;
-		switch (type) {
-			case 0:
-				return (short) (103 + offset);     // Tơ lụa
-			case 1:
-				return (short) (96 + offset);      // Da mềm
-			case 2:
-				return (short) (75 + offset);      // Sắt
-			case 10:
-			case 11:
-				return (short) (131 + offset);     // Da cứng
-			case 3:
-			case 4:
-			case 5:
-			case 6:
-			case 7:
-				return (short) (89 + offset);      // Gỗ thường
-			case 8:
-				return (short) (82 + offset);      // Ngọc
-			case 9:
-			case 12:
-				return (short) (117 + offset);     // Thủy tinh
-			default:
-				return (short) (89 + offset);
-		}
-	}
-
-	public static short getDaNguHopId(byte rank, int tier) {
-		int offset = tier - 1;
-		if (rank == 1) {
-			return (short) (149 + offset); // Tinh khiết
-		} else if (rank == 2 || rank == 3) {
-			return (short) (143 + offset); // Cao cấp
-		} else {
-			return (short) (137 + offset); // Thường
-		}
 	}
 
 	public static String formatXu(long amount) {

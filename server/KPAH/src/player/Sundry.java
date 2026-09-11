@@ -41,6 +41,7 @@ public class Sundry {
     private byte craftType;
     private short idItemDismantle;
     private int dismantlePage;
+    private byte craftMatIndex;
 
     private boolean comeHome;
     private long lastTimeComeHome;

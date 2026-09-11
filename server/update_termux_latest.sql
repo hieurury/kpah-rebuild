@@ -1124,3 +1124,44 @@ SET
 WHERE
     `id` = 444;
 -- Hoàng đồng búa
+
+-- =========================================================
+-- 5. TÁI THIẾT HỆ THỐNG NGUYÊN LIỆU & NPC THƯƠNG NHÂN / LUYỆN KIM
+-- =========================================================
+
+-- 5.1 Đổi tên 2 NPC Thợ hợp thành thành Thương nhân nguyên liệu và Thợ luyện kim
+UPDATE `npc_actor` SET `name` = 'Thuong nhan nguyen lieu' WHERE `id` = 4;
+UPDATE `npc_actor` SET `name` = 'Tho luyen kim' WHERE `id` = 5;
+
+-- 5.2 Ẩn toàn bộ các bậc phẩm cũ (cấp 2 đến 6) khỏi shop
+UPDATE `gem_template`
+SET `isSell` = 0
+WHERE `id` IN (
+    69,70,71,72,73,
+    76,77,78,79,80,
+    83,84,85,86,87,
+    90,91,92,93,94,
+    97,98,99,100,101,
+    104,105,106,107,108,
+    111,112,113,114,115,
+    118,119,120,121,122,
+    125,126,127,128,129,
+    132,133,134,135,136
+);
+
+-- 5.3 Chuẩn hóa 5 loại nguyên liệu sơ cấp (2 Lượng, bán trong shop, tên bỏ cấp 1)
+UPDATE `gem_template` SET `name` = 'Vải', `price` = 2, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 68;
+UPDATE `gem_template` SET `name` = 'Sắt', `price` = 2, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 75;
+UPDATE `gem_template` SET `name` = 'Ngọc', `price` = 2, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 82;
+UPDATE `gem_template` SET `name` = 'Gỗ thường', `price` = 2, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 89;
+UPDATE `gem_template` SET `name` = 'Da mềm', `price` = 2, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 96;
+
+-- 5.4 Chuẩn hóa 5 loại nguyên liệu cao cấp (5 Lượng, bán trong shop, tên bỏ cấp 1)
+UPDATE `gem_template` SET `name` = 'Tơ lụa', `price` = 5, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 103;
+UPDATE `gem_template` SET `name` = 'Bạc', `price` = 5, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 110;
+UPDATE `gem_template` SET `name` = 'Thủy tinh', `price` = 5, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 117;
+UPDATE `gem_template` SET `name` = 'Gỗ sưa', `price` = 5, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 124;
+UPDATE `gem_template` SET `name` = 'Da cứng', `price` = 5, `typeMoney` = 1, `isSell` = 1 WHERE `id` = 131;
+
+-- 5.5 Chuẩn hóa Ngọc rèn (ID 268: 10.000 Xu, bán trong shop)
+UPDATE `gem_template` SET `price` = 10000, `typeMoney` = 0, `isSell` = 1 WHERE `id` = 268;

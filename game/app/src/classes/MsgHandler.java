@@ -187,7 +187,34 @@ public class MsgHandler {
 				System.err.println("Error when processing Cmd " + msg.a + ": " + ex.getMessage());
 				ex.printStackTrace();
 			}
+
+			if (msg.a == 25 || msg.a == 4 || msg.a == 19 || msg.a == 11) {
+				updateMaterialVisuals();
+			}
 		} catch (IOException e) {
+		}
+	}
+
+	/**
+	 * Thiết lập hào quang vàng (cấp 5) cho 10 loại nguyên liệu sơ cấp & cao cấp mới
+	 */
+	public static void updateMaterialVisuals() {
+		try {
+			if (class_yi.e != null) {
+				for (int i = 0; i < class_yi.e.size(); i++) {
+					class_xv item = (class_xv) class_yi.e.elementAt(i);
+					if (item != null) {
+						short id = item.o;
+						// Sơ cấp: 68 (Vải), 75 (Sắt), 82 (Ngọc), 89 (Gỗ thường), 96 (Da mềm)
+						// Cao cấp: 103 (Tơ lụa), 110 (Bạc), 117 (Thủy tinh), 124 (Gỗ sưa), 131 (Da cứng)
+						if (id == 68 || id == 75 || id == 82 || id == 89 || id == 96
+								|| id == 103 || id == 110 || id == 117 || id == 124 || id == 131) {
+							item.s = 1; // Hào quang vàng phẩm cấp 5
+						}
+					}
+				}
+			}
+		} catch (Exception ignored) {
 		}
 	}
 }

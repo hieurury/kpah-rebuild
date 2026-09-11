@@ -170,7 +170,7 @@ public class ItemService {
                 .rank(rank)
                 .he(he)
                 .damageType(ItemEquipConst.DAMAGE_NONE)
-                .nameCharSeal("Tinh Anh")
+                .nameCharSeal("Sinh ra từ thiên địa")
                 .dayUse(0)
                 .timeCreateItem(System.currentTimeMillis())
                 .itemAttributes(new ArrayList<>())

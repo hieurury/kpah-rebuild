@@ -445,14 +445,47 @@ public class PlayerDAO {
         return listItem;
     }
 
+    public static short getCanonicalGemId(short templateId) {
+        if (templateId >= 68 && templateId <= 73) return 68;   // Vải
+        if (templateId >= 75 && templateId <= 80) return 75;   // Sắt
+        if (templateId >= 82 && templateId <= 87) return 82;   // Ngọc
+        if (templateId >= 89 && templateId <= 94) return 89;   // Gỗ thường
+        if (templateId >= 96 && templateId <= 101) return 96;  // Da mềm
+        if (templateId >= 103 && templateId <= 108) return 103;// Tơ lụa
+        if (templateId >= 110 && templateId <= 115) return 110;// Bạc
+        if (templateId >= 117 && templateId <= 122) return 117;// Thủy tinh
+        if (templateId >= 124 && templateId <= 129) return 124;// Gỗ sưa
+        if (templateId >= 131 && templateId <= 136) return 131;// Da cứng
+        return templateId;
+    }
+
     private static List<ItemGem> loadDataItemGem(String data) throws JSONException {
         List<ItemGem> listItem = new ArrayList<>();
         JSONArray arrAll = new JSONArray(data);
         for (int i = 0; i < arrAll.length(); i++) {
             JSONArray dataItem = arrAll.getJSONArray(i);
-            ItemGem item = ItemService.instance.createNewItemGem((short) dataItem.getInt(1), (short) dataItem.getInt(2));
-            item.setIdItem((short) dataItem.getInt(0));
-            listItem.add(item);
+            short originalTemplateId = (short) dataItem.getInt(1);
+            short canonicalTemplateId = getCanonicalGemId(originalTemplateId);
+            short quantity = (short) dataItem.getInt(2);
+
+            // Kiểm tra xem trong list đã có gem loại này chưa để gộp số lượng
+            ItemGem existing = null;
+            for (ItemGem g : listItem) {
+                if (g != null && g.getTemplate() != null && g.getTemplate().getId() == canonicalTemplateId) {
+                    existing = g;
+                    break;
+                }
+            }
+
+            if (existing != null) {
+                existing.plusQuantity(quantity);
+            } else {
+                ItemGem item = ItemService.instance.createNewItemGem(canonicalTemplateId, quantity);
+                if (item != null) {
+                    item.setIdItem((short) dataItem.getInt(0));
+                    listItem.add(item);
+                }
+            }
         }
         return listItem;
     }

@@ -156,17 +156,18 @@ public class ShopService {
                     }
                     if (item.getCategory() == Const.CATEGORY_GEM_ITEM) {
                         GemTemplate gemTemplate = Manager.getGemTemplate(item.getIdItem());
-                        if (!gemTemplate.isSell()) {
+                        if (gemTemplate == null || !gemTemplate.isSell()) {
                             continue;
                         }
+                        int totalCost = gemTemplate.getPrice() * item.getQuantity();
                         if (gemTemplate.getTypeMoney() == Const.XU) {
-                            if (!player.getInventory().minusXu(gemTemplate.getPrice())) {
-                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(gemTemplate.getPrice())));
+                            if (!player.getInventory().minusXu(totalCost)) {
+                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(totalCost)));
                                 return;
                             }
                         } else if (gemTemplate.getTypeMoney() == Const.LUONG) {
-                            if (!player.getInventory().minusLuong(gemTemplate.getPrice())) {
-                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s lượng", Util.formatNumber(gemTemplate.getPrice())));
+                            if (!player.getInventory().minusLuong(totalCost)) {
+                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s lượng", Util.formatNumber(totalCost)));
                                 return;
                             }
                         }
@@ -174,7 +175,7 @@ public class ShopService {
                         InventoryService.instance.addItemGem(player, itemGem);
                         String curGem = (gemTemplate.getTypeMoney() == Const.XU) ? "xu" : "lượng";
                         utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Ngọc từ NPC: [%s] x%d với giá %s %s.",
-                                player.getName(), player.getIdPlayer(), gemTemplate.getName(), item.getQuantity(), Util.formatNumber(gemTemplate.getPrice()), curGem);
+                                player.getName(), player.getIdPlayer(), gemTemplate.getName(), item.getQuantity(), Util.formatNumber(totalCost), curGem);
                     } else if (item.getCategory() == Const.CATEGORY_POTION) {
                         PotionTemplate potionTemplate = Manager.getPotionTemplate(item.getIdItem());
                         int money = potionTemplate.getPrice();
