@@ -106,8 +106,8 @@ public class BuffService {
         switch (playerAttack.getInfo().getClassPlayer()) {
             case Const.CUNG_THU -> {
                 if (playerAttack.getSkillBuff().isExistBuff(BuffConst.DOC_LUU_TIEN)) {
-                    short percentDamage = playerAttack.getSkillBuff().getPercentDame(BuffConst.DOC_LUU_TIEN);
-                    mob.getBuffInfluence().addBuffPoisoned(playerAttack, percentDamage, percentDamage);
+                    // Độc tức thì: làm mục tiêu dính độc, cộng dồn tối đa 5 tầng, duy trì 6s
+                    mob.getBuffInfluence().addBuffInstantPoison(playerAttack, (short) 6);
                 }
             }
             case Const.DAU_SI -> {
@@ -128,8 +128,8 @@ public class BuffService {
         switch (playerAttack.getInfo().getClassPlayer()) {
             case Const.CUNG_THU -> {
                 if (playerAttack.getSkillBuff().isExistBuff(BuffConst.DOC_LUU_TIEN)) {
-                    short percentDamage = playerAttack.getSkillBuff().getPercentDame(BuffConst.DOC_LUU_TIEN);
-                    player.getBuffInfluence().addBuffPoisoned(percentDamage, percentDamage);
+                    // Độc tức thì: làm mục tiêu dính độc, cộng dồn tối đa 5 tầng, duy trì 6s
+                    player.getBuffInfluence().addBuffInstantPoison((short) 6);
                 }
             }
             case Const.DAU_SI -> {
@@ -146,6 +146,15 @@ public class BuffService {
     public int onAttackPlayerHasBuff(@NonNull Monster mobAttack, @NonNull Player playerTarget, int damage) throws IOException {
         if (playerTarget.isDie() || mobAttack.isDie()) {
             return damage;
+        }
+        // Khuyếch đại sát thương nếu mục tiêu dính độc tức thì (+2% mỗi tầng, tối đa 10%)
+        if (playerTarget.getBuffInfluence().isInstantPoisoned()) {
+            byte stacks = playerTarget.getBuffInfluence().getInstantPoisonStacks();
+            int bonus = (int) ((long) damage * (stacks * 2) / 100);
+            if (bonus > 0) {
+                damage += bonus;
+                sendSubHpByBuffInfluence(playerTarget, (short) bonus);
+            }
         }
         switch (playerTarget.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH -> {
@@ -169,9 +178,9 @@ public class BuffService {
             }
             case Const.PHAP_SU -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
-                    // Cơ chế mới: hồi mana tương đương 10% (tăng 5% mỗi cấp) sát thương nhận vào
+                    // Nerf Song hộ công thủ: hồi mana tương đương 5% (+2% mỗi cấp) sát thương nhận vào
                     byte lvSkill7 = playerTarget.getSkill().getLevelSkill()[7];
-                    int percentMp = 10 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                    int percentMp = 5 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 2 : 0);
                     short mpPlus = (short) ((long) damage * percentMp / 100);
                     damage -= mpPlus;
                     if (mpPlus > 0) {
@@ -187,6 +196,15 @@ public class BuffService {
     public int onAttackPlayerHasBuff(@NonNull Player playerAttack, @NonNull Player playerTarget, int damage) throws IOException {
         if (playerTarget.isDie() || playerAttack.isDie()) {
             return damage;
+        }
+        // Khuyếch đại sát thương nếu mục tiêu dính độc tức thì (+2% mỗi tầng, tối đa 10%)
+        if (playerTarget.getBuffInfluence().isInstantPoisoned()) {
+            byte stacks = playerTarget.getBuffInfluence().getInstantPoisonStacks();
+            int bonus = (int) ((long) damage * (stacks * 2) / 100);
+            if (bonus > 0) {
+                damage += bonus;
+                sendSubHpByBuffInfluence(playerTarget, (short) bonus);
+            }
         }
         switch (playerTarget.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH -> {
@@ -210,9 +228,9 @@ public class BuffService {
             }
             case Const.PHAP_SU -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
-                    // Cơ chế mới: hồi mana tương đương 10% (tăng 5% mỗi cấp) sát thương nhận vào
+                    // Nerf Song hộ công thủ: hồi mana tương đương 5% (+2% mỗi cấp) sát thương nhận vào
                     byte lvSkill7 = playerTarget.getSkill().getLevelSkill()[7];
-                    int percentMp = 10 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                    int percentMp = 5 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 2 : 0);
                     short mpPlus = (short) ((long) damage * percentMp / 100);
                     damage -= mpPlus;
                     if (mpPlus > 0) {

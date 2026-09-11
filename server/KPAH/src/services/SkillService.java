@@ -70,7 +70,7 @@ public class SkillService {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);
             if (pl.getInfo().getClassPlayer() == Const.PHAP_SU && pl.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
                 byte lvSkill7 = pl.getSkill().getLevelSkill()[7];
-                int percentHpHeal = 20 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                int percentHpHeal = 10 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 2 : 0);
                 int hpHeal = (int) ((long) skillMP * percentHpHeal / 100);
                 if (hpHeal > 0) {
                     pl.getPoint().plusHp(hpHeal);
@@ -178,7 +178,7 @@ public class SkillService {
             UseItemService.instance.onPlusMp(pl, (short) -skillMP);
             if (pl.getInfo().getClassPlayer() == Const.PHAP_SU && pl.getSkillBuff().isExistBuff(BuffConst.SONG_HO_CONG_THU)) {
                 byte lvSkill7 = pl.getSkill().getLevelSkill()[7];
-                int percentHpHeal = 20 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 5 : 0);
+                int percentHpHeal = 10 + (lvSkill7 > 0 ? (lvSkill7 - 1) * 2 : 0);
                 int hpHeal = (int) ((long) skillMP * percentHpHeal / 100);
                 if (hpHeal > 0) {
                     pl.getPoint().plusHp(hpHeal);

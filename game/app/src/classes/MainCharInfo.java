@@ -321,16 +321,18 @@ public class MainCharInfo {
 									color = 0x00E676;
 									break;
 								case 22:
-									// Hiệu ứng 22: Chỉ hiển thị Trúng Độc khi còn thời gian poisonEndTime
-									if (poisonEndTime > now || (mainChar.aJ != 2 && mainChar.dg > 0)) {
-										name = "Trúng Độc";
+									// Hiệu ứng 22: Debuff Dính Độc (tím) hoặc Buff Tẩm Độc (xanh lá, chỉ Cung Thủ class 4)
+									if ((buff instanceof class_zx && ((class_zx) buff).isDebuff) || poisonEndTime > now) {
+										name = "Dính Độc";
 										color = 0xBA55D3;
 										isDebuff = true;
-									} else if (mainChar.aJ == 2) {
+									} else if (mainChar.aJ == 4) {
 										name = "Tẩm Độc";
 										color = 0x00E676;
 									} else {
-										continue;
+										name = "Dính Độc";
+										color = 0xBA55D3;
+										isDebuff = true;
 									}
 									break;
 								case 23:
@@ -355,8 +357,8 @@ public class MainCharInfo {
 									isDebuff = true;
 									break;
 								case 4:
-									name = "Trúng Độc";
-									color = 0xFF1744;
+									name = "Độc Ăn Mòn";
+									color = 0xBA55D3;
 									isDebuff = true;
 									break;
 								case 5:

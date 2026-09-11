@@ -454,17 +454,17 @@ public class Manager {
         SKILL_MP[Const.KIEM_KHACH][7] = new short[]{0, 25, 28, 31, 34, 37, 40, 43, 46, 50, 55}; // AoE 30
         SKILL_MP[Const.KIEM_KHACH][8] = new short[]{0, 35, 39, 43, 47, 51, 55, 60, 65, 70, 75}; // AoE 45
 
-        // Pháp Sư: Tăng tiêu hao MP AoE liên hoàn 8-10, chỉnh skill 7 chống tràn byte
-        SKILL_MP[Const.PHAP_SU][1] = new short[]{0, 15, 18, 21, 24, 27, 30, 33, 36, 40, 45};
-        SKILL_MP[Const.PHAP_SU][2] = new short[]{0, 20, 23, 26, 30, 34, 38, 42, 46, 50, 55};
-        SKILL_MP[Const.PHAP_SU][3] = new short[]{0, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70};
-        SKILL_MP[Const.PHAP_SU][4] = new short[]{0, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150};
+        // Pháp Sư: Tăng tiêu hao MP kỹ năng tương xứng với bể mana dồi dào, giữ <= 250 MP an toàn cho MIDP
+        SKILL_MP[Const.PHAP_SU][1] = new short[]{0, 25, 30, 35, 40, 45, 50, 55, 60, 65, 75};
+        SKILL_MP[Const.PHAP_SU][2] = new short[]{0, 35, 42, 50, 58, 66, 75, 85, 95, 105, 120};
+        SKILL_MP[Const.PHAP_SU][3] = new short[]{0, 50, 60, 70, 80, 95, 110, 125, 140, 155, 175};
+        SKILL_MP[Const.PHAP_SU][4] = new short[]{0, 80, 95, 110, 125, 140, 155, 170, 185, 200, 220};
         SKILL_MP[Const.PHAP_SU][5] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         SKILL_MP[Const.PHAP_SU][6] = new short[]{0, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140};
-        SKILL_MP[Const.PHAP_SU][7] = new short[]{0, 80, 90, 100, 115, 130, 145, 160, 175, 190, 200}; // Song hộ công thủ
-        SKILL_MP[Const.PHAP_SU][8] = new short[]{0, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140}; // Hải long 4s CD
-        SKILL_MP[Const.PHAP_SU][9] = new short[]{0, 70, 80, 90, 100, 115, 130, 145, 160, 170, 180}; // Hàn băng 5s CD
-        SKILL_MP[Const.PHAP_SU][10] = new short[]{0, 90, 105, 120, 135, 150, 165, 180, 200, 220, 240}; // Bão tuyết 6s CD
+        SKILL_MP[Const.PHAP_SU][7] = new short[]{0, 100, 115, 130, 145, 160, 175, 190, 205, 220, 240}; // Song hộ công thủ
+        SKILL_MP[Const.PHAP_SU][8] = new short[]{0, 80, 95, 110, 125, 140, 155, 170, 185, 200, 220}; // Hải long 4s CD
+        SKILL_MP[Const.PHAP_SU][9] = new short[]{0, 100, 115, 130, 145, 160, 175, 190, 205, 220, 235}; // Song long 5s CD
+        SKILL_MP[Const.PHAP_SU][10] = new short[]{0, 120, 135, 150, 165, 180, 195, 210, 225, 240, 250}; // Hàn băng vũ 6s CD
     }
 
     public static long getSkillCooldown(byte clazz, byte skillType, byte level) {

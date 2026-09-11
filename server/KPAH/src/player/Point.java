@@ -108,10 +108,10 @@ public class Point {
         int dameAttack = (int) (this.attack * (isAttackMob ? 2.5 : 2));
         dameAttack += dameAttack * (Manager.getSkillDamPercent(player.getInfo().getClassPlayer(), player.getSkill().getTypeSkill(), player.getSkill().getLevelSkill()[player.getSkill().getTypeSkill()]) / 100);
         if (player.getInfo().getClassPlayer() == Const.PHAP_SU) {
-            // Hồi lực tiến (Skill 5 nội tại): tăng dame theo lượng mana đang có, cấp 1 là 5% mana, tăng 2% mỗi cấp
+            // Hồi lực tiến (Skill 5 nội tại): tăng dame theo lượng mana đang có, cấp 1 là 2% mana, tăng 1% mỗi cấp (Lv 1: 2%, Lv 10: 11%)
             byte lvSkill5 = player.getSkill().getLevelSkill()[5];
             if (lvSkill5 > 0) {
-                int percentMana = 5 + (lvSkill5 - 1) * 2;
+                int percentMana = 2 + (lvSkill5 - 1) * 1;
                 int bonusDame = (int) ((long) this.mp * percentMana / 100);
                 dameAttack += bonusDame;
             }

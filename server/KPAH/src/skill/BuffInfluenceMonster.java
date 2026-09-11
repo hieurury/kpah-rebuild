@@ -33,6 +33,11 @@ public class BuffInfluenceMonster {
     private short secondOfStunned;
     private long lastTimeStunned;
 
+    private boolean isInstantPoisoned;
+    private byte instantPoisonStacks;
+    private short secondOfInstantPoison;
+    private long lastTimeInstantPoisoned;
+
     @Synchronized
     public void addBuffPoisoned(Player player, short time, short docto) throws IOException {
         addBuffPoisoned(player, time, 0, (int) docto);
@@ -72,6 +77,34 @@ public class BuffInfluenceMonster {
     }
 
     @Synchronized
+    public void addBuffInstantPoison(Player player, short time) throws IOException {
+        isInstantPoisoned = true;
+        if (instantPoisonStacks < 5) {
+            instantPoisonStacks++;
+        }
+        secondOfInstantPoison = time;
+        lastTimeInstantPoisoned = System.currentTimeMillis();
+        playerUser = player;
+        BuffService.instance.sendAddBuffInfluence(mob, BuffConst.BUFF_DOC_TO);
+    }
+
+    @Synchronized
+    public void removeBuffInstantPoison() {
+        if (!isInstantPoisoned) {
+            return;
+        }
+        isInstantPoisoned = false;
+        instantPoisonStacks = 0;
+        secondOfInstantPoison = 0;
+        lastTimeInstantPoisoned = 0;
+    }
+
+    @Synchronized
+    public byte getSecondInstantPoisonLeft() {
+        return (byte) Math.max(0, (secondOfInstantPoison - Util.getSecondDifference(System.currentTimeMillis(), lastTimeInstantPoisoned)));
+    }
+
+    @Synchronized
     public void addBuffStunned(short time) throws IOException {
         if (isStunned) {
             return;
@@ -96,6 +129,9 @@ public class BuffInfluenceMonster {
         if (isPoisoned) {
             removeBuffPoisoned();
         }
+        if (isInstantPoisoned) {
+            removeBuffInstantPoison();
+        }
         if (isStunned) {
             removeBuffStunned();
         }
@@ -107,6 +143,9 @@ public class BuffInfluenceMonster {
         }
         if (isPoisoned && (Util.canDoWithTime(lastTimePoisoned, secondOfPoisoned * 1000) || mob.isDie())) {
             removeBuffPoisoned();
+        }
+        if (isInstantPoisoned && (Util.canDoWithTime(lastTimeInstantPoisoned, secondOfInstantPoison * 1000) || mob.isDie())) {
+            removeBuffInstantPoison();
         }
         // Gây sát thương độc mỗi giây (1000ms)
         if (isPoisoned && !mob.isDie() && Util.canDoWithTime(lastTimeMinusHp, 1000L)) {

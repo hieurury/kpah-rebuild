@@ -94,35 +94,35 @@ public class MsgHandler {
 				return;
 			}
 			case 89: {
-				// BUFF_ATTACK: Quản lý sát thương độc DoT và thời gian độc
-				byte cat = msg.b().readByte();
+				// BUFF_ATTACK: targetId(short), cat(byte), b2(byte), s2(short hpSub), b3(byte), b4(byte), dur(byte)
 				short targetId = msg.b().readShort();
+				byte cat = msg.b().readByte();
+				byte b2 = msg.b().readByte();
+				short s2 = msg.b().readShort();
+				byte b3 = msg.b().readByte();
 				byte b4 = msg.b().readByte();
-				int hpSub = 0;
-				try {
-					hpSub = msg.b().readInt();
-				} catch (Exception ignored) {
-				}
-				byte dur = 0;
+				byte dur = -1;
 				try {
 					dur = msg.b().readByte();
 				} catch (Exception ignored) {
 				}
 
 				if (b4 == -1) {
-					// DoT tick sát thương độc
+					// DoT tick sát thương độc hoặc instant poison bonus damage
 					if (class_acv.s != null && class_acv.s.l != null) {
 						for (int i = 0; i < class_acv.s.l.size(); i++) {
 							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
 							if (entity != null && entity.cG == targetId) {
-								Paint.addStatusPopup(Paint.POPUP_POISON, -hpSub, entity.cK, entity.cL - 40);
+								if (s2 > 0) {
+									Paint.addStatusPopup(Paint.POPUP_POISON, -s2, entity.cK, entity.cL - 40);
+								}
 								if (cat == 1 && entity instanceof class_bb) {
-									((class_bb) entity).d((int) hpSub);
+									((class_bb) entity).d((int) s2);
 									if (((class_bb) entity).v <= 0) {
 										((class_bb) entity).cE = true;
 									}
 								} else if (entity instanceof class_hw) {
-									((class_hw) entity).v -= hpSub;
+									((class_hw) entity).v -= s2;
 									if (((class_hw) entity).v <= 0) {
 										((class_hw) entity).cV = (byte) 3;
 									}
@@ -131,20 +131,66 @@ public class MsgHandler {
 							}
 						}
 					}
-					// Đã xử lý trừ máu và hiển thị popup tím, return để chặn class_abj vẽ chữ trắng/đỏ đè lên
 					return;
 				} else if (b4 == 4) {
-					// Áp dụng trúng độc
+					// Áp dụng trúng độc (BUFF_DOC_TO)
 					int sec = dur > 0 ? dur : 10;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_zx eff = new class_zx(entity.cK, entity.cL, 22);
+								eff.isDebuff = true;
+								eff.a(sec);
+								entity.a(eff);
+								entity.dg = System.currentTimeMillis();
+								entity.df = s2;
+								entity.dh = b2;
+								break;
+							}
+						}
+					}
 					if (class_acv.s != null && class_acv.s.q != null && class_acv.s.q.cG == targetId) {
 						MainCharInfo.poisonEndTime = System.currentTimeMillis() + (long) sec * 1000L;
 					}
-					msg.b().reset();
-					break;
-				} else {
-					msg.b().reset();
-					break;
+					return;
+				} else if (b4 == 3) {
+					// Áp dụng Choáng (BUFF_STUN)
+					int sec = dur > 0 ? dur : 3;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								entity.cW = true;
+								entity.cZ = System.currentTimeMillis() + (long) (sec * 1000L);
+								class_zx eff = new class_zx(entity.cK, entity.cL, 19);
+								eff.a(sec);
+								entity.a(eff);
+								break;
+							}
+						}
+					}
+					return;
+				} else if (b4 == 2) {
+					// Hút MP
+					if (b3 == 7 && s2 > 0 && class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_acv.s.a("-" + s2, 3, (int) entity.cK, entity.cL - 40, 0, -1);
+								if (entity instanceof class_hw) {
+									((class_hw) entity).bz -= s2;
+									if (((class_hw) entity).bz < 0) {
+										((class_hw) entity).bz = 0;
+									}
+								}
+								break;
+							}
+						}
+					}
+					return;
 				}
+				return;
 			}
 			case -115: {
 				byte count = msg.b().readByte();

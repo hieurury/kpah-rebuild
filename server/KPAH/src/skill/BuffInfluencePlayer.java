@@ -32,6 +32,11 @@ public class BuffInfluencePlayer {
     private short secondOfStunned;
     private long lastTimeStunned;
 
+    private boolean isInstantPoisoned;
+    private byte instantPoisonStacks;
+    private short secondOfInstantPoison;
+    private long lastTimeInstantPoisoned;
+
     @Synchronized
     public void addBuffPoisoned(short time, short docto) throws IOException {
         addBuffPoisoned(time, 0, (int) docto);
@@ -69,6 +74,33 @@ public class BuffInfluencePlayer {
     }
 
     @Synchronized
+    public void addBuffInstantPoison(short time) throws IOException {
+        isInstantPoisoned = true;
+        if (instantPoisonStacks < 5) {
+            instantPoisonStacks++;
+        }
+        secondOfInstantPoison = time;
+        lastTimeInstantPoisoned = System.currentTimeMillis();
+        BuffService.instance.sendAddBuffInfluence(this.player, BuffConst.BUFF_DOC_TO);
+    }
+
+    @Synchronized
+    public void removeBuffInstantPoison() {
+        if (!isInstantPoisoned) {
+            return;
+        }
+        isInstantPoisoned = false;
+        instantPoisonStacks = 0;
+        secondOfInstantPoison = 0;
+        lastTimeInstantPoisoned = 0;
+    }
+
+    @Synchronized
+    public byte getSecondInstantPoisonLeft() {
+        return (byte) Math.max(0, (secondOfInstantPoison - Util.getSecondDifference(System.currentTimeMillis(), lastTimeInstantPoisoned)));
+    }
+
+    @Synchronized
     public void addBuffStunned(short time) throws IOException {
         if (isStunned) {
             return;
@@ -100,6 +132,9 @@ public class BuffInfluencePlayer {
         }
         if (isPoisoned && (Util.canDoWithTime(lastTimePoisoned, secondOfPoisoned * 1000) || player.isDie())) {
             removeBuffPoisoned();
+        }
+        if (isInstantPoisoned && (Util.canDoWithTime(lastTimeInstantPoisoned, secondOfInstantPoison * 1000) || player.isDie())) {
+            removeBuffInstantPoison();
         }
         // Gây sát thương độc mỗi giây (1000ms)
         if (isPoisoned && !player.isDie() && Util.canDoWithTime(lastTimeMinusHp, 1000L)) {

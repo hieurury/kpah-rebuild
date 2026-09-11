@@ -143,6 +143,15 @@ public class Monster implements Cloneable {
             if (damage <= 0) {
                 damage = 1;
             }
+            // Khuyếch đại sát thương nếu quái đang dính độc tức thì (+2% mỗi tầng, tối đa 10%)
+            if (this.buffInfluence.isInstantPoisoned()) {
+                byte stacks = this.buffInfluence.getInstantPoisonStacks();
+                int bonusDame = (int) ((long) damage * (stacks * 2) / 100);
+                if (bonusDame > 0) {
+                    damage += bonusDame;
+                    BuffService.instance.sendSubHpByBuffInfluence(this, (short) bonusDame);
+                }
+            }
             if (isInjuredByEffect && this.buffInfluence.isPoisoned()) {
                 if (hp - damage < 1) {
                     damage = hp - 1;
