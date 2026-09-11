@@ -159,6 +159,27 @@ public class MsgHandler {
 				MainCharInfo.setCustomBuffs(list);
 				return;
 			}
+			case -117: {
+				byte classChar = msg.b().readByte();
+				byte equipType = msg.b().readByte();
+				short count = msg.b().readShort();
+				java.util.Vector list = new java.util.Vector();
+				for (int i = 0; i < count; i++) {
+					short id = msg.b().readShort();
+					String name = msg.b().readUTF();
+					byte level = msg.b().readByte();
+					byte type = msg.b().readByte();
+					short icon = msg.b().readShort();
+					byte attrLen = msg.b().readByte();
+					short[] attrs = new short[attrLen];
+					for (int a = 0; a < attrLen; a++) {
+						attrs[a] = msg.b().readShort();
+					}
+					list.addElement(new CraftShopScreen.CraftItem(id, name, level, type, icon, attrs));
+				}
+				CraftShopScreen.show(classChar, equipType, list);
+				return;
+			}
 			}
 			try {
 				globalMsgHandler.a(msg);

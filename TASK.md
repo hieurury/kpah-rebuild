@@ -170,4 +170,43 @@
 
 **Kết quả:** ✅ Thành công. Mô tả Thẻ Mua Bán, cơ chế thanh toán Lượng/Xu và hệ thống log server đã được đồng bộ chuẩn xác và minh bạch 100%.
 
+## [2026-09-11 22:15] — Task #97: Khôi Phục & Nâng Cấp Toàn Diện Thợ Rèn Thần Bí (Gian Hàng Chế Tạo 5 Phẩm Cấp & Cơ Chế Phân Rã Trang Bị)
+
+**Yêu cầu:**
+1. **Khôi phục tính năng Thợ Rèn Thần Bí (NPC ID -8)**:
+   - Giao tiếp NPC -> Hiện menu 2 lựa chọn: `Chế tạo trang bị` và `Phân rã trang bị`.
+2. **Chế tạo trang bị**:
+   - Chọn class nhân vật: `Kiếm khách`, `Chiến binh`, `Pháp sư`, `Đấu sĩ`, `Cung thủ`.
+   - Chọn loại trang bị: `Vũ khí`, `Áo`, `Quần`, `Nón`, `Giày`, `Găng tay`, `Nhẫn`, `Dây chuyền`, `Ngọc`.
+   - Mở giao diện **Gian Hàng Chế Tạo** (`CraftShopScreen`) thay vì dạng text menu cũ:
+     - 5 tab phẩm cấp: **Ngũ phẩm -> Tứ phẩm -> Tam phẩm -> Nhị phẩm -> Nhất phẩm** (chuyển đổi bằng phím điều hướng trái/phải hoặc click tab).
+     - Màu sắc phẩm cấp đồng bộ: Ngũ phẩm (Trắng), Tứ phẩm (Xanh lá), Tam phẩm (Xanh dương), Nhị phẩm (Vàng), Nhất phẩm (Tím).
+     - Danh sách trang bị kèm biểu tượng icon, cấp độ yêu cầu, chỉ số cơ bản tự động nhân hệ số phẩm cấp (1.1x -> 1.8x).
+     - Hiển thị danh sách nguyên liệu chế tạo kèm kiểm tra số lượng: Nguyên liệu 1 (có/cần), Nguyên liệu 2 (có/cần), Đá ngũ hợp (có/cần), Ngọc rèn (có/cần), Phí xu (xanh lá nếu đủ, đỏ nếu thiếu).
+     - Bấm "Chế tạo" -> Hiện popup xác nhận -> Trừ nguyên liệu & xu -> Nhận trang bị chuẩn phẩm cấp, ngũ hành và dòng thuộc tính ẩn ngẫu nhiên.
+3. **Phân rã trang bị**:
+   - Chọn trang bị từ hành lý để phân rã (phân trang 5 món/trang).
+   - Xem trước số lượng Ngọc rèn hoàn trả theo công thức: `max(1, level/10) + bonus phẩm cấp (0 đến 4)`.
+   - Popup xác nhận: `"Bạn có chắc muốn phân rã [tên] không? Bạn sẽ nhận lại [X] ngọc rèn."`
+   - Xác nhận -> Hủy trang bị -> Cộng trực tiếp Ngọc rèn (ID 268) vào hành lý kèm thông báo hệ thống.
+4. **Sửa lỗi dữ liệu gốc**:
+   - Bổ sung chỉ số gốc cho 177 trang bị chế tạo (ID 268-444) trước đó bị rỗng `[0,0,0,0,0,0,0,0,0,0]` trong database và cơ chế fallback runtime trong `Manager.java`.
+
+**Files thay đổi:**
+- `server/kpah.sql` — Bổ sung chỉ số gốc cho 177 trang bị chế tạo (ID 268-444) và định nghĩa Gem ID 268 (`Ngọc rèn`).
+- `server/KPAH/src/manager/Manager.java` — Thêm `initCraftedEquipmentStats()` khởi tạo chỉ số runtime cho trang bị chế tạo và Gem `Ngọc rèn`.
+- `server/KPAH/src/network/CommandMessage.java` — Thêm opcode `CRAFT_ITEM = -116` và `CRAFT_SHOP = -117`.
+- `server/KPAH/src/network/MessageHandler.java` — Bắt opcode `CommandMessage.CRAFT_ITEM` và gọi `CraftService.instance.craftEquipment(player, idItem, rank)`.
+- `server/KPAH/src/player/Sundry.java` — Thêm trạng thái phiên chế tạo (`craftClass`, `craftType`, `idItemDismantle`, `dismantlePage`).
+- `server/KPAH/src/services/MenuOptionService.java` — Tách biệt ID menu `THO_REN_THAN_BI = 20`, bổ sung các sub-menu class (21), loại trang bị (22), phân rã (23); chuyển luồng chọn sang `CraftService.openCraftShop`.
+- `server/KPAH/src/services/PopupService.java` — Thêm `CONFIRM_DISMANTLE = 3` và popup xác nhận phân rã hoàn trả ngọc rèn.
+- `server/KPAH/src/services/CraftService.java` — Viết mới toàn bộ logic `openCraftShop`, `craftEquipment` (kiểm tra nguyên liệu, trừ xu/đá/ngọc, tính bonus phẩm cấp, add item), `openDismantleMenu`, `onSelectDismantleItem`, `confirmDismantle`.
+- `game/app/src/classes/class_go.java` — Thêm method `sendCraftItem(short idItem, byte rank)` gửi opcode `-116`.
+- `game/app/src/classes/CraftShopScreen.java` — Tạo mới màn hình giao diện Gian hàng chế tạo: 5 tab phẩm cấp, điều hướng phím/touch, hiển thị chỉ số tỉ lệ phẩm cấp, hiển thị nguyên liệu xanh/đỏ, nút Chế tạo & Đóng.
+- `game/app/src/classes/MsgHandler.java` — Bắt opcode `-117` (`CRAFT_SHOP`), đọc danh sách trang bị chế tạo và khởi tạo `CraftShopScreen.show(...)`.
+- `server/dist/KPAH.jar` & `game/build/dist/KPAH_PROD.jar` — Biên dịch thành công 100% bằng ant. Đã khởi động server và client trên emulator.
+- Backup files: Lưu tại `_backup/` trong các thư mục tương ứng theo quy định.
+
+**Kết quả:** ✅ Thành công. Hệ thống Chế tạo trang bị dạng Gian hàng 5 phẩm cấp và Phân rã trang bị tại Thợ Rèn Thần Bí hoạt động trơn tru, đồng bộ giữa Server và Client.
+
 ---

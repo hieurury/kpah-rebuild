@@ -918,6 +918,9 @@ public class Manager {
                     itemTemplate.setNdayLoan((short) 4320);
                     itemTemplate.setColorItem((byte) 1);
                 }
+                if (attribute.length >= 7 && attribute[0] == 0 && attribute[1] == 0 && attribute[2] == 0 && attribute[3] == 0) {
+                    initCraftedEquipmentStats(itemTemplate, attribute);
+                }
                 ITEM_EQUIPMENTS.put(itemTemplate.getId(), itemTemplate);
                 if (itemTemplate.getColorItem() == 0 && itemTemplate.getNdayLoan() == 0) {
                     short id = itemTemplate.getId();
@@ -1008,6 +1011,20 @@ public class Manager {
                 GEM_TEMPLATES.put(gem.getId(), gem);
             }
             rs.close();
+            if (!GEM_TEMPLATES.containsKey((short) 268)) {
+                GemTemplate ngocRen = GemTemplate.builder()
+                        .id((short) 268)
+                        .idImage((byte) 20)
+                        .price(1000)
+                        .name("Ngọc rèn")
+                        .decript("Dùng để tinh luyện và nâng cấp trang bị tại Thợ Rèn Thần Bí.")
+                        .type((byte) 6)
+                        .isSell(false)
+                        .typeEp((byte) 0)
+                        .typeMoney((byte) 0)
+                        .build();
+                GEM_TEMPLATES.put((short) 268, ngocRen);
+            }
             // </editor-fold>
 
             Printer.printGreen(String.format("Finish Load Gem Template [%s]", GEM_TEMPLATES.size()));
@@ -1703,6 +1720,54 @@ public class Manager {
         } catch (Exception e) {
             Logger.logError("Lỗi Tải Dữ Liệu", e);
             System.exit(0);
+        }
+    }
+
+    public static void initCraftedEquipmentStats(ItemEquipTemplate template, short[] attribute) {
+        int lv = template.getLevel();
+        byte typ = template.getType();
+        if (typ == 0) { // Áo
+            short def = (short) (lv + 15);
+            attribute[1] = def;
+            attribute[6] = def;
+            attribute[2] = (short) (1 + lv / 20);
+            attribute[3] = (short) (1 + lv / 20);
+        } else if (typ == 1) { // Quần
+            short def = (short) (lv + 8);
+            attribute[1] = def;
+            attribute[6] = def;
+            attribute[3] = (short) (1 + lv / 20);
+        } else if (typ == 2) { // Nón
+            short def = (short) (lv + 6);
+            attribute[1] = def;
+            attribute[6] = def;
+            attribute[3] = (short) (1 + lv / 20);
+        } else if (typ == 10) { // Giày
+            short def = (short) (lv + 8);
+            attribute[1] = def;
+            attribute[6] = def;
+            attribute[2] = (short) (2 + lv / 10);
+        } else if (typ == 11) { // Găng
+            short def = (short) (lv + 6);
+            attribute[1] = def;
+            attribute[6] = def;
+            attribute[3] = (short) (1 + lv / 12);
+            attribute[4] = (short) (1 + lv / 15);
+        } else if (typ >= 3 && typ <= 7) { // Vũ khí
+            short atk = (short) (70 + Math.round(lv * 4.5));
+            attribute[0] = atk;
+            attribute[3] = (short) (1 + lv / 15);
+            attribute[4] = (short) (1 + lv / 20);
+        } else if (typ == 8) { // Nhẫn
+            attribute[0] = (short) (15 + lv * 2);
+            attribute[3] = (short) (2 + lv / 15);
+        } else if (typ == 9) { // Dây chuyền
+            attribute[0] = (short) (20 + lv * 2);
+            attribute[4] = (short) (1 + lv / 15);
+        } else if (typ == 12) { // Ngọc
+            attribute[3] = (short) (2 + lv / 15);
+            attribute[4] = (short) (1 + lv / 20);
+            attribute[5] = (short) (20 + lv * 3);
         }
     }
 }

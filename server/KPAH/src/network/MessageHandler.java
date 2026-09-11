@@ -14,6 +14,7 @@ import lombok.NonNull;
 import services.BuffService;
 import services.ChatService;
 import services.ClanService;
+import services.CraftService;
 import services.FriendService;
 import services.InventoryService;
 import services.ItemService;
@@ -663,6 +664,13 @@ public class MessageHandler {
                         if (id == player.getIdPlayer()) {
                             PopupService.instance.doAction(player, idPop, button);
                         }
+                    }
+                }
+                case CommandMessage.CRAFT_ITEM -> {
+                    if (player != null) {
+                        short idItem = msg.reader().readShort();
+                        byte rank = msg.reader().readByte();
+                        CraftService.instance.craftEquipment(player, idItem, rank);
                     }
                 }
                 case CommandMessage.FINISH_PUT_ITEM_2_BAG, CommandMessage.CONFIG, CommandMessage.QUEST_CLAN -> {

@@ -24,12 +24,16 @@ public class PopupService {
     private static final byte CONFIRM_REVIVAL = 0;
     private static final byte CONFIRM_REGISTER_CLAN = 1;
     private static final byte CONFIRM_QUYEN_GOP = 2;
+    public static final byte CONFIRM_DISMANTLE = 3;
 
     public void doAction(@NonNull Player player, byte typePop, byte button) throws IOException {
         if (button == CANCEL) {
             return;
         }
         switch (typePop) {
+            case CONFIRM_DISMANTLE -> {
+                CraftService.instance.confirmDismantle(player);
+            }
             case REVIVAL -> {
                 if (player.isDie()) {
                     sendPopupOkCancel(player, String.format("Bạn có muốn hồi sinh tại chỗ. Chi phí %s xu", Util.formatNumber(player.getPoint().getXuRevive())), CONFIRM_REVIVAL);
@@ -58,7 +62,6 @@ public class PopupService {
                 player.getInventory().minusXu(player.getSundry().getXuQuyenGop());
                 clan.plusXu(player.getSundry().getXuQuyenGop());
                 player.getSundry().setXuQuyenGop(0);
-                InventoryService.instance.sendItemPotion(player);
             }
             case CONFIRM_REGISTER_CLAN -> {
                 ClanService.instance.sendChooseIcon(player);
@@ -72,6 +75,10 @@ public class PopupService {
 
     public void sendPopupConfirmRegClan(@NonNull Player player) throws IOException {
         sendPopupOkCancel(player, String.format("Chi phí tạo bang là %s xu và phải đạt 10 thành viên trong 3 ngày tính từ thời điểm tạo bang", Util.formatNumber(ClanConst.XU_NEED_TO_REGISTER)), CONFIRM_REGISTER_CLAN);
+    }
+
+    public void sendPopupConfirmDismantle(@NonNull Player player, String text) throws IOException {
+        sendPopupOkCancel(player, text, CONFIRM_DISMANTLE);
     }
 
     private void sendPopupOkCancel(@NonNull Player player, String text, byte id) throws IOException {

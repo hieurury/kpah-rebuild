@@ -37,6 +37,11 @@ public class Sundry {
     private byte idOpenMenu;
     private byte selectedOption;
 
+    private byte craftClass;
+    private byte craftType;
+    private short idItemDismantle;
+    private int dismantlePage;
+
     private boolean comeHome;
     private long lastTimeComeHome;
 

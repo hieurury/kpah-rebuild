@@ -33,7 +33,10 @@ public class MenuOptionService {
     private static final byte THO_HOP_THANH_CAO_CAP = 3;
     private static final byte THO_HOP_THANH_SO_CAP = 4;
     private static final byte TONG_QUAN = 5;
-    private static final byte THO_REN_THAN_BI = 5;
+    public static final byte THO_REN_THAN_BI = 20;
+    public static final byte THO_REN_CHOOSE_CLASS = 21;
+    public static final byte THO_REN_CHOOSE_TYPE = 22;
+    public static final byte THO_REN_DISMANTLE = 23;
     private static final byte TONG_TIEU_DAU = 6;
     private static final byte DAU_TRUONG = 7;
     private static final byte TIEN_NU = 8;
@@ -65,6 +68,28 @@ public class MenuOptionService {
         player.getSundry().setIdOpenMenu(idMenu);
         player.getSundry().setSelectedOption(selected);
         switch (idMenu) {
+            case THO_REN_THAN_BI -> {
+                switch (selected) {
+                    case 0 -> { // Chế tạo trang bị
+                        sendOptionMenu(player, THO_REN_CHOOSE_CLASS, "Kiếm khách", "Chiến binh", "Pháp sư", "Đấu sĩ", "Cung thủ");
+                    }
+                    case 1 -> { // Phân rã trang bị
+                        CraftService.instance.openDismantleMenu(player, 0);
+                    }
+                }
+            }
+            case THO_REN_CHOOSE_CLASS -> {
+                player.getSundry().setCraftClass(selected);
+                sendOptionMenu(player, THO_REN_CHOOSE_TYPE, "Vũ khí", "Áo", "Quần", "Nón", "Giày", "Găng tay", "Nhẫn", "Dây chuyền", "Ngọc");
+            }
+            case THO_REN_CHOOSE_TYPE -> {
+                player.getSundry().setCraftType(selected);
+                byte classChar = player.getSundry().getCraftClass();
+                CraftService.instance.openCraftShop(player, classChar, selected);
+            }
+            case THO_REN_DISMANTLE -> {
+                CraftService.instance.onSelectDismantleItem(player, selected);
+            }
             case MENU_NPC_DYNAMIC -> {
                 byte npcId = player.getSundry().getIdNpcOpen();
                 if (selected == 0) {
@@ -500,7 +525,7 @@ public class MenuOptionService {
     }
 
     public void sendMenuThoRenThanBi(@NonNull Player player) throws IOException {
-        sendOptionMenu(player, THO_REN_THAN_BI, "Vũ khí", "Trang bị", "Trang bị thú", "Gia hạn vktt(150l 7n)", "Gia hạn vktt dùng thẻ", "Tắt phi phong vip", "Tắt mặt nạ");
+        sendOptionMenu(player, THO_REN_THAN_BI, "Chế tạo trang bị", "Phân rã trang bị");
     }
 
     public void sendMenuTongQuan(@NonNull Player player) throws IOException {
