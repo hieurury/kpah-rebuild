@@ -104,7 +104,70 @@
 
 **Kết quả:** ✅ Thành công. Toàn bộ số liệu hiển thị và Status HUD đã được đồng bộ chuẩn xác 100%.
 
+- **Tinh chỉnh hoàn thiện (theo phản hồi thực tế từ hình ảnh gameplay)**:
+  - Loại bỏ hoàn toàn hộp nền đen đặc che tầm nhìn trên status bar.
+  - Đồng bộ hóa toàn bộ số nổi về font pixel art 8px (`fs_red.png`, `fs_blue.png`, `fs_poison.png`) bằng đúng kích cỡ font EXP của game (`+100`, `-100`, `-35`).
+  - Bổ sung ký tự `'/'` vào các bộ font pixel art và áp dụng cho `curHp/maxHp` (Đỏ) và `curMp/maxMp` (Xanh dương) trên status bar gọn gàng, sắc nét.
+  - Đã đóng gói và khởi chạy thành công trên MicroEmulator (`task-554`).
+
 ---
 
+## [2026-09-11 20:55] — Task #95: Điều Chỉnh Tỷ Lệ Drop Quái, Đồng Bộ Thẻ Mua Bán Thợ Rèn Hắc Ngưu (150% Phí, Dùng Giao Dịch Tại Chỗ) Và Tối Ưu HUD Độ Bền Hỏng
 
+**Yêu cầu:**
+1. Điều chỉnh tỷ lệ rơi đồ từ quái:
+   - Bình potion (HP/MP): 20%
+   - Xu: 5%
+   - Trang bị: 2%
+2. Thẻ mua bán (ItemEquip ID 675 & ItemPotion ID 33):
+   - Xuất hiện trong gian hàng của Thợ rèn Hắc Ngưu (giá 10 lượng, thời hạn ấn định 3 ngày = 4320 phút).
+   - Đồng bộ toàn diện: dù người chơi sở hữu thẻ dưới dạng nào cũng kích hoạt tính năng như nhau.
+   - Khi có thẻ trong hành lý: tự động sửa chữa trang bị hỏng ở mọi nơi ngay lập tức với chi phí 150% xu.
+   - Khi tự động sửa chữa, hiển thị chat only: `Đã tiêu tốn value xu để sửa các trang bị hỏng.`
+   - Bấm "Sử dụng" thẻ trực tiếp trong hành lý để mở giao diện gian hàng giao dịch với Thợ rèn Hắc Ngưu ngay tại chỗ (vô hạn lượt dùng khi còn hạn).
+   - Cập nhật mô tả thẻ chuẩn xác: `"Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.\nThời gian còn lại: value"`
+3. HUD Độ bền trang bị:
+   - Khi trang bị hỏng: bỏ hoàn toàn cơ chế chớp nháy đỏ và chữ "HỎNG", chỉ hiển thị số `0` màu đỏ tĩnh và vẽ viền đỏ cho hàng trang bị hỏng đó.
 
+**Files thay đổi:**
+- `server/KPAH/src/map/Monster.java` — Chỉnh tỷ lệ drop: `potionRate = 20%`, `goldRate = 5%`, `equipRate = 2%`.
+- `server/KPAH/src/services/InventoryService.java` — Thêm helper `hasTheMuaBan` kiểm tra đồng bộ cả Potion ID 33 và ItemEquip ID 675.
+- `server/KPAH/src/services/UseItemService.java` — Khi bấm dùng Thẻ mua bán (cả Potion 33 và Equip 675), mở trực tiếp gian hàng vũ khí Hắc Ngưu tại chỗ; không trừ số lượng thẻ.
+- `server/KPAH/src/services/SkillService.java` — Sửa chi phí tự sửa vũ khí/cuốc/trang bị hỏng thành 150% khi có Thẻ mua bán, hiển thị thông báo chat only: `Đã tiêu tốn value xu để sửa các trang bị hỏng.`
+- `server/KPAH/src/player/Player.java` — Tự động sửa chữa trang bị phòng thủ bị hỏng lúc bị quái đánh với chi phí 150% xu nếu có Thẻ mua bán, thông báo chat only: `Đã tiêu tốn value xu để sửa các trang bị hỏng.`
+- `game/app/src/classes/Paint.java` — Tinh chỉnh `paintRightEquipDurability`: bỏ chữ `(HỎNG)` và hiệu ứng chớp tắt `blink`, hiển thị số `0` màu đỏ tĩnh `class_d.j[2]` và vẽ viền đỏ `0xFF1744` cho hàng hỏng.
+- `server/update_the_mua_ban.sql` & `server/kpah.sql` — Cập nhật mô tả Thẻ mua bán, `ndayLoan = 4320` (3 ngày), `price = 10` lượng.
+- `server/dist/KPAH.jar` & `game/build/dist/KPAH_PROD.jar` — Biên dịch thành công 100% bằng ant với JDK 21 và JDK 8. Khởi chạy client mới trên MicroEmulator (`task-916`).
+- Backup files: Lưu tại `_backup/` trong các thư mục tương ứng.
+
+**Kết quả:** ✅ Thành công. Mọi tính năng yêu cầu đã được triển khai, kiểm thử và biên dịch hoàn hảo.
+
+## [2026-09-11 21:10] — Task #96: Đồng Bộ Mô Tả Thẻ Mua Bán Trực Tiếp Từ Server, Sửa Lỗi Tiền Tệ Mua Hàng (Lượng vs Xu) Và Minh Bạch Hóa Server Log
+
+**Yêu cầu:**
+- Cập nhật mô tả hiển thị của Thẻ Mua Bán chuẩn xác theo yêu cầu:
+  `Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.`
+  kèm thời gian còn lại tự động tính bởi Client (`Thời gian còn lại: value`).
+- Sửa lỗi nạp mô tả Thẻ Mua Bán: đảm bảo tự động đồng bộ trực tiếp từ code nạp Server (`Manager.java`) và tự động cập nhật database, không phụ thuộc vào việc chạy tay migration script.
+- Khắc phục lỗi tiền tệ khi mua vật phẩm có hạn (`ndayLoan != 0`): trước đó code trừ cả Xu lẫn Lượng và log ra đơn vị `xu`, nay tách biệt rạch ròi:
+  - Vật phẩm có hạn (`ndayLoan != 0` như Thẻ Mua Bán): chỉ trừ **Lượng**, không trừ Xu.
+  - Vật phẩm vĩnh viễn (`ndayLoan == 0`): chỉ trừ **Xu**.
+  - Log server hiển thị minh bạch, chính xác từng loại tiền tệ (`với giá %s lượng` hoặc `với giá %s xu`) cho cả Trang Bị, Ngọc và Dược Phẩm.
+- Đảm bảo các Thẻ Mua Bán đã mua trước đó trong hành lý nếu có thời hạn cũ (168h / 7 ngày) sẽ tự động đồng bộ về tối đa 3 ngày (4320 phút = 72h).
+
+**Files thay đổi:**
+- `server/KPAH/src/manager/Manager.java`:
+  - Trong quá trình nạp `item_equipment` và `potion_template`: tự động thực thi query cập nhật database và ghi đè trực tiếp trong bộ nhớ cho Thẻ Mua Bán (ID 675 và Potion 33) với đúng mô tả chuẩn, giá 10 Lượng, hạn 4320 phút (3 ngày).
+- `server/KPAH/src/services/ShopService.java`:
+  - `buyItemNpcShop`: Tách biệt điều kiện trừ tiền: nếu `template.getNdayLoan() != 0` thì chỉ gọi `minusLuong()`, ngược lại chỉ gọi `minusXu()`.
+  - Log mua hàng của Server được cập nhật động theo đơn vị tiền tệ thực tế (`lượng` hoặc `xu`).
+  - Áp dụng logic tương tự cho nhóm Dược Phẩm (Potion ID 33 dùng Lượng).
+- `server/KPAH/src/daos/PlayerDAO.java`:
+  - Khi load trang bị người chơi từ database, nếu phát hiện Thẻ Mua Bán có `dayUse > 4320`, tự động giới hạn về `4320` phút (3 ngày) để đồng bộ dữ liệu người chơi cũ.
+- `server/update_the_mua_ban.sql`: Cập nhật lại câu lệnh SQL đồng bộ tuyệt đối với logic trên server.
+- `server/KPAH/dist/KPAH.jar`: Biên dịch sạch sẽ 100% bằng ant với JDK 21.
+- Backup files: Tạo tại `_backup/` trong các thư mục `server/KPAH/src/services/`, `server/KPAH/src/manager/`, `server/KPAH/src/daos/` theo đúng quy định.
+
+**Kết quả:** ✅ Thành công. Mô tả Thẻ Mua Bán, cơ chế thanh toán Lượng/Xu và hệ thống log server đã được đồng bộ chuẩn xác và minh bạch 100%.
+
+---

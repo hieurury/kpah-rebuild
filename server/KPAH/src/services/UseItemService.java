@@ -2,6 +2,7 @@ package services;
 
 import consts.Const;
 import consts.HorseConst;
+import consts.ItemEquipConst;
 import item.ItemAnimal;
 import item.ItemEquip;
 import item.ItemPotion;
@@ -130,29 +131,8 @@ public class UseItemService {
                     useHorsePotion(player, potion, id);
                 }
                 case 33 -> {
-                    int price = player.getInventory().getPriceRepair(consts.ItemEquipConst.REPAIR_ALL);
-                    if (price <= 0) {
-                        ChatService.instance.sendChatOnlyMe(player, "Tất cả trang bị đang mặc đều còn nguyên độ bền, không cần sửa chữa.");
-                        return;
-                    }
-                    if (!player.getInventory().minusXu(price)) {
-                        ChatService.instance.sendChatOnlyMe(player, "Không đủ " + Util.formatNumber(price) + " xu để sửa chữa toàn bộ trang bị!");
-                        return;
-                    }
-                    for (int i = 0; i < player.getInventory().getItemBody().size(); i++) {
-                        ItemEquip item = player.getInventory().getItemBody().get(i);
-                        if (item == null || item.getTemplate() == null) {
-                            continue;
-                        }
-                        short mDurable = item.getTemplate().getDurable();
-                        item.setDurable(mDurable);
-                        item.setMDurable(mDurable);
-                    }
-                    InventoryService.instance.sendItemBody(player);
-                    InventoryService.instance.sendItemPotion(player);
-                    player.getPoint().initPoint();
-                    Service.instance.sendMainCharInfo(player);
-                    ChatService.instance.sendChatOnlyMe(player, "Đã dùng Thẻ mua bán sửa chữa toàn bộ trang bị (Trừ " + Util.formatNumber(price) + " xu).");
+                    // Thẻ mua bán: Sử dụng trực tiếp để giao dịch với Hắc Ngưu
+                    ShopService.instance.openNpcShop(player, "WEAPON", ItemEquipConst.DAMAGE_NONE);
                 }
                 case 35 -> {
                     player.setBuffGioVang(3600000L, (short) 100);
@@ -542,6 +522,11 @@ public class UseItemService {
         }
         ItemEquip equipment = InventoryService.instance.findItemBag(player, index);
         if (equipment == null) {
+            return;
+        }
+        if (equipment.getTemplate().getId() == 675) {
+            // Thẻ mua bán: Sử dụng trực tiếp để giao dịch với Hắc Ngưu
+            ShopService.instance.openNpcShop(player, "WEAPON", ItemEquipConst.DAMAGE_NONE);
             return;
         }
         if (equipment.getTemplate().getGender() != 0 && equipment.getTemplate().getGender() != player.getInfo().getGender()) {

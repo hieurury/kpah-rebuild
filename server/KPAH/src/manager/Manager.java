@@ -898,6 +898,9 @@ public class Manager {
             Printer.printGreen(String.format("Finish Load Tree Info [%s]", TREE_INFOS.size()));
 
             // <editor-fold defaultstate="collapsed" desc="Load Item Equipment">
+            try {
+                HikariCP.executeUpdate("UPDATE `item_equipment` SET `name` = 'Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.', `price` = 10, `ndayLoan` = 4320, `colorItem` = 1 WHERE `id` = 675");
+            } catch (Exception ignored) {}
             rs = HikariCP.executeQuery("SELECT * FROM item_equipment");
             while (rs.next()) {
                 JSONArray attb = new JSONArray(rs.getString("attribute"));
@@ -909,6 +912,12 @@ public class Manager {
                 byte dx = dxdy.length() > 0 ? (byte) dxdy.getInt(0) : Manager.DX_DY_WP[0][0];
                 byte dy = dxdy.length() > 0 ? (byte) dxdy.getInt(1) : Manager.DX_DY_WP[1][0];
                 ItemEquipTemplate itemTemplate = ItemEquipTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).classChar(rs.getByte("classChar")).idIcon(rs.getShort("idIcon")).type(rs.getByte("type")).style(rs.getByte("stype")).he(rs.getByte("he")).gender(rs.getByte("gender")).level(rs.getByte("level")).durable(rs.getShort("durable")).price(rs.getInt("price")).colorItem(rs.getByte("colorItem")).ndayLoan(rs.getShort("ndayLoan")).attribute(attribute).dxWear(dx).dyWear(dy).build();
+                if (itemTemplate.getId() == 675) {
+                    itemTemplate.setName("Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.");
+                    itemTemplate.setPrice(10);
+                    itemTemplate.setNdayLoan((short) 4320);
+                    itemTemplate.setColorItem((byte) 1);
+                }
                 ITEM_EQUIPMENTS.put(itemTemplate.getId(), itemTemplate);
                 if (itemTemplate.getColorItem() == 0 && itemTemplate.getNdayLoan() == 0) {
                     short id = itemTemplate.getId();
@@ -1015,9 +1024,16 @@ public class Manager {
             Printer.printGreen(String.format("Finish Load Shop Template [%s]", SHOP_TEMPLATES.size()));
 
             // <editor-fold defaultstate="collapsed" desc="Load Potion Template">
+            try {
+                HikariCP.executeUpdate("UPDATE `potion_template` SET `name` = 'Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.', `price` = 10 WHERE `id` = 33");
+            } catch (Exception ignored) {}
             rs = HikariCP.executeQuery("SELECT * FROM `potion_template`");
             while (rs.next()) {
                 PotionTemplate potionTemplate = PotionTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).name2(rs.getString("name2")).idImage(rs.getByte("idImage")).delay(rs.getShort("delay")).isTrade(rs.getBoolean("isTrade")).price(rs.getShort("price")).recovered(rs.getShort("recovered")).build();
+                if (potionTemplate.getId() == 33) {
+                    potionTemplate.setName("Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.");
+                    potionTemplate.setPrice((short) 10);
+                }
                 POTION_TEMPLATES.put(potionTemplate.getId(), potionTemplate);
             }
             rs.close();

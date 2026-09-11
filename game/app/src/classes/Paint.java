@@ -173,7 +173,7 @@ public class Paint {
 				MainCharInfo.EquipDurability eq = (MainCharInfo.EquipDurability) equips.elementAt(i);
 				if (eq == null) continue;
 				String label = eq.name + ": ";
-				String valStr = eq.isBroken ? "0 (HỎNG)" : String.valueOf(eq.durable);
+				String valStr = eq.isBroken ? "0" : String.valueOf(eq.durable);
 				int w = class_d.j[0].a(label) + (eq.isBroken ? class_d.j[2].a(valStr) : class_d.j[5].a(valStr));
 				if (w > maxW) {
 					maxW = w;
@@ -188,25 +188,23 @@ public class Paint {
 				if (eq == null) continue;
 
 				String label = eq.name + ": ";
-				String valStr = eq.isBroken ? "0 (HỎNG)" : String.valueOf(eq.durable);
+				String valStr = eq.isBroken ? "0" : String.valueOf(eq.durable);
 				int titleW = class_d.j[0].a(label);
 
-				boolean blink = eq.isBroken && (class_acv.l % 10 < 5);
-
-				// Nền mờ
-				g.setColor(blink ? 0x4A0000 : 0x000000);
+				// Nền mờ đen
+				g.setColor(0x000000);
 				g.fillRect(startX - 2, startY, maxW + 4, 12);
+
+				// Viền: viền đỏ nếu trang bị hỏng, viền xám đen nếu bình thường
 				g.setColor(eq.isBroken ? 0xFF1744 : 0x2E3842);
 				g.drawRect(startX - 2, startY, maxW + 4, 12);
 
 				// Tiêu đề màu trắng
 				class_d.j[0].a(g, label, startX, startY + 1, 0);
 
-				// Giá trị: đỏ nhấp nháy nếu hỏng, vàng/cam nếu bình thường
+				// Giá trị: số 0 màu đỏ tĩnh nếu hỏng, vàng/cam nếu bình thường
 				if (eq.isBroken) {
-					if (blink) {
-						class_d.j[2].a(g, valStr, startX + titleW, startY + 1, 0);
-					}
+					class_d.j[2].a(g, valStr, startX + titleW, startY + 1, 0);
 				} else {
 					class_d.j[5].a(g, valStr, startX + titleW, startY + 1, 0);
 				}
@@ -296,17 +294,88 @@ public class Paint {
 	public static final int POPUP_MP = 2;
 	public static final int POPUP_POISON = 3;
 
+	public static final int FONT_RED = 1;
+	public static final int FONT_BLUE = 2;
+	public static final int FONT_POISON = 3;
+
+	private static javax.microedition.lcdui.Image imgFsRed;
+	private static javax.microedition.lcdui.Image imgFsBlue;
+	private static javax.microedition.lcdui.Image imgFsPoison;
+
+	private static final String FS_CHARS = "0123456789+-%$:abcdefghijklmnopqrstuvwxyz@/";
+	private static final byte[] FS_WIDTHS = new byte[]{
+		5, 3, 5, 5, 5, 5, 5, 5, 5, 5, // 0-9
+		5, 5,                         // + -
+		7, 5, 3,                      // % $ :
+		5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 6, 5, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5, 5, // a-z
+		7,                            // @
+		5                             // /
+	};
+
+	/**
+	 * Vẽ chuỗi ký tự bằng Bitmap Font 8px pixel art (đồng bộ kích cỡ với font EXP)
+	 */
+	public static void drawFsString(Graphics g, int fontType, String str, int x, int y, int align) {
+		if (str == null || str.length() == 0) return;
+		try {
+			javax.microedition.lcdui.Image fontImg = null;
+			if (fontType == FONT_RED) {
+				if (imgFsRed == null) imgFsRed = javax.microedition.lcdui.Image.createImage("/font/fs_red.png");
+				fontImg = imgFsRed;
+			} else if (fontType == FONT_BLUE) {
+				if (imgFsBlue == null) imgFsBlue = javax.microedition.lcdui.Image.createImage("/font/fs_blue.png");
+				fontImg = imgFsBlue;
+			} else if (fontType == FONT_POISON) {
+				if (imgFsPoison == null) imgFsPoison = javax.microedition.lcdui.Image.createImage("/font/fs_poison.png");
+				fontImg = imgFsPoison;
+			}
+
+			if (fontImg == null) return;
+
+			int totalW = 0;
+			int len = str.length();
+			for (int i = 0; i < len; i++) {
+				char c = str.charAt(i);
+				int idx = FS_CHARS.indexOf(c);
+				if (idx >= 0) {
+					totalW += FS_WIDTHS[idx] - 1;
+				} else {
+					totalW += 3;
+				}
+			}
+
+			int startX = x;
+			if ((align & Graphics.HCENTER) != 0 || align == 2) {
+				startX = x - (totalW >> 1);
+			} else if ((align & Graphics.RIGHT) != 0 || align == 1) {
+				startX = x - totalW;
+			}
+
+			for (int i = 0; i < len; i++) {
+				char c = str.charAt(i);
+				int idx = FS_CHARS.indexOf(c);
+				if (idx >= 0) {
+					g.drawRegion(fontImg, 0, idx * 8, 7, 8, 0, startX, y, 20);
+					startX += FS_WIDTHS[idx] - 1;
+				} else {
+					startX += 3;
+				}
+			}
+		} catch (Exception ignored) {
+		}
+	}
+
 	public static class StatusPopup {
 		public String text;
-		public int fontIdx;
+		public int fontType;
 		public int worldX;
 		public int startY;
 		public int frame;
 		public int maxFrame = 25; // tồn tại ~1s (game chạy ~25fps)
 
-		public StatusPopup(String text, int fontIdx, int worldX, int worldY) {
+		public StatusPopup(String text, int fontType, int worldX, int worldY) {
 			this.text = text;
-			this.fontIdx = fontIdx;
+			this.fontType = fontType;
 			this.worldX = worldX;
 			this.startY = worldY;
 			this.frame = 0;
@@ -317,9 +386,10 @@ public class Paint {
 
 	/**
 	 * Thêm popup trạng thái nổi đồng bộ theo quy định:
-	 * HP: "HP +10" hoặc "HP -10" màu Đỏ (class_d.j[2])
-	 * MP: "MP +10" hoặc "MP -10" màu Xanh dương (class_d.j[3])
-	 * Độc: "Độc -10" màu Tím (class_d.j[4])
+	 * HP: "+10" hoặc "-10" màu Đỏ (fs_red)
+	 * MP: "+10" hoặc "-10" màu Xanh dương (fs_blue)
+	 * Độc: "-10" màu Tím (fs_poison)
+	 * Kích cỡ chữ nhỏ 8px bằng đúng font EXP của game
 	 */
 	public static void addStatusPopup(int type, int value, int worldX, int worldY) {
 		try {
@@ -328,20 +398,17 @@ public class Paint {
 				statusPopups.removeElementAt(0);
 			}
 
-			String text;
-			int fontIdx;
+			String text = (value > 0 ? "+" : "-") + Math.abs(value);
+			int fontType;
 			if (type == POPUP_HP) {
-				text = (value > 0 ? "HP +" : "HP -") + Math.abs(value);
-				fontIdx = 2; // Đỏ nguyên bản KPAH
+				fontType = FONT_RED; // Đỏ nguyên bản KPAH
 			} else if (type == POPUP_MP) {
-				text = (value > 0 ? "MP +" : "MP -") + Math.abs(value);
-				fontIdx = 3; // Xanh dương nguyên bản KPAH
+				fontType = FONT_BLUE; // Xanh dương nguyên bản KPAH
 			} else {
-				text = "Độc -" + Math.abs(value);
-				fontIdx = 4; // Tím nguyên bản KPAH
+				fontType = FONT_POISON; // Tím nguyên bản KPAH
 			}
 
-			statusPopups.addElement(new StatusPopup(text, fontIdx, worldX, worldY));
+			statusPopups.addElement(new StatusPopup(text, fontType, worldX, worldY));
 		} catch (Exception ignored) {
 		}
 	}
@@ -366,8 +433,8 @@ public class Paint {
 					continue;
 				}
 
-				// Bay lên trên: 25 frame bay lên khoảng 24 pixel
-				int currentY = p.startY - (p.frame * 24 / p.maxFrame);
+				// Bay lên trên: 25 frame bay lên khoảng 22 pixel
+				int currentY = p.startY - (p.frame * 22 / p.maxFrame);
 				int sx = p.worldX - camX;
 				int sy = currentY - camY;
 
@@ -375,66 +442,10 @@ public class Paint {
 					continue;
 				}
 
-				// Vẽ số nổi bằng bộ font class_d.j có đầy đủ tiếng Việt, dấu cách, viền 3D
-				// align = 2 là căn giữa HCENTER
-				if (class_d.j != null && p.fontIdx >= 0 && p.fontIdx < class_d.j.length && class_d.j[p.fontIdx] != null) {
-					class_d.j[p.fontIdx].a(g, p.text, sx, sy, 2);
-				}
+				// Vẽ số nổi bằng bộ font pixel art 8px đồng bộ với font EXP
+				drawFsString(g, p.fontType, p.text, sx, sy, Graphics.HCENTER | Graphics.TOP);
 			}
 		} catch (Exception ignored) {
-		}
-	}
-
-	private static javax.microedition.lcdui.Image imgFontPoison;
-	private static final String FONT_CHARS = "0123456789+-%$:abcdefghijklmnopqrstuvwxyz@";
-	private static final byte[] FONT_WIDTHS = new byte[]{5, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 5, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 7, 6, 5, 5, 5, 5, 5, 5, 5, 5, 7, 5, 5, 5, 7};
-
-	/**
-	 * Vẽ chuỗi ký tự bằng Bitmap Font độc dược màu tím pixel art (dự phòng)
-	 */
-	public static void drawPoisonBitmapString(Graphics g, String str, int x, int y, int align) {
-		try {
-			if (imgFontPoison == null) {
-				imgFontPoison = javax.microedition.lcdui.Image.createImage("/font/fs_poison.png");
-			}
-		} catch (Exception e) {
-			g.setColor(0xDF5FFF);
-			g.drawString(str, x, y, align);
-			return;
-		}
-
-		if (str == null || str.length() == 0) {
-			return;
-		}
-
-		int totalWidth = 0;
-		int len = str.length();
-		for (int i = 0; i < len; i++) {
-			char c = str.charAt(i);
-			int idx = FONT_CHARS.indexOf(c);
-			if (idx >= 0) {
-				totalWidth += FONT_WIDTHS[idx] - 1;
-			} else {
-				totalWidth += 4;
-			}
-		}
-
-		int startX = x;
-		if ((align & Graphics.HCENTER) != 0) {
-			startX = x - (totalWidth >> 1);
-		} else if ((align & Graphics.RIGHT) != 0) {
-			startX = x - totalWidth;
-		}
-
-		for (int i = 0; i < len; i++) {
-			char c = str.charAt(i);
-			int idx = FONT_CHARS.indexOf(c);
-			if (idx >= 0) {
-				g.drawRegion(imgFontPoison, 0, idx * 8, 7, 8, 0, startX, y, 20);
-				startX += FONT_WIDTHS[idx] - 1;
-			} else {
-				startX += 4;
-			}
 		}
 	}
 
@@ -443,7 +454,7 @@ public class Paint {
 	 * Tọa độ HP: X: 46, Y: 8, W: 44, H: 3
 	 * Tọa độ MP: X: 46, Y: 18, W: 44, H: 3
 	 * Ngăn chặn tuyệt đối tình trạng vẽ số âm, tràn số, hoặc nhấp nháy đầy/cạn
-	 * Đồng thời hiển thị số liệu cụ thể (cur/max) bên phải 2 thanh bar
+	 * Đồng thời hiển thị số liệu cụ thể (cur/max) bên phải 2 thanh bar bằng font pixel art 8px
 	 */
 	private static void paintPlayerHpMpBar(Graphics g) {
 		try {
@@ -497,29 +508,16 @@ public class Paint {
 			}
 
 			// 3. Hiển thị thông số cụ thể bên phải thanh bar (Task #94)
-			// HP: bên phải thanh HP, màu Đỏ (class_d.j[2])
-			// MP: bên phải thanh MP, màu Xanh dương (class_d.j[3])
+			// Không dùng hộp đen dày đặc che tầm nhìn; dùng font pixel art 8px có viền đen tự nhiên
 			String hpStr = curHp + "/" + maxHp;
 			String mpStr = curMp + "/" + maxMp;
 
-			int textX = 96; // Mép phải khung Avatar info.png (rộng 96px)
-			if (class_d.j != null && class_d.j.length > 3 && class_d.j[2] != null && class_d.j[3] != null) {
-				int hpTextW = class_d.j[2].a(hpStr);
-				int mpTextW = class_d.j[3].a(mpStr);
-				int maxTextW = Math.max(hpTextW, mpTextW);
+			int textX = 94; // Ngay mép phải thanh HP/MP (kết thúc ở 90-92)
+			// HP ghi bên phải thanh HP (Y = 6, khớp thanh HP ở Y = 8)
+			drawFsString(g, FONT_RED, hpStr, textX, 6, 0);
 
-				// Khung nền tối mờ sang trọng nối tiếp khung avatar info.png
-				g.setColor(0xDD0D1117);
-				g.fillRect(textX, 2, maxTextW + 6, 25);
-				g.setColor(0x2E3846);
-				g.drawRect(textX, 2, maxTextW + 6, 25);
-
-				// HP ghi bên phải thanh HP (căn dòng Y = 3)
-				class_d.j[2].a(g, hpStr, textX + 3, 3, 0);
-
-				// MP ghi bên phải thanh MP (căn dòng Y = 15)
-				class_d.j[3].a(g, mpStr, textX + 3, 15, 0);
-			}
+			// MP ghi bên phải thanh MP (Y = 16, khớp thanh MP ở Y = 18)
+			drawFsString(g, FONT_BLUE, mpStr, textX, 16, 0);
 		} catch (Exception ignored) {
 		}
 	}

@@ -101,6 +101,32 @@ public class SkillService {
                 }
             }
         }
+        if (anyBroken) {
+            if (InventoryService.instance.hasTheMuaBan(pl)) {
+                int totalPrice = 0;
+                for (int i = 0; i < pl.getInventory().getItemBody().size(); i++) {
+                    ItemEquip it = pl.getInventory().getItemBody().get(i);
+                    if (it != null && it.getTemplate() != null && it.getDurable() <= 0) {
+                        int base = it.getTemplate().getPrice() / 10;
+                        totalPrice += Math.max(1, (int) Math.round(base * 1.5));
+                    }
+                }
+                if (totalPrice > 0 && pl.getInventory().minusXu(totalPrice)) {
+                    for (int i = 0; i < pl.getInventory().getItemBody().size(); i++) {
+                        ItemEquip it = pl.getInventory().getItemBody().get(i);
+                        if (it != null && it.getTemplate() != null && it.getDurable() <= 0) {
+                            short mDur = it.getTemplate().getDurable();
+                            it.setDurable(mDur);
+                            it.setMDurable(mDur);
+                        }
+                    }
+                    anyBroken = false;
+                    anyDurableChanged = true;
+                    InventoryService.instance.sendItemPotion(pl);
+                    ChatService.instance.sendChatOnlyMe(pl, "Đã tiêu tốn " + Util.formatNumber(totalPrice) + " xu để sửa các trang bị hỏng.");
+                }
+            }
+        }
         if (anyDurableChanged) {
             InventoryService.instance.sendItemBody(pl);
         }
@@ -189,9 +215,9 @@ public class SkillService {
             return false;
         }
         if (weapon.getDurable() <= 0) {
-            ItemPotion theMuaBan = InventoryService.instance.findItemPotion(pl, (short) 33);
-            if (theMuaBan != null && theMuaBan.getQuantity() > 0) {
-                int price = weapon.getTemplate().getPrice() / 10;
+            if (InventoryService.instance.hasTheMuaBan(pl)) {
+                int basePrice = weapon.getTemplate().getPrice() / 10;
+                int price = Math.max(1, (int) Math.round(basePrice * 1.5));
                 if (price <= 0 || pl.getInventory().minusXu(price)) {
                     short mDurable = weapon.getTemplate().getDurable();
                     weapon.setDurable(mDurable);
@@ -200,7 +226,7 @@ public class SkillService {
                     Service.instance.sendMainCharInfo(pl);
                     InventoryService.instance.sendItemBody(pl);
                     InventoryService.instance.sendItemPotion(pl);
-                    ChatService.instance.sendChatOnlyMe(pl, "Vũ khí đã được tự động sửa chữa bằng Thẻ mua bán" + (price > 0 ? " (Trừ " + Util.formatNumber(price) + " xu)." : "."));
+                    ChatService.instance.sendChatOnlyMe(pl, "Đã tiêu tốn " + Util.formatNumber(price) + " xu để sửa các trang bị hỏng.");
                     return true;
                 } else {
                     long now = System.currentTimeMillis();
@@ -227,16 +253,16 @@ public class SkillService {
             return false;
         }
         if (cuoc.getDurable() <= 0) {
-            ItemPotion theMuaBan = InventoryService.instance.findItemPotion(pl, (short) 33);
-            if (theMuaBan != null && theMuaBan.getQuantity() > 0) {
-                int price = cuoc.getTemplate().getPrice() / 10;
+            if (InventoryService.instance.hasTheMuaBan(pl)) {
+                int basePrice = cuoc.getTemplate().getPrice() / 10;
+                int price = Math.max(1, (int) Math.round(basePrice * 1.5));
                 if (price <= 0 || pl.getInventory().minusXu(price)) {
                     short mDurable = cuoc.getTemplate().getDurable();
                     cuoc.setDurable(mDurable);
                     cuoc.setMDurable(mDurable);
                     InventoryService.instance.sendItemBody(pl);
                     InventoryService.instance.sendItemPotion(pl);
-                    ChatService.instance.sendChatOnlyMe(pl, "Cuốc đã được tự động sửa chữa bằng Thẻ mua bán" + (price > 0 ? " (Trừ " + Util.formatNumber(price) + " xu)." : "."));
+                    ChatService.instance.sendChatOnlyMe(pl, "Đã tiêu tốn " + Util.formatNumber(price) + " xu để sửa các trang bị hỏng.");
                     return true;
                 } else {
                     long now = System.currentTimeMillis();

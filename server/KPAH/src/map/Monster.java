@@ -387,8 +387,8 @@ public class Monster implements Cloneable {
         double lvRatio = Math.min(1.0, (double) Math.max(1, level) / 35.0);
         double rateMultiplier = isElite ? 2.5 : 1.0; // Tỷ lệ rớt đồ giữ nguyên x2.5
 
-        // 1. Potion drop (25% cho lv <= 15, 30% cho lv 16-35)
-        double potionRate = Math.min(100.0, (level <= 15 ? 25.0 : 30.0) * rateMultiplier);
+        // 1. Potion drop (20% cơ bản)
+        double potionRate = Math.min(100.0, 20.0 * rateMultiplier);
         if (Util.isTrue(potionRate, 100.0)) {
             short idItemPotion;
             short quantity;
@@ -423,8 +423,8 @@ public class Monster implements Cloneable {
             its.add(ItemService.instance.createNewItemMap(idItemPotion, quantity, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
         }
         
-        // 2. Gold drop (15% cho lv <= 15, 20% cho lv 16-35)
-        double goldRate = Math.min(100.0, (level <= 15 ? 15.0 : 20.0) * rateMultiplier);
+        // 2. Gold drop (5% cơ bản)
+        double goldRate = Math.min(100.0, 5.0 * rateMultiplier);
         if (Util.isTrue(goldRate, 100.0)) {
             short quantity;
             if (level <= 15) {

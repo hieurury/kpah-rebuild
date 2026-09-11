@@ -133,21 +133,26 @@ public class ShopService {
                     }
                     if (item.getCategory() == Const.CATEGORY_ITEM) {
                         ItemEquipTemplate template = Manager.getItemEquipment(item.getIdItem());
-                        if (!player.getInventory().minusXu(template.getPrice())) {
-                            Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(template.getPrice())));
-                            return;
-                        }
-                        if (template.getNdayLoan() != 0 && !player.getInventory().minusLuong(template.getPrice())) {
-                            Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s lượng", Util.formatNumber(template.getPrice())));
-                            return;
+                        boolean isLuong = (template.getNdayLoan() != 0);
+                        if (isLuong) {
+                            if (!player.getInventory().minusLuong(template.getPrice())) {
+                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s lượng", Util.formatNumber(template.getPrice())));
+                                return;
+                            }
+                        } else {
+                            if (!player.getInventory().minusXu(template.getPrice())) {
+                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(template.getPrice())));
+                                return;
+                            }
                         }
                         ItemEquip itemEquipment = ItemService.instance.createNewItemEquipment(item.getIdItem(), item.getClassChar(), typeDamage);
                         if (template.getNdayLoan() != 0) {
                             itemEquipment.setDayUse(template.getNdayLoan());
                         }
                         InventoryService.instance.addItemBagEquipment(player, itemEquipment);
-                        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Trang Bị từ NPC: [%s] (Cấp %d) với giá %s xu.",
-                                player.getName(), player.getIdPlayer(), template.getName(), template.getLevel(), Util.formatNumber(template.getPrice()));
+                        String currency = isLuong ? "lượng" : "xu";
+                        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Trang Bị từ NPC: [%s] (Cấp %d) với giá %s %s.",
+                                player.getName(), player.getIdPlayer(), template.getName(), template.getLevel(), Util.formatNumber(template.getPrice()), currency);
                     }
                     if (item.getCategory() == Const.CATEGORY_GEM_ITEM) {
                         GemTemplate gemTemplate = Manager.getGemTemplate(item.getIdItem());
@@ -171,17 +176,28 @@ public class ShopService {
                         utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Ngọc từ NPC: [%s] x%d với giá %s %s.",
                                 player.getName(), player.getIdPlayer(), gemTemplate.getName(), item.getQuantity(), Util.formatNumber(gemTemplate.getPrice()), curGem);
                     } else if (item.getCategory() == Const.CATEGORY_POTION) {
-                        int money = Manager.getPotionTemplate(item.getIdItem()).getPrice();
+                        PotionTemplate potionTemplate = Manager.getPotionTemplate(item.getIdItem());
+                        int money = potionTemplate.getPrice();
                         int totalCost = money * item.getQuantity();
-                        if (!player.getInventory().minusXu(totalCost)) {
-                            Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(totalCost)));
-                            InventoryService.instance.sendItemPotion(player);
-                            return;
+                        boolean isLuong = (potionTemplate.getId() == 33);
+                        if (isLuong) {
+                            if (!player.getInventory().minusLuong(totalCost)) {
+                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s lượng", Util.formatNumber(totalCost)));
+                                InventoryService.instance.sendItemPotion(player);
+                                return;
+                            }
+                        } else {
+                            if (!player.getInventory().minusXu(totalCost)) {
+                                Service.instance.sendLogOut(player.getSession(), String.format("Không đủ %s xu", Util.formatNumber(totalCost)));
+                                InventoryService.instance.sendItemPotion(player);
+                                return;
+                            }
                         }
                         ItemPotion potion = ItemService.instance.createNewItemPotion(item.getIdItem(), item.getQuantity());
                         InventoryService.instance.addItemPotion(player, potion);
-                        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Dược Phẩm từ NPC: [%s] x%d với giá %s xu.",
-                                player.getName(), player.getIdPlayer(), Manager.getPotionTemplate(item.getIdItem()).getName(), item.getQuantity(), Util.formatNumber(totalCost));
+                        String curPotion = isLuong ? "lượng" : "xu";
+                        utils.ServerLog.shop("Nhân vật '%s' (ID: %d) mua Dược Phẩm từ NPC: [%s] x%d với giá %s %s.",
+                                player.getName(), player.getIdPlayer(), potionTemplate.getName(), item.getQuantity(), Util.formatNumber(totalCost), curPotion);
                     }
                 }
             }

@@ -682,4 +682,22 @@ public class InventoryService {
                 player.getInventory().initIdItem();
         }
     }
+
+    public boolean hasTheMuaBan(@NonNull Player player) {
+        // 1. Kiểm tra Thẻ mua bán dạng Potion (ID 33)
+        ItemPotion potion = findItemPotion(player, (short) 33);
+        if (potion != null && potion.getQuantity() > 0) {
+            return true;
+        }
+        // 2. Kiểm tra Thẻ mua bán dạng Trang bị / Túi đồ (ID 675)
+        if (player.getInventory() != null && player.getInventory().getItemBag() != null) {
+            for (int i = 0; i < player.getInventory().getItemBag().size(); i++) {
+                ItemEquip eq = player.getInventory().getItemBag().get(i);
+                if (eq != null && eq.getTemplate() != null && eq.getTemplate().getId() == 675) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }

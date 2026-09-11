@@ -154,6 +154,32 @@ public class Player {
                     }
                 }
             }
+            if (anyBroken) {
+                if (InventoryService.instance.hasTheMuaBan(this)) {
+                    int totalPrice = 0;
+                    for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
+                        ItemEquip it = this.inventory.getItemBody().get(i);
+                        if (it != null && it.getTemplate() != null && it.getDurable() <= 0) {
+                            int base = it.getTemplate().getPrice() / 10;
+                            totalPrice += Math.max(1, (int) Math.round(base * 1.5));
+                        }
+                    }
+                    if (totalPrice > 0 && this.inventory.minusXu(totalPrice)) {
+                        for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
+                            ItemEquip it = this.inventory.getItemBody().get(i);
+                            if (it != null && it.getTemplate() != null && it.getDurable() <= 0) {
+                                short mDur = it.getTemplate().getDurable();
+                                it.setDurable(mDur);
+                                it.setMDurable(mDur);
+                            }
+                        }
+                        anyBroken = false;
+                        anyDurableChanged = true;
+                        InventoryService.instance.sendItemPotion(this);
+                        ChatService.instance.sendChatOnlyMe(this, "Đã tiêu tốn " + Util.formatNumber(totalPrice) + " xu để sửa các trang bị hỏng.");
+                    }
+                }
+            }
             if (anyDurableChanged) {
                 InventoryService.instance.sendItemBody(this);
             }

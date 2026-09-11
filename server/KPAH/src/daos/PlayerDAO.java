@@ -359,8 +359,10 @@ public class PlayerDAO {
             item.setViTriVe((byte) dataItem.getInt(9));
             item.setRank((byte) dataItem.getInt(10));
             item.setDamageType((byte) dataItem.getInt(11));
-            item.setNameCharSeal(dataItem.getString(12));
             item.setDayUse(dataItem.getInt(13));
+            if (item.getTemplate() != null && item.getTemplate().getId() == 675 && item.getDayUse() > 4320) {
+                item.setDayUse(4320);
+            }
             item.setTimeCreateItem(dataItem.getLong(14));
             item.setHe((byte) dataItem.getInt(15));
             JSONArray attributes = dataItem.getJSONArray(16);
