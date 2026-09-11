@@ -14,11 +14,11 @@
 | **1** | **Kim tinh pháp** | Đơn thể | Lv 6 – 15 | 140% – 205% | 1.0s – 1.5s | 2 – 5 | Đòn đánh đơn mục tiêu |
 | **2** | **Lôi điện pháp** | Đơn thể | Lv 11 – 20 | 160% – 265% | 1.5s – 2.5s | 4 – 6 | Đòn đánh tích điện |
 | **3** | **Kinh lôi bát thủ** | Đơn thể | Lv 17 – 42 | 200% – 300% | 1.9s – 2.5s | 2 – 6 | Đòn kiếm chém nhanh |
-| **4** | **Hộ sát tiến** | Bị động | Lv 3 – 32 | — | Không có | 8 – 12 | Xuyên giáp: +10 đến +80 điểm |
-| **5** | **Dĩ lực đáo công** | Buff chủ động | Lv 3 – 32 | — | 90s | 100 – 550 | Phản đòn: Tỷ lệ 10% – 55%, Sát thương phản 50% – 140% |
-| **6** | **Thiên lôi điện trảm** | Đánh lan | Lv 25 – 41 | Đánh lan | 5s | 10 – 55 | Sấm sét tấn công nhiều mục tiêu |
-| **7** | **Sấm động dương gian** | Đánh lan | Lv 30 – 46 | Đánh lan | 6s | 10 – 55 | Sét chuyền qua các mục tiêu xung quanh |
-| **8** | **Kiếm phi kinh thiên** | Đánh lan | Lv 45 – 61 | Đánh lan | 7s | 10 – 80 | Kiếm khổng lồ rơi xuống diện rộng |
+| **4** | **Hộ sát tiến** | Bị động | Lv 3 – 32 | — | Không có | 10 – 25 | Xuyên giáp: +10 đến +80 điểm |
+| **5** | **Dĩ lực đáo công** | Buff chủ động | Lv 3 – 32 | — | 90s | 35 – 80 | Phản đòn: Tỷ lệ 10% – 55%, Sát thương phản 50% – 140% |
+| **6** | **Thiên lôi điện trảm** | Đánh lan | Lv 25 – 41 | Đánh lan | 5s | 20 – 45 | Sấm sét tấn công nhiều mục tiêu |
+| **7** | **Sấm động dương gian** | Đánh lan | Lv 30 – 46 | Đánh lan | 6s | 25 – 55 | Sét chuyền qua các mục tiêu xung quanh |
+| **8** | **Kiếm phi kinh thiên** | Đánh lan | Lv 45 – 61 | Đánh lan | 7s | 35 – 75 | Kiếm khổng lồ rơi xuống diện rộng |
 
 ---
 

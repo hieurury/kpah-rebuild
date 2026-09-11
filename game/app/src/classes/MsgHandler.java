@@ -18,6 +18,71 @@ public class MsgHandler {
 				}
 				break;
 			}
+			case 22: {
+				// USE_POTION / Đồng bộ HP-MP chuẩn xác, chống ghi đè MP bằng HP và chống chết oan khi MP = 0
+				short entityId = msg.b().readShort();
+				byte potionId = msg.b().readByte();
+				short valueAdd = msg.b().readShort();
+				int curVal = msg.b().readInt();
+				byte extra = 0;
+				try {
+					extra = msg.b().readByte();
+				} catch (Exception ignored) {}
+
+				if (class_acv.s != null) {
+					boolean isMp = (potionId == 4 || potionId == 5 || potionId == 6 || potionId == 23 || potionId == 24 || (extra != 1 && (potionId == 82 || potionId == 85 || potionId == 34)));
+					boolean isHp = (potionId == 1 || potionId == 2 || potionId == 3 || potionId == 21 || potionId == 22 || (extra == 1 && (potionId == 82 || potionId == 85 || potionId == 34)));
+
+					// Nếu entity là chính người chơi
+					if (class_acv.s.q != null && class_acv.s.q.cG == entityId) {
+						if (isMp) {
+							// Cập nhật MP chính xác (cả khi tăng lẫn khi giảm, rút mana)
+							class_acv.s.q.bz = Math.max(0, curVal);
+							if (class_acv.s.q.by > 0 && class_acv.s.q.bz > class_acv.s.q.by) {
+								class_acv.s.q.bz = class_acv.s.q.by;
+							}
+							if (valueAdd != 0) {
+								Paint.addStatusPopup(Paint.POPUP_MP, valueAdd, class_acv.s.q.cK, class_acv.s.q.cL - 40);
+							}
+						} else if (isHp) {
+							// Cập nhật HP chính xác
+							class_acv.s.q.v = class_acv.s.q.t = Math.max(0, curVal);
+							if (class_acv.s.q.w > 0 && class_acv.s.q.v > class_acv.s.q.w) {
+								class_acv.s.q.v = class_acv.s.q.w;
+							}
+							if (curVal <= 0) {
+								class_acv.s.q.cV = (byte) 3; // Chết
+							}
+							if (valueAdd != 0) {
+								Paint.addStatusPopup(Paint.POPUP_HP, valueAdd, class_acv.s.q.cK, class_acv.s.q.cL - 30);
+							}
+						}
+						return; // Đã xử lý chuẩn xác, chặn không cho class_abj cũ gán sai
+					} else {
+						// Entity khác trong map
+						class_vh target = (class_vh) class_acv.s.b(entityId);
+						if (target != null && target instanceof class_hw) {
+							class_hw otherPlayer = (class_hw) target;
+							if (isMp) {
+								otherPlayer.bz = Math.max(0, curVal);
+								if (valueAdd != 0) {
+									Paint.addStatusPopup(Paint.POPUP_MP, valueAdd, otherPlayer.cK, otherPlayer.cL - 40);
+								}
+							} else if (isHp) {
+								otherPlayer.v = otherPlayer.t = Math.max(0, curVal);
+								if (curVal <= 0) {
+									otherPlayer.cV = (byte) 3;
+								}
+								if (valueAdd != 0) {
+									Paint.addStatusPopup(Paint.POPUP_HP, valueAdd, otherPlayer.cK, otherPlayer.cL - 30);
+								}
+							}
+							return;
+						}
+					}
+				}
+				return;
+			}
 			case 30: {
 				short userId = msg.b().readShort();
 				short percenLv = msg.b().readShort();
@@ -29,14 +94,16 @@ public class MsgHandler {
 				return;
 			}
 			case 89: {
-				msg.b().mark(64);
-				short targetId = msg.b().readShort();
+				// BUFF_ATTACK: Quản lý sát thương độc DoT và thời gian độc
 				byte cat = msg.b().readByte();
-				byte b2 = msg.b().readByte();
-				short hpSub = msg.b().readShort();
-				byte b3 = msg.b().readByte();
+				short targetId = msg.b().readShort();
 				byte b4 = msg.b().readByte();
-				int dur = -1;
+				int hpSub = 0;
+				try {
+					hpSub = msg.b().readInt();
+				} catch (Exception ignored) {
+				}
+				byte dur = 0;
 				try {
 					dur = msg.b().readByte();
 				} catch (Exception ignored) {
@@ -48,7 +115,7 @@ public class MsgHandler {
 						for (int i = 0; i < class_acv.s.l.size(); i++) {
 							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
 							if (entity != null && entity.cG == targetId) {
-								Paint.addPoisonDamage(hpSub, entity.cK, entity.cL - 40);
+								Paint.addStatusPopup(Paint.POPUP_POISON, -hpSub, entity.cK, entity.cL - 40);
 								if (cat == 1 && entity instanceof class_bb) {
 									((class_bb) entity).d((int) hpSub);
 									if (((class_bb) entity).v <= 0) {

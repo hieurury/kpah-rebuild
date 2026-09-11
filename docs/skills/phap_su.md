@@ -17,10 +17,10 @@
 | **4** | **Hồi công lực đan** | Buff chủ động | Lv 3 – 32 | — | 120s | 80 – 120 | Tăng Max HP và Max MP: 10% – 85% trong 90s |
 | **5** | **Hồi lực tiến** | Bị động | Lv 3 – 32 | — | Không có | 0 | Tăng sát thương theo Mana hiện có: 5% – 23% |
 | **6** | **Hồi sinh** | Hồi sinh | Lv 6 – 33 | — | 180s – 90s | Theo mục tiêu | Rút HP/MP bản thân truyền cho mục tiêu (tối đa 80%) |
-| **7** | **Song hộ công thủ** | Buff chủ động | Lv 6 – 33 | — | 5s – 170s | 100 – 550 | Hồi Mana khi nhận đòn 10% – 55%, Hồi Máu khi tốn MP 20% – 65% |
-| **8** | **Hải long xuất thế** | Đánh lan | Lv 25 – 41 | Đánh lan | 4s | 10 – 55 | Rồng nước cuộn sóng đánh diện rộng |
-| **9** | **Song long thị uy** | Đánh lan | Lv 30 – 46 | Đánh lan | 5s | 10 – 55 | Song long xoắn ốc đánh diện rộng |
-| **10** | **Hàn băng vũ** | Đánh lan | Lv 45 – 61 | Đánh lan | 6s | 10 – 90 | Mưa băng tuyết diện cực rộng |
+| **7** | **Song hộ công thủ** | Buff chủ động | Lv 6 – 33 | — | 60s | 80 – 200 | Hồi Mana khi nhận đòn 10% – 55%, Hồi Máu khi tốn MP 20% – 65% |
+| **8** | **Hải long xuất thế** | Đánh lan | Lv 25 – 41 | Đánh lan | 4s | 50 – 140 | Rồng nước cuộn sóng đánh diện rộng |
+| **9** | **Song long thị uy** | Đánh lan | Lv 30 – 46 | Đánh lan | 5s | 70 – 180 | Song long xoắn ốc đánh diện rộng |
+| **10** | **Hàn băng vũ** | Đánh lan | Lv 45 – 61 | Đánh lan | 6s | 90 – 240 | Mưa băng tuyết diện cực rộng |
 
 ---
 

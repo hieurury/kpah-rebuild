@@ -57,3 +57,54 @@
 
 **Kết quả:** ✅ Thành công. Cả Server (`server/dist/KPAH.jar`) và Client (`game/build/dist/KPAH_PROD.jar`) đã được biên dịch thành công và emulator đã được khởi động lại.
 
+---
+
+## [2026-09-11 19:10] — Task #93: Cân Bằng Mana Kiếm Khách & Pháp Sư, Khắc Phục Lỗi HUD HP/MP Bar và Đồng Bộ Bitmap Font Sát Thương Độc Màu Tím
+
+**Yêu cầu:**
+- Cân bằng lượng mana tiêu hao giữa Kiếm Khách và Pháp Sư:
+  - Kiếm Khách có mức tiêu tốn mana trung bình, điều chỉnh giảm mana tiêu hao hợp lý (trước đó quá lớn, skill 5 tốn 100-550 MP nuốt sạch mana và bị lỗi tràn byte).
+  - Pháp Sư là class thiên về mana, hao nhiều mana, sức mạnh phụ thuộc mana, hồi chiêu nhanh nhất: tăng mana tiêu tốn của 3 chiêu AoE liên hoàn (Skill 8 hồi 4s, Skill 9 hồi 5s, Skill 10 hồi 6s) cho tương xứng với bể mana khổng lồ.
+- Khắc phục triệt để lỗi HUD thanh HP & MP bar của người chơi nhảy đầy và cạn liên tục, hiển thị hết mana nhưng thực chất còn khi bơm/rút máu/mana nhanh.
+- Thiết kế lại số hiển thị sát thương độc màu tím đồng bộ 100% về font chữ, kích thước, đổ bóng pixel art với các số nhảy khác của game (thay vì font vector trơn lệch tone trước đó).
+
+**Files thay đổi:**
+- `server/KPAH/src/services/UseItemService.java` — Sửa lỗi typo nghiêm trọng trong `onPlusHp`: đổi `writeByte(4)` (bình mana) thành `writeByte(1)` (bình HP), chấm dứt việc server vô tình ghi đè MP bằng HP mỗi khi hồi máu.
+- `server/KPAH/src/manager/Manager.java` — Thêm `applySkillMPRebalance()` cân bằng `SKILL_MP` cho Kiếm Khách (Skill 5: 35-80 MP, Skill 6: 20-45 MP, Skill 7: 25-55 MP, Skill 8: 35-75 MP) và Pháp Sư (Skill 7: 80-200 MP, Skill 8: 50-140 MP, Skill 9: 70-180 MP, Skill 10: 90-240 MP); đảm bảo không vượt quá 240 MP để triệt tiêu lỗi tràn byte giao thức MIDP.
+- `server/kpah.sql` & `server/update_skills_mana_rebalance.sql` — Cập nhật bản ghi `SKILL_MP` trong database và tạo script migration mới.
+- `game/res/font/fs_poison.png` — Tạo mới Bitmap Font màu tím độc 7x336 pixel art chuẩn xác dựa trên `fs4_red.png` với 42 ký tự và viền đen đổ bóng 3D.
+- `game/app/src/classes/Paint.java` — Thêm hàm `drawPoisonBitmapString` render số sát thương độc chuẩn xác theo Bitmap Font pixel art; thêm hàm `paintPlayerHpMpBar` vẽ đè 2 thanh HP/MP bar siêu mượt, loại bỏ triệt để lỗi vẽ số âm và tràn số.
+- `game/app/src/classes/MsgHandler.java` — Thêm xử lý gói tin `case 22` (`USE_POTION`): phân định rạch ròi giữa cập nhật HP (`v, t`) và MP (`bz`), đồng bộ chính xác cả khi tăng lẫn giảm/rút mana, chặn đứng lỗi chết oan khi MP = 0.
+- `docs/skills/kiem_khach.md` & `docs/skills/phap_su.md` — Cập nhật tài liệu kỹ năng đồng bộ với các thông số mana mới.
+- `server/dist/KPAH.jar` & `game/build/dist/KPAH_PROD.jar` & `game/build/dist/KPAH_MOD.jar` — Biên dịch sạch sẽ 100% bằng ant với JDK 21 (server) và JDK 8 (client).
+- Backup files: Tạo tại `_backup/` trong các thư mục tương ứng.
+
+**Kết quả:** ✅ Thành công. Toàn bộ 3 vấn đề đã được xử lý triệt để, đồng bộ và biên dịch không có bất kỳ lỗi nào.
+
+---
+
+## [2026-09-11 20:05] — Task #94: Đồng Bộ Số Liệu Hiển Thị HP, MP, Độc Và Hiển Thị Thông Số Trên Status HUD
+
+**Yêu cầu:**
+- Đồng bộ hóa toàn diện các số liệu cộng / trừ HP, MP và Độc:
+  - HP cộng / trừ: định dạng `HP +10` / `HP -10`, màu **Đỏ**.
+  - MP cộng / trừ: định dạng `MP +10` / `MP -10`, màu **Xanh dương**.
+  - Độc rút máu DoT: định dạng `Độc -10`, màu **Tím**.
+  - Dẹp bỏ hoàn toàn các lỗi font hiển thị lung tung của game cũ (`hp+`, `mp+`, lỗi biến khoảng trắng hoặc tiếng Việt thành số 0).
+- Hiển thị thông số HP và MP bên phải thanh status bar của người dùng:
+  - Bên phải thanh HP: hiển thị số `curHp/maxHp` (ví dụ: `1201/1780`) bằng font **màu Đỏ**.
+  - Bên phải thanh MP: hiển thị số `curMp/maxMp` (ví dụ: `12900/15000`) bằng font **màu Xanh dương**.
+  - Bố trí ngay ngắn, căn dòng hoàn hảo, có khung nền tối mờ sang trọng nối liền với khung Avatar bảo đảm số liệu luôn nổi bật trên mọi nền bản đồ.
+
+**Files thay đổi:**
+- `game/app/src/classes/Paint.java` — Xây dựng hệ thống `StatusPopup` quản lý tập trung toàn bộ các số nổi HP (Đỏ: `class_d.j[2]`), MP (Xanh dương: `class_d.j[3]`) và Độc (Tím: `class_d.j[4]`); nâng cấp hàm `paintPlayerHpMpBar` vẽ bảng thông số `curHp/maxHp` màu Đỏ và `curMp/maxMp` màu Xanh dương bên phải thanh bar.
+- `game/app/src/classes/MsgHandler.java` — Chuyển toàn bộ các sự kiện hồi máu, trừ máu, hồi mana, trừ mana (`case 22`) và sát thương độc DoT (`case 89`) sang sử dụng `Paint.addStatusPopup`.
+- `game/build/dist/KPAH_PROD.jar` & `game/build/dist/KPAH_MOD.jar` — Biên dịch sạch 100% bằng ant với Java 8.
+- Backup files: Tạo tại `game/app/src/classes/_backup/` theo quy định.
+
+**Kết quả:** ✅ Thành công. Toàn bộ số liệu hiển thị và Status HUD đã được đồng bộ chuẩn xác 100%.
+
+---
+
+
+

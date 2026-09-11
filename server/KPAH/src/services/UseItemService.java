@@ -628,7 +628,7 @@ public class UseItemService {
     public void onPlusHp(@NonNull Player player, short valueAdd) throws IOException {
         Message msg = new Message(CommandMessage.USE_POTION);
         msg.writer().writeShort(player.getIdPlayer());
-        msg.writer().writeByte(4);
+        msg.writer().writeByte(1);
         msg.writer().writeShort(valueAdd);
         msg.writer().writeInt(player.getPoint().getHp());
         msg.writer().writeByte(1);

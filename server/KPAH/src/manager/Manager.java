@@ -431,7 +431,40 @@ public class Manager {
     }
 
     public static short getSkillMP(byte clazz, byte skillType, byte skillLevel) {
-        return (skillLevel > 0) ? SKILL_MP[clazz][skillType][skillLevel] : 0;
+        if (skillLevel <= 0) {
+            return 0;
+        }
+        if (SKILL_MP != null && clazz < SKILL_MP.length && skillType < SKILL_MP[clazz].length && skillLevel < SKILL_MP[clazz][skillType].length) {
+            return SKILL_MP[clazz][skillType][skillLevel];
+        }
+        return 0;
+    }
+
+    public static void applySkillMPRebalance() {
+        if (SKILL_MP == null || SKILL_MP.length < 5) {
+            return;
+        }
+        // Kiếm Khách: Giảm tiêu hao MP skill 5 (35-80), skill 6-8 (20-75)
+        SKILL_MP[Const.KIEM_KHACH][1] = new short[]{0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+        SKILL_MP[Const.KIEM_KHACH][2] = new short[]{0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
+        SKILL_MP[Const.KIEM_KHACH][3] = new short[]{0, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20};
+        SKILL_MP[Const.KIEM_KHACH][4] = new short[]{0, 10, 11, 13, 15, 17, 19, 21, 23, 25, 25};
+        SKILL_MP[Const.KIEM_KHACH][5] = new short[]{0, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80}; // Phản dame 35-80 MP
+        SKILL_MP[Const.KIEM_KHACH][6] = new short[]{0, 20, 22, 25, 28, 31, 34, 37, 40, 43, 45}; // AoE 25
+        SKILL_MP[Const.KIEM_KHACH][7] = new short[]{0, 25, 28, 31, 34, 37, 40, 43, 46, 50, 55}; // AoE 30
+        SKILL_MP[Const.KIEM_KHACH][8] = new short[]{0, 35, 39, 43, 47, 51, 55, 60, 65, 70, 75}; // AoE 45
+
+        // Pháp Sư: Tăng tiêu hao MP AoE liên hoàn 8-10, chỉnh skill 7 chống tràn byte
+        SKILL_MP[Const.PHAP_SU][1] = new short[]{0, 15, 18, 21, 24, 27, 30, 33, 36, 40, 45};
+        SKILL_MP[Const.PHAP_SU][2] = new short[]{0, 20, 23, 26, 30, 34, 38, 42, 46, 50, 55};
+        SKILL_MP[Const.PHAP_SU][3] = new short[]{0, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70};
+        SKILL_MP[Const.PHAP_SU][4] = new short[]{0, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150};
+        SKILL_MP[Const.PHAP_SU][5] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+        SKILL_MP[Const.PHAP_SU][6] = new short[]{0, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140};
+        SKILL_MP[Const.PHAP_SU][7] = new short[]{0, 80, 90, 100, 115, 130, 145, 160, 175, 190, 200}; // Song hộ công thủ
+        SKILL_MP[Const.PHAP_SU][8] = new short[]{0, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140}; // Hải long 4s CD
+        SKILL_MP[Const.PHAP_SU][9] = new short[]{0, 70, 80, 90, 100, 115, 130, 145, 160, 170, 180}; // Hàn băng 5s CD
+        SKILL_MP[Const.PHAP_SU][10] = new short[]{0, 90, 105, 120, 135, 150, 165, 180, 200, 220, 240}; // Bão tuyết 6s CD
     }
 
     public static long getSkillCooldown(byte clazz, byte skillType, byte level) {
@@ -787,6 +820,7 @@ public class Manager {
                                 }
                             }
                         }
+                        applySkillMPRebalance();
                     }
                     case "SKILL_RANGE" -> {
                         SKILL_RANGE = new short[arr.length()][];
