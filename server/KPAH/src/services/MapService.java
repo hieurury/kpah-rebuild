@@ -314,6 +314,7 @@ public class MapService {
         pl.getPoint().initPoint();
         Service.instance.sendMainCharInfo(pl);
         sendInfoMe(pl);
+        InventoryService.instance.sendItemBody(pl);
     }
 
     public void onChangeKiller(@NonNull Player pl) throws IOException {
@@ -482,6 +483,7 @@ public class MapService {
             msg.writer().writeByte((animal == null ? -1 : animal.getTemplate().getIdImage()));
             if (animal != null) {
                 msg.writer().writeUTF(animal.getInfo());
+                msg.writer().writeByte(animal.getTemplate().getIdImage());
             }
         } else {
             ItemAnimal animal = playerView.getHorse().getAnimalUse();

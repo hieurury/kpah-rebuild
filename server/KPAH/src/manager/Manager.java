@@ -944,7 +944,19 @@ public class Manager {
             // <editor-fold defaultstate="collapsed" desc="load Item Attribute Template">
             rs = HikariCP.executeQuery("SELECT * FROM `item_attribute`");
             while (rs.next()) {
-                AttributeEquipTemplate itemAttributeTemplate = AttributeEquipTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).isPercent(rs.getByte("isPercent")).colorPaint(rs.getByte("colorPaint")).build();
+                short id = rs.getShort("id");
+                String name = rs.getString("name");
+                byte isPercent = rs.getByte("isPercent");
+                byte colorPaint = rs.getByte("colorPaint");
+                // Chuẩn hóa tên và màu sắc hiển thị
+                if (id == 7) { name = "Tăng HP"; isPercent = 1; colorPaint = 2; }
+                else if (id == 8) { name = "Tăng MP"; isPercent = 1; colorPaint = 1; }
+                else if (id == 9) { name = "May mắn"; isPercent = 0; colorPaint = 5; }
+                else if (id == 33) { name = "Tăng HP"; isPercent = 0; colorPaint = 2; }
+                else if (id == 34) { name = "Tăng MP"; isPercent = 0; colorPaint = 1; }
+                else if (id == 118 || id == 30 || id == 31 || id == 41 || id == 65 || id == 115 || id == 117) { colorPaint = 5; }
+                else if (id == 0 || id == 1 || id == 6 || id == 10 || id == 11 || id == 12 || id == 13 || id == 88) { colorPaint = 1; }
+                AttributeEquipTemplate itemAttributeTemplate = AttributeEquipTemplate.builder().id(id).name(name).isPercent(isPercent).colorPaint(colorPaint).build();
                 ITEM_ATTRIBUTE_TEMPLATES.put(itemAttributeTemplate.getId(), itemAttributeTemplate);
             }
             rs.close();

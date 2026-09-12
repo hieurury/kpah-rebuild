@@ -9,6 +9,8 @@ import item.ItemPotion;
 import item.ItemQuest;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Enumeration;
 import lombok.NonNull;
 import manager.Manager;
@@ -157,7 +159,7 @@ public class ItemService {
         // 6. Tạo ItemEquip
         short durable = (short) (template.getDurable() * 1.5);
         ItemEquip item = ItemEquip.builder()
-                .idItem(template.getId())
+                .idItem((short) 0)
                 .template(template)
                 .classChar(template.getClassChar() != -1 ? template.getClassChar() : classChar)
                 .level(template.getLevel())
@@ -347,9 +349,9 @@ public class ItemService {
     public void sendItemTemplate(@NonNull Player pl) throws IOException {
         Message msg = new Message(CommandMessage.ITEM_TEMPLATE);
         msg.writer().writeByte(Manager.ITEM_ATTRIBUTE_TEMPLATES.size());
-        Enumeration<Short> keysByte = Manager.ITEM_ATTRIBUTE_TEMPLATES.keys();
-        while (keysByte.hasMoreElements()) {
-            short key = keysByte.nextElement();
+        List<Short> sortedKeys = new ArrayList<>(Manager.ITEM_ATTRIBUTE_TEMPLATES.keySet());
+        Collections.sort(sortedKeys);
+        for (short key : sortedKeys) {
             AttributeEquipTemplate attributeTemplate = Manager.getAttributeTemplate(key);
             msg.writer().writeByte(attributeTemplate.getId());
             msg.writer().writeUTF(attributeTemplate.getName());

@@ -226,6 +226,7 @@ public class UseItemService {
         player.getPoint().initPoint();
         Service.instance.sendMainCharInfo(player);
         MapService.instance.sendInfoMe(player);
+        InventoryService.instance.sendItemBody(player);
         InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
     }
 
@@ -539,18 +540,25 @@ public class UseItemService {
             return;
         }
         if (equipment.getTemplate().getGender() != 0 && equipment.getTemplate().getGender() != player.getInfo().getGender()) {
+            Service.instance.sendLogOut(player.getSession(), "Vật phẩm này chỉ dành cho " + (equipment.getTemplate().getGender() == 1 ? "Nam" : "Nữ") + ".");
+            InventoryService.instance.sendItemBag(player);
             return;
         }
         if (equipment.getClassChar() != -1 && equipment.getClassChar() != player.getInfo().getClassPlayer() && equipment.isWeapon()) {
+            Service.instance.sendLogOut(player.getSession(), "Vật phẩm này không phù hợp với môn phái.");
+            InventoryService.instance.sendItemBag(player);
             return;
         }
         // Sửa lỗi: so sánh level trang bị với level nhân vật
-        if (equipment.getLevel() > player.getInfo().getLevel()) {
+        if (equipment.getTemplate().getLevel() > player.getInfo().getLevel()) {
+            Service.instance.sendLogOut(player.getSession(), "Bạn phải đạt cấp " + equipment.getTemplate().getLevel() + " để có thể dùng.");
+            InventoryService.instance.sendItemBag(player);
             return;
         }
 
         // Xử lý riêng biệt cho nhẫn (type == 8)
         if (equipment.getTemplate().getType() == 8) {
+            InventoryService.instance.normalizeItemBodyRings(player);
             ItemEquip ringTop = InventoryService.instance.findItemBodyRingBySlot(player, (byte) 1);
             ItemEquip ringBottom = InventoryService.instance.findItemBodyRingBySlot(player, (byte) 2);
 
@@ -575,8 +583,15 @@ public class UseItemService {
                 InventoryService.instance.removeItemBagEquipment(player, equipment);
                 InventoryService.instance.addItemBodyEquipment(player, equipment);
             }
+            InventoryService.instance.normalizeItemBodyRings(player);
         } else {
-            ItemEquip hasEquipment = InventoryService.instance.findItemBodyByType(player, equipment.getTemplate().getType());
+            // Kiểm tra vũ khí và cuốc (cùng chia sẻ slot vũ khí)
+            ItemEquip hasEquipment = null;
+            if (equipment.isWeapon() || equipment.getTemplate().getType() == 13) {
+                hasEquipment = InventoryService.instance.findItemBodyWeaponOrPickaxe(player);
+            } else {
+                hasEquipment = InventoryService.instance.findItemBodyByType(player, equipment.getTemplate().getType());
+            }
             if (hasEquipment != null) {
                 InventoryService.instance.swapItemBagToBody(player, equipment, hasEquipment);
             } else {
@@ -585,11 +600,14 @@ public class UseItemService {
             }
         }
 
+        player.getPoint().initPoint();
+        Service.instance.sendMainCharInfo(player);
+        MapService.instance.sendInfoMe(player);
+        MapService.instance.onNewHpMp(player);
         InventoryService.instance.sendWeaponImage(player);
         InventoryService.instance.sendItemBag(player);
         InventoryService.instance.sendItemBody(player);
-        player.getPoint().initPoint();
-        MapService.instance.onNewHpMp(player);
+        ChatService.instance.sendChatOnlyMe(player, "Đã trang bị " + equipment.getTemplate().getName() + ".");
     }
 
     private void onUseItemPk(@NonNull Player player) throws IOException {

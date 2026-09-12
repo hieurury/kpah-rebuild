@@ -331,7 +331,7 @@ public class CraftService {
         short durable = (short) (template.getDurable() * 1.5);
 
         ItemEquip item = ItemEquip.builder()
-                .idItem(template.getId())
+                .idItem((short) 0)
                 .template(template)
                 .classChar(template.getClassChar() != -1 ? template.getClassChar() : player.getInfo().getClassPlayer())
                 .level(template.getLevel())

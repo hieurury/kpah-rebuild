@@ -6,6 +6,8 @@ import item.ItemGem;
 import item.ItemPotion;
 import item.ItemQuest;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.NonNull;
 import lombok.Synchronized;
 import manager.Manager;
@@ -318,6 +320,34 @@ public class InventoryService {
                 .findFirst().orElse(null);
     }
 
+    public ItemEquip findItemBodyWeaponOrPickaxe(@NonNull Player player) {
+        return player.getInventory().getItemBody().stream()
+                .filter(it -> it != null && (it.isWeapon() || it.getTemplate().getType() == 13))
+                .findFirst().orElse(null);
+    }
+
+    public void normalizeItemBodyRings(@NonNull Player player) {
+        List<ItemEquip> rings = new ArrayList<>();
+        for (ItemEquip it : player.getInventory().getItemBody()) {
+            if (it != null && it.getTemplate().getType() == 8) {
+                rings.add(it);
+            }
+        }
+        if (rings.size() > 2) {
+            for (int i = 2; i < rings.size(); i++) {
+                ItemEquip extra = rings.get(i);
+                removeItemBodyEquipment(player, extra);
+                addItemBagEquipment(player, extra);
+            }
+        }
+        if (rings.size() >= 1) {
+            rings.get(0).setViTriVe((byte) 1);
+        }
+        if (rings.size() >= 2) {
+            rings.get(1).setViTriVe((byte) 2);
+        }
+    }
+
     public int sumAttributeValueForId(@NonNull Player player, byte attributeId) {
         int sum = 0;
         for (ItemEquip item : player.getInventory().getItemBody()) {
@@ -329,6 +359,7 @@ public class InventoryService {
     }
 
     public void sendItemBody(@NonNull Player player, Player... playerRecive) throws IOException {
+        normalizeItemBodyRings(player);
         Message msg = new Message(CommandMessage.CHAR_WEARING);
         msg.writer().writeByte(0);
         msg.writer().writeShort(player.getIdPlayer());
@@ -370,10 +401,31 @@ public class InventoryService {
             }
         }
         ItemAnimal animal = player.getHorse().getAnimalUse();
-        msg.writer().writeByte((animal == null ? -1 : animal.getTemplate().getIdImage()));
+        byte animalImg = -1;
+        String animalInfo = "";
         if (animal != null) {
-            msg.writer().writeUTF(animal.getInfo());
-            msg.writer().writeByte(animal.getTemplate().getIdImage());
+            animalImg = (byte) animal.getTemplate().getIdImage();
+            animalInfo = animal.getInfo();
+        } else if (player.getHorse().getUseHorse() != consts.HorseConst.NON_HORSE) {
+            template.AnimalTemplate at = manager.Manager.getAnimalTemplate(player.getHorse().getIdItem());
+            if (at != null) {
+                animalImg = (byte) at.getIdImage();
+                animalInfo = at.getName();
+            } else {
+                animalImg = switch (player.getHorse().getImageHorse()) {
+                    case consts.HorseConst.IMAGE_MANH_HO -> 1;
+                    case consts.HorseConst.IMAGE_HAC_NGUU -> 2;
+                    case consts.HorseConst.IMAGE_SOI_XAM -> 3;
+                    case consts.HorseConst.IMAGE_TIEN_HAC -> 4;
+                    default -> 0; // Bạch mã / Thú cưỡi
+                };
+                animalInfo = "Thú cưỡi";
+            }
+        }
+        msg.writer().writeByte(animalImg);
+        if (animalImg != -1) {
+            msg.writer().writeUTF(animalInfo);
+            msg.writer().writeByte(animalImg);
         }
         msg.writer().writeByte(-1);// animal move
         if (playerRecive != null && playerRecive.length > 0) {
@@ -652,34 +704,36 @@ public class InventoryService {
     }
 
     private void initIdItemEquip(@NonNull Player player, @NonNull ItemEquip itemEquipment) {
-        switch (itemEquipment.getIdItem()) {
-            case 0 -> {
-                short idMax = player.getInventory().getMaxIdItem();
-                itemEquipment.setIdItem((short) (idMax + 1));
-                player.getInventory().setMaxIdItem((short) (idMax + 1));
-            }
-            case -1 -> {
-                itemEquipment.setIdItem((short) 1);
-                player.getInventory().setMaxIdItem((short) 1);
-            }
-            case 32766 ->
+        if (itemEquipment.getIdItem() == -1) {
+            itemEquipment.setIdItem((short) 1);
+            player.getInventory().setMaxIdItem((short) 1);
+            return;
+        }
+        if (itemEquipment.getIdItem() == 0) {
+            short idMax = player.getInventory().getMaxIdItem();
+            if (idMax >= 32760 || idMax < 0) {
                 player.getInventory().initIdItem();
+                idMax = player.getInventory().getMaxIdItem();
+            }
+            itemEquipment.setIdItem((short) (idMax + 1));
+            player.getInventory().setMaxIdItem((short) (idMax + 1));
         }
     }
 
     private void initIdItemGem(@NonNull Player player, @NonNull ItemGem itemGem) {
-        switch (itemGem.getIdItem()) {
-            case 0 -> {
-                short idMax = player.getInventory().getMaxIdItem();
-                itemGem.setIdItem((short) (idMax + 1));
-                player.getInventory().setMaxIdItem((short) (idMax + 1));
-            }
-            case -1 -> {
-                itemGem.setIdItem((short) 1);
-                player.getInventory().setMaxIdItem((short) 1);
-            }
-            case 32766 ->
+        if (itemGem.getIdItem() == -1) {
+            itemGem.setIdItem((short) 1);
+            player.getInventory().setMaxIdItem((short) 1);
+            return;
+        }
+        if (itemGem.getIdItem() == 0) {
+            short idMax = player.getInventory().getMaxIdItem();
+            if (idMax >= 32760 || idMax < 0) {
                 player.getInventory().initIdItem();
+                idMax = player.getInventory().getMaxIdItem();
+            }
+            itemGem.setIdItem((short) (idMax + 1));
+            player.getInventory().setMaxIdItem((short) (idMax + 1));
         }
     }
 

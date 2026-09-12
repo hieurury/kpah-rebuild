@@ -89,3 +89,87 @@
 
 ---
 
+## [2026-09-12 17:10] — Task #103: Sửa Toàn Diện Hệ Thống Trang Bị (2 Nhẫn, Tooltip Cột Phải, Đồ Khác Giới, Cuốc/Vũ Khí, Thú Cưỡi) & Nâng Cấp Hiển Thị Chỉ Số Chế Tạo
+
+**Yêu cầu:**
+1. **Lỗi 2 Nhẫn:** Khi đeo đủ 2 nhẫn, nhẫn trên (`107, 52`) không hiển thị do client chỉ vẽ khi `L == 1`, trong khi server trước đó không gán `viTriVe = 1` và `2`. Chuẩn hóa để 2 nhẫn hiển thị đúng cả 2 ô trên và dưới.
+2. **Lỗi Tooltip cột phải:** Bấm vào các trang bị cột phải (Vũ khí, Dây chuyền, 2 Nhẫn, Ngọc bội) trong menu Trang bị không hiện tooltip do tọa độ cảm ứng tính sai cột (`f = n8 * g + n2 + 1` rơi vào cột 1 của avatar). Sửa lại chuẩn xác cột 2 (`f = n8 * g + 2`).
+3. **Lỗi đồ khác giới / sai phái:** Khi mặc đồ không đúng giới tính/hệ phái/cấp, server báo lỗi nhưng túi đồ client bị mất item tạm thời do không gửi lại `sendItemBag`. Cần đồng bộ ngay lập tức.
+4. **Lỗi Cuốc & Vũ khí:** Đeo cuốc xong không hiển thị tháo và không thể trang bị lại vũ khí (bị kẹt trạng thái đào khoáng). Cần hỗ trợ hoán đổi qua lại 2 chiều giữa Cuốc (type 13) và Vũ khí (type 3..7).
+5. **Lỗi Thú cưỡi:** Ô trang bị thú cưỡi không hiển thị icon thú do gói tin 15 (`CHAR_WEARING`) ở server thiếu byte `getIdImage()`, và client ẩn thú khi `bK == true` (đang cầm cuốc).
+6. **Tooltip chỉ số trang bị chế tạo:** Khắc phục tình trạng hiển thị `chỉ số 7: 5`, `chỉ số 8: 5`. Format chuẩn hóa tên thuộc tính rõ ràng kèm dấu `+` (ví dụ `Sức khỏe: +5`, `Tấn công: +100`, `Né: +5%`), phân loại màu sắc chính xác: HP màu đỏ (2), MP màu xanh (1), chỉ số thường màu xanh (1), chỉ số đặc biệt/VIP màu vàng (5).
+
+**Files thay đổi:**
+- `server/kpah.sql` & `server/update_item_attributes_20260912.sql`: Cập nhật bảng `item_attribute` đặt tên rõ ràng cho ID 7 (`Tăng HP`), ID 8 (`Tăng MP`), ID 9 (`May mắn`), ID 33 (`Tăng HP`), ID 34 (`Tăng MP`), và chuẩn hóa mã màu (HP=2, MP=1, chỉ số đặc biệt=5, thường=1).
+- `server/KPAH/src/manager/Manager.java`: Chuẩn hóa runtime `item_attribute` ngay khi nạp DB vào bộ nhớ (ID 7, 8, 9, 33, 34 và color mapping) bảo đảm tính nhất quán ngay cả khi chưa chạy SQL update.
+- `server/KPAH/src/services/ItemService.java`: Sắp xếp attribute ID trước khi gửi opcode 25 (`ITEM_TEMPLATE`) tới client.
+- `server/KPAH/src/services/MapService.java`: Bổ sung byte `animal.getTemplate().getIdImage()` còn thiếu trong gói tin 15 (`CHAR_WEARING`) khi nhân vật đang cưỡi thú.
+- `server/KPAH/src/services/InventoryService.java`:
+  - Thêm `findItemBodyWeaponOrPickaxe()` tìm kiếm hoán đổi giữa Cuốc và Vũ khí.
+  - Thêm `normalizeItemBodyRings()` tự động gán `viTriVe = 1` cho nhẫn thứ nhất và `viTriVe = 2` cho nhẫn thứ hai; gọi tự động trong `sendItemBody()`.
+- `server/KPAH/src/services/UseItemService.java`:
+  - Cho phép hoán đổi 2 chiều giữa Vũ khí và Cuốc trực tiếp trong hành trang mà không bị kẹt.
+  - Khi kiểm tra giới tính/hệ phái/cấp độ thất bại, luôn gọi `InventoryService.instance.sendItemBag(player)` để giao diện túi đồ client không bao giờ bị mất đồ.
+  - Chuẩn hóa vị trí đeo nhẫn (`slot = 1` hoặc `2`).
+- `game/app/src/classes/class_zu.java`: Override class hiển thị thuộc tính trang bị client: thêm dấu `+` tự động, format phần trăm `%`, ánh xạ tên thuộc tính rõ ràng và tô màu chuẩn (HP đỏ=2, MP xanh=1, đặc biệt vàng=5, thường xanh=1).
+- `game/tools/Patcher.java`: Thêm `patchClassNu()`:
+  - Patch `c()`: Sửa bytecode tọa độ click cột phải từ `iload 4; iadd; iconst_1; iadd` thành `iconst_2; iadd; nop; nop; nop` (`f = n8 * g + 2`), kích hoạt mở tooltip chính xác cho Vũ khí, Dây chuyền, 2 Nhẫn, Ngọc bội.
+  - Patch `o(Graphics)`: Bỏ lệnh nhảy bỏ qua khi `bK == true`, bảo đảm icon thú cưỡi luôn hiển thị tại ô `(82, 92)` trên UI nhân vật.
+- `game/libs/KPAH_225_remade.jar`: Đã inject `class_nu.class` đã patch và `class_zu.class`.
+- `game/build/dist/KPAH_PROD.jar`: Đã biên dịch bản phát hành mới và khởi chạy MicroEmulator.
+
+**Kết quả:** ✅ Thành công (Cả Server và Client đã biên dịch và đóng gói hoàn tất, client đã khởi chạy trong emulator).
+**Ghi chú:**
+- Backup paths:
+  - `server/_backup/kpah.sql.bak.20260912_1638`
+  - `server/KPAH/src/manager/_backup/Manager.java.bak.20260912_1639`
+  - `server/KPAH/src/services/_backup/ItemService.java.bak.20260912_1640`
+  - `server/KPAH/src/services/_backup/InventoryService.java.bak.20260912_1641`
+  - `server/KPAH/src/services/_backup/UseItemService.java.bak.20260912_1642`
+  - `server/KPAH/src/services/_backup/MapService.java.bak.20260912_1643`
+  - `game/libs/_backup/KPAH_225_remade.jar.bak.20260912_1705`
+  - `game/tools/_backup/Patcher.java.bak.20260912_1709`
+
+## [2026-09-12 19:55] — Task #104: Sửa Lỗi Trang Bị Vũ Khí & Thú Cưỡi (Hiển Thị Ô Thú Cưỡi, Đồng Bộ Chỉ Số, Chống Trùng ID Trang Bị Chế Tạo, Sửa Crash Render Ngựa)
+
+**Yêu cầu:**
+1. **Lỗi không hiện thú cưỡi:** Nhân vật đang cưỡi ngựa (uống rượu thú cưỡi Bạch Mã, v.v.) nhưng vào menu Trang bị ô thú cưỡi `(82, 92)` vẫn trống, bấm vào không xem được thông tin Linh thú.
+2. **Lỗi trang bị vũ khí không hiện & thông tin không đúng (Hình 2 & Hình 3):** Sau khi bấm "Sử dụng" vũ khí chế tạo (`Cơ duyên bút tam phẩm`), người chơi nhìn vào ô đầu túi đồ thấy hiện vũ khí cũ (`Bút sắt`, độ bền 1024) tưởng chưa mặc hoặc hiển thị sai chỉ số; bấm tiếp "Sử dụng" thì lại tháo vũ khí chế tạo cất vào túi và đeo lại vũ khí cũ. Thiếu thông báo xác nhận và thiếu đồng bộ chỉ số HUD sau khi trang bị.
+3. **Lỗi ID trang bị chế tạo bị trùng template ID:** `CraftService` và `ItemService` gán `.idItem(template.getId())` khiến vật phẩm mới không có ID thực thể tăng dần (bị bỏ qua bởi `initIdItemEquip`), dẫn đến xung đột khi hoán đổi trang bị.
+4. **Lỗi crash `ArrayIndexOutOfBoundsException` trong `class_hw.a(Graphics)`:** Khi client render thú cưỡi, `class_ko.b.elementAt(this.cj)` không kiểm tra độ dài vector dẫn đến crash game khi `cj >= size`.
+
+**Files thay đổi:**
+- `server/KPAH/src/services/CraftService.java`:
+  - Sửa dòng 334 gán `.idItem((short) 0)` (thay vì `template.getId()`) để `initIdItemEquip` tự động cấp phát ID thực thể duy nhất cho trang bị chế tạo.
+- `server/KPAH/src/services/ItemService.java`:
+  - Sửa dòng 162 gán `.idItem((short) 0)` (thay vì `template.getId()`) cho trang bị nhặt rơi.
+- `server/KPAH/src/services/InventoryService.java`:
+  - Trong `sendItemBody()`: Thêm logic tự động tra cứu `AnimalTemplate` theo `idItem` (hoặc switch theo `imageHorse`) khi `animalUse == null` nhưng nhân vật đang cưỡi thú (`useHorse != NON_HORSE`). Gửi đúng mã hình ảnh `animalImg` (0=Bạch mã, 1=Mãnh hổ, 2=Hắc ngưu, 3=Sói xám, 4=Tiên hạc) và tên thú cưỡi giúp client vẽ icon tại ô `(82, 92)` và mở tooltip Linh thú.
+  - Sửa `initIdItemEquip()` và `initIdItemGem()`: Kiểm tra tràn `idMax >= 32760 || idMax < 0` trước khi tăng ID để tự động gọi `initIdItem()`.
+- `server/KPAH/src/services/UseItemService.java`:
+  - Trong `useItemHorse()`: Gọi `InventoryService.instance.sendItemBody(player)` để cập nhật ô thú cưỡi ngay khi dùng thuốc thú cưỡi.
+  - Trong `useItemEquipment()`:
+    - Sửa điều kiện kiểm tra cấp độ: `equipment.getTemplate().getLevel() > player.getInfo().getLevel()`.
+    - Gọi `sendMainCharInfo(player)`, `sendInfoMe(player)`, `onNewHpMp(player)` sau khi trang bị để cập nhật toàn diện chỉ số công/thủ/HP/MP và ngoại trang.
+    - Thêm thông báo xác nhận: `ChatService.instance.sendChatOnlyMe(player, "Đã trang bị " + equipment.getTemplate().getName() + ".")`.
+- `server/KPAH/src/services/MapService.java`:
+  - Trong `onDownHorse()`: Gọi `InventoryService.instance.sendItemBody(pl)` khi xuống ngựa để dọn sạch icon thú cưỡi trên giao diện Trang bị.
+- `game/tools/Patcher.java`:
+  - Thêm method `patchClassHw()` chèn kiểm tra an toàn cho `Vector.elementAt()` và `drawRegion()` trong `classes.class_hw.a(Graphics)` bằng Javassist.
+  - Thực thi patch `class_hw.class` và inject vào `game/libs/KPAH_225_remade.jar`.
+- `game/build/dist/KPAH_PROD.jar` & `server/KPAH/dist/KPAH.jar`:
+  - Biên dịch và đóng gói hoàn tất cả Client và Server. Đã khởi động Server và MicroEmulator kiểm tra hoạt động ổn định.
+
+**Kết quả:** ✅ Thành công (Đã kiểm tra logic, recompile cả Client và Server, khởi động Server và Emulator chạy ổn định).
+**Ghi chú:**
+- Backup paths:
+  - `server/KPAH/src/services/_backup/CraftService.java.bak.20260912_1950`
+  - `server/KPAH/src/services/_backup/ItemService.java.bak.20260912_1950`
+  - `server/KPAH/src/services/_backup/InventoryService.java.bak.20260912_1950`
+  - `server/KPAH/src/services/_backup/UseItemService.java.bak.20260912_1950`
+  - `server/KPAH/src/services/_backup/MapService.java.bak.20260912_1950`
+  - `game/tools/_backup/Patcher.java.bak.20260912_1950`
+
+---
+
+

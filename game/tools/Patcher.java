@@ -1,5 +1,6 @@
 import javassist.*;
 import javassist.expr.*;
+import javassist.bytecode.*;
 
 /**
  * Patcher v3 – sửa 3 vấn đề Auto-Loot:
@@ -16,6 +17,9 @@ import javassist.expr.*;
  *
  * 4. [class_ba.a()]   25000ms => 60000ms (1 phút) cho item drop
  *
+ * 5. [class_nu.c()]   Touch handling right column f = n8 * g + 2 (hiện tooltip trang bị cột phải)
+ *    [class_nu.o()]   Mount slot visibility (luôn vẽ thú cưỡi)
+ *
  * QUAN TRỌNG: Luôn đọc từ /tmp/orig_abj_clean (backup sạch) và /tmp/orig_ba_clean
  */
 public class Patcher {
@@ -24,11 +28,13 @@ public class Patcher {
         pool.appendClassPath("../libs/KPAH_225_remade.jar");
         pool.appendClassPath("../wtk/lib/midpapi20.jar");
         pool.appendClassPath("../wtk/lib/cldcapi11.jar");
-        pool.appendClassPath("../build/classes");
+        pool.insertClassPath("../build/classes");
         pool.insertClassPath("_orig_classes");
 
         patchClassAbj(pool);
         patchClassBa(pool);
+        patchClassNu(pool);
+        patchClassHw(pool);
 
         System.out.println("All patches applied successfully!");
     }
@@ -230,5 +236,66 @@ public class Patcher {
 
         cc.writeFile("patched_classes");
         System.out.println("class_ba patched (item timeout = 60s).");
+    }
+
+    private static void patchClassNu(ClassPool pool) throws Exception {
+        CtClass cc = pool.get("classes.class_nu");
+
+        // Patch method c(): Fix right-column touch selection (weapon, necklace, rings, jade)
+        CtMethod m = cc.getDeclaredMethod("c", new CtClass[0]);
+        MethodInfo mi = m.getMethodInfo();
+        CodeAttribute ca = mi.getCodeAttribute();
+        CodeIterator ci = ca.iterator();
+        while (ci.hasNext()) {
+            int pos = ci.next();
+            if (pos == 2508) {
+                // replace iload 4 (2), iadd (1), iconst_1 (1), iadd (1) with iconst_2 (1), iadd (1), nop (1), nop (1), nop (1)
+                ci.writeByte(Opcode.ICONST_2, pos);
+                ci.writeByte(Opcode.IADD, pos + 1);
+                ci.writeByte(Opcode.NOP, pos + 2);
+                ci.writeByte(Opcode.NOP, pos + 3);
+                ci.writeByte(Opcode.NOP, pos + 4);
+                System.out.println("Patched class_nu.c() (right column click tooltip) at pos " + pos);
+                break;
+            }
+        }
+
+        // Patch method o(Graphics): Always draw mount even if pickaxe is equipped
+        CtClass[] gParam = new CtClass[] { pool.get("javax.microedition.lcdui.Graphics") };
+        CtMethod mo = cc.getDeclaredMethod("o", gParam);
+        MethodInfo mio = mo.getMethodInfo();
+        CodeAttribute cao = mio.getCodeAttribute();
+        CodeIterator cio = cao.iterator();
+        while (cio.hasNext()) {
+            int pos = cio.next();
+            if (pos == 339) {
+                for (int i = 0; i < 12; i++) {
+                    cio.writeByte(Opcode.NOP, pos + i);
+                }
+                System.out.println("Patched class_nu.o(Graphics) (mount slot visibility) at pos " + pos);
+                break;
+            }
+        }
+
+        cc.writeFile("patched_classes");
+        System.out.println("class_nu patched successfully.");
+    }
+
+    private static void patchClassHw(ClassPool pool) throws Exception {
+        CtClass cc = pool.get("classes.class_hw");
+        CtClass[] gParam = new CtClass[] { pool.get("javax.microedition.lcdui.Graphics") };
+        CtMethod m = cc.getDeclaredMethod("a", gParam);
+        m.instrument(new ExprEditor() {
+            @Override
+            public void edit(MethodCall mc) throws CannotCompileException {
+                if (mc.getMethodName().equals("drawRegion")) {
+                    mc.replace("if ($1 != null) { $proceed($$); }");
+                } else if (mc.getMethodName().equals("elementAt") && mc.getClassName().equals("java.util.Vector")) {
+                    mc.replace("$_ = ($1 >= 0 && $1 < $0.size()) ? $proceed($$) : null;");
+                }
+            }
+        });
+        cc.writeFile("patched_classes");
+        System.out.println("class_hw patched successfully (safe elementAt & drawRegion).");
     }
 }
