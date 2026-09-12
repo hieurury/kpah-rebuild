@@ -263,33 +263,33 @@ public class Monster implements Cloneable {
         int mobLv = this.template.getLevel();
         int plDef = (pl != null && pl.getPoint() != null) ? pl.getPoint().getDefend() : 0;
 
-        // 1. Sát thương cơ bản tự nhiên của quái theo level
-        int minAtk = Math.max(16, mobLv * 11 + 5);
-        int maxAtk = Math.max(24, mobLv * 14 + 15);
+        // 1. Sát thương cơ bản tự nhiên của quái theo level (đã giảm sức mạnh theo yêu cầu)
+        int minAtk = Math.max(10, mobLv * 7 + 3);
+        int maxAtk = Math.max(16, mobLv * 10 + 8);
         int baseAtk = Util.nextInt(minAtk, maxAtk);
 
         // 2. Bonus cận chiến hoặc tinh anh
         if (isMelee()) {
-            baseAtk = (int) (baseAtk * 1.1); // Cận chiến +10%
+            baseAtk = (int) (baseAtk * 1.05); // Cận chiến +5%
         }
         if (isElite) {
-            // Quái tinh anh tăng mạnh sát thương +80% (người chơi trang bị kém sẽ chịu không nổi)
-            baseAtk = (int) (baseAtk * 1.8);
-            // Trạng thái Cuồng Nộ (Frenzy): dưới 50% HP tăng thêm 25% sát thương
+            // Quái tinh anh cân bằng lại sát thương +40% (trước là +80%)
+            baseAtk = (int) (baseAtk * 1.4);
+            // Trạng thái Cuồng Nộ (Frenzy): dưới 50% HP tăng thêm 20% sát thương
             if (this.hp < getMaxHp() / 2) {
-                baseAtk = (int) (baseAtk * 1.25);
+                baseAtk = (int) (baseAtk * 1.2);
             }
-            // 25% tỷ lệ Bạo Kích (Critical Hit) của Tinh Anh: x1.5 sát thương
-            if (Util.isTrue(25.0, 100.0)) {
-                baseAtk = (int) (baseAtk * 1.5);
+            // 20% tỷ lệ Bạo Kích (Critical Hit) của Tinh Anh: x1.25 sát thương
+            if (Util.isTrue(20.0, 100.0)) {
+                baseAtk = (int) (baseAtk * 1.25);
             }
         }
 
         // 3. Sát thương cào xước tối thiểu (min scratch damage) theo level quái
         // Khi giáp người chơi rất cao, quái vẫn gây ra lượng sát thương nhỏ hợp lý (không bị về 1 dame vô lý)
-        int minScratch = Math.max(3, (int) (mobLv * 1.5 + 2));
+        int minScratch = Math.max(2, (int) (mobLv * 1.1 + 1));
         if (isElite) {
-            minScratch = Math.max(25, (int) (mobLv * 3.5 + 15));
+            minScratch = Math.max(16, (int) (mobLv * 2.5 + 10));
         }
 
         int netDmg = Math.max(baseAtk - plDef, minScratch);
@@ -563,14 +563,16 @@ public class Monster implements Cloneable {
         if (!isDie() && !this.buffInfluence.isStunned() && Util.canDoWithTime(lastTimeAttackPlayer, nextAttackDelay)) {
             this.lastTimeAttackPlayer = System.currentTimeMillis();
             
-            // Randomize next attack delay based on monster type
+            // Randomize next attack delay based on monster type (đánh xa 5-10s, đánh gần 5-7s)
             if (isElite) {
-                // Cuồng Nộ (Frenzy) khi máu < 50%: tốc độ đánh điên cuồng 800-1200ms, bình thường 1200-1800ms
-                this.nextAttackDelay = (this.hp < getMaxHp() / 2) ? Util.nextInt(800, 1200) : Util.nextInt(1200, 1800);
+                // Tinh Anh: Cuồng Nộ (Frenzy) khi máu < 50%: 2.5 - 4s, bình thường: 4 - 6s
+                this.nextAttackDelay = (this.hp < getMaxHp() / 2) ? Util.nextInt(2500, 4000) : Util.nextInt(4000, 6000);
             } else if (isMelee()) {
-                this.nextAttackDelay = Util.nextInt(1800, 2800);
+                // Đánh gần: 5 - 7 giây
+                this.nextAttackDelay = Util.nextInt(5000, 7000);
             } else {
-                this.nextAttackDelay = Util.nextInt(2200, 3600);
+                // Đánh xa: 5 - 10 giây
+                this.nextAttackDelay = Util.nextInt(5000, 10000);
             }
             
             getPlayerCanAttack();

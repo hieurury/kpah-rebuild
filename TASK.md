@@ -213,3 +213,44 @@
   - `game/tools/_backup/Patcher.java.bak.20260912_2034`
 
 ---
+
+## [2026-09-12 20:55] — Task #106: Cân Bằng Giảm Sức Mạnh & Tăng Thời Gian Giãn Cách Đòn Đánh Của Quái (Xa 5-10s, Gần 5-7s) & Reset Sạch Toàn Bộ Dữ Liệu Tài Khoản, Người Chơi
+
+**Yêu cầu:**
+1. **Điều chỉnh thời gian giãn cách đòn đánh của quái vật:**
+   - Quái đánh xa (Ranged): giãn cách thời gian giữa các đòn tấn công lên 5 - 10s.
+   - Quái cận chiến (Melee): giãn cách thời gian giữa các đòn tấn công lên 5 - 7s.
+   - Giảm sức mạnh đòn đánh của quái (sát thương cơ bản và đòn quái tinh anh).
+2. **Clear toàn bộ dữ liệu người dùng & tài khoản:**
+   - Tạo bản sao lưu dự phòng (backup) dữ liệu tài khoản và nhân vật trước khi thao tác.
+   - Truncate sạch toàn bộ các bảng người chơi (`users`, `players`, `clan`, `cpanel`, `atm_check`, `atm_lichsu`, `napthe`) trên cả Database cục bộ và Database thiết bị Android (Termux) để sẵn sàng đăng ký và trải nghiệm lại từ đầu.
+   - Triển khai `KPAH.jar` mới và khởi động lại Server trên cả hai môi trường.
+
+**Files thay đổi:**
+- `server/KPAH/src/map/Monster.java`:
+  - Trong `attackPlayer()`:
+    - Quái đánh gần: `this.timeAttack = System.currentTimeMillis() + Util.nextInt(5000, 7000)`.
+    - Quái đánh xa: `this.timeAttack = System.currentTimeMillis() + Util.nextInt(5000, 10000)`.
+    - Quái tinh anh: `(this.hp < getMaxHp() / 2) ? Util.nextInt(2500, 4000) : Util.nextInt(4000, 6000)`.
+  - Trong `getDameAttack()`:
+    - Giảm công thức sát thương cơ bản của quái từ `mobLv * 11 + 5` / `mobLv * 14 + 15` xuống `Math.max(10, mobLv * 7 + 3)` / `Math.max(16, mobLv * 10 + 8)`.
+    - Giảm hệ số cường hóa sát thương quái tinh anh từ `1.8x` xuống `1.4x`, giảm bạo kích từ `1.5x` xuống `1.25x`.
+    - Giảm sát thương xước tối thiểu khi thủ người chơi quá cao từ `mobLv * 1.5 + 2` xuống `Math.max(2, (int)(mobLv * 1.1 + 1))`.
+- **Database (`kpah`):**
+  - Sao lưu dự phòng an toàn trước khi xóa:
+    - Cục bộ: `_backup/db_users_players.sql.bak.20260912_2053`
+    - Termux Android: `~/data/programs/kpah-rebuild/_backup/db_users_players.sql.bak.20260912_2054`
+  - Truncate sạch dữ liệu các bảng: `users`, `players`, `clan`, `cpanel`, `atm_check`, `atm_lichsu`, `napthe`, reset `AUTO_INCREMENT = 1`.
+- **Triển khai & Khởi động lại Server:**
+  - Biên dịch thành công `KPAH.jar` bằng Ant JDK 21.
+  - Triển khai file `KPAH.jar` và `Monster.java` lên điện thoại Android qua SCP.
+  - Khởi động lại Server Game trên điện thoại Android (kết nối Bore tunnel `bore.pub:19129`) và trên máy chủ cục bộ (Daemon Port 19129).
+
+**Kết quả:** ✅ Thành công (Dữ liệu tài khoản/nhân vật đã làm sạch 100%, quái đánh xa giãn cách 5-10s, đánh gần 5-7s, sát thương đã giảm phù hợp cho khởi đầu game mới).
+**Ghi chú:**
+- Backup paths:
+  - `server/KPAH/src/map/_backup/Monster.java.bak.20260912_2052`
+  - `_backup/db_users_players.sql.bak.20260912_2053`
+  - Termux: `~/data/programs/kpah-rebuild/_backup/db_users_players.sql.bak.20260912_2054`
+
+---
