@@ -85,7 +85,7 @@ public class BuffInfluenceMonster {
         secondOfInstantPoison = time;
         lastTimeInstantPoisoned = System.currentTimeMillis();
         playerUser = player;
-        BuffService.instance.sendAddBuffInfluence(mob, BuffConst.BUFF_DOC_TO);
+        BuffService.instance.sendAddBuffInfluence(mob, BuffConst.BUFF_NHIEM_DOC);
     }
 
     @Synchronized

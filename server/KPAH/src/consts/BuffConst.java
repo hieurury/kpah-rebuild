@@ -26,5 +26,6 @@ public class BuffConst {
     public static final byte BUFF_STUN = 3;
     public static final byte BUFF_DOC_TO = 4;
     public static final byte BUFF_PHONG_THU = 5;
+    public static final byte BUFF_NHIEM_DOC = 6;
 
 }

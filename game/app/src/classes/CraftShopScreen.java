@@ -411,14 +411,14 @@ public class CraftShopScreen extends class_aae {
 		switch (type) {
 			case 3: // Kiếm
 			case 4: // Đao
-			case 7: // Búa
+			case 6: // Búa
 				r.soCap1Id = 75;   // Sắt
 				r.soCap2Id = 89;   // Gỗ thường
 				r.caoCap1Id = 110; // Bạc
 				r.caoCap2Id = 124; // Gỗ sưa
 				break;
-			case 5: // Cung
-			case 6: // Bút
+			case 5: // Bút
+			case 7: // Cung
 				r.soCap1Id = 89;   // Gỗ thường
 				r.soCap2Id = 75;   // Sắt
 				r.caoCap1Id = 124; // Gỗ sưa

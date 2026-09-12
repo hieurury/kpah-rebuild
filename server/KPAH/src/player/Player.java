@@ -113,79 +113,83 @@ public class Player {
     @Synchronized
     public int injured(int damage, boolean isInjuredByEffect, byte typeDame, boolean x2) throws IOException {
         if (!this.isDie()) {
-            int def = (typeDame == ItemEquipConst.DAMAGE_MAGIC ? this.point.getDefendMagic() : this.point.getDefend());
-            byte classPlayer = this.info.getClassPlayer();
-            byte skillLevel = this.skill.getLevelSkill()[classPlayer == Const.DAU_SI ? 5 : 4];
-            if (classPlayer == Const.DAU_SI) {
-                def += def * (Manager.getSkillDamPercent(classPlayer, BuffConst.BUFF_PHONG_THU, skillLevel) / 100);
+            if (!isInjuredByEffect) {
+                int def = (typeDame == ItemEquipConst.DAMAGE_MAGIC ? this.point.getDefendMagic() : this.point.getDefend());
+                byte classPlayer = this.info.getClassPlayer();
+                byte skillLevel = this.skill.getLevelSkill()[classPlayer == Const.DAU_SI ? 5 : 4];
+                if (classPlayer == Const.DAU_SI) {
+                    def += def * (Manager.getSkillDamPercent(classPlayer, BuffConst.BUFF_PHONG_THU, skillLevel) / 100);
+                }
+                if (classPlayer == Const.CHIEN_BINH && skillBuff.isExistBuff(BuffConst.CUONG_THAN_GIAP)) {
+                    def += def * skillBuff.getPercentDame(BuffConst.CUONG_THAN_GIAP) / 100;
+                }
+                damage -= def;
+                if (Util.isTrue((double) this.point.getHapThu(), 100.0)) {
+                    damage -= damage * this.point.getHapThu() / 100;
+                }
+                if (typeDame == ItemEquipConst.DAMAGE_MAGIC) {
+                    damage -= damage * this.point.getGiamStMa() / 100;
+                } else {
+                    damage -= damage * this.point.getGiamStVat() / 100;
+                }
             }
-            if (classPlayer == Const.CHIEN_BINH && skillBuff.isExistBuff(BuffConst.CUONG_THAN_GIAP)) {
-                def += def * skillBuff.getPercentDame(BuffConst.CUONG_THAN_GIAP) / 100;
-            }
-            damage -= def;
-            if (Util.isTrue((double) this.point.getHapThu(), 100.0)) {
-                damage -= damage * this.point.getHapThu() / 100;
-            }
-            if (typeDame == ItemEquipConst.DAMAGE_MAGIC) {
-                damage -= damage * this.point.getGiamStMa() / 100;
-            } else {
-                damage -= damage * this.point.getGiamStVat() / 100;
-            }
-            if (damage < 0) {
+            if (damage < 1) {
                 damage = 1;
             }
             if (isInjuredByEffect && this.buffInfluence.isPoisoned()) {
                 if (this.point.getHp() - damage < 1) {
-                    damage = this.point.getHp() - 1;
+                    damage = Math.max(0, this.point.getHp() - 1);
                 }
             }
-            boolean anyBroken = false;
-            boolean anyDurableChanged = false;
-            // Nhóm thủ: các món còn lại (Áo, Quần, Nón, Giày, Găng tay, Phi phong) hao độ bền khi bị tấn công
-            for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
-                ItemEquip item = this.inventory.getItemBody().get(i);
-                if (item != null && !item.isWeapon() && !item.isJewelry() && item.getMDurable() > 0) {
-                    short oldDur = item.getDurable();
-                    if (item.minusDurableCheck()) {
-                        anyDurableChanged = true;
-                    }
-                    if (oldDur > 0 && item.getDurable() <= 0) {
-                        anyBroken = true;
-                    }
-                }
-            }
-            if (anyBroken) {
-                if (InventoryService.instance.hasTheMuaBan(this)) {
-                    int totalPrice = 0;
-                    for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
-                        ItemEquip it = this.inventory.getItemBody().get(i);
-                        if (it != null && it.getTemplate() != null && it.getDurable() <= 0) {
-                            int base = it.getTemplate().getPrice() / 10;
-                            totalPrice += Math.max(1, (int) Math.round(base * 1.5));
+            if (!isInjuredByEffect) {
+                boolean anyBroken = false;
+                boolean anyDurableChanged = false;
+                // Nhóm thủ: các món còn lại (Áo, Quần, Nón, Giày, Găng tay, Phi phong) hao độ bền khi bị tấn công
+                for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
+                    ItemEquip item = this.inventory.getItemBody().get(i);
+                    if (item != null && !item.isWeapon() && !item.isJewelry() && item.getMDurable() > 0) {
+                        short oldDur = item.getDurable();
+                        if (item.minusDurableCheck()) {
+                            anyDurableChanged = true;
+                        }
+                        if (oldDur > 0 && item.getDurable() <= 0) {
+                            anyBroken = true;
                         }
                     }
-                    if (totalPrice > 0 && this.inventory.minusXu(totalPrice)) {
+                }
+                if (anyBroken) {
+                    if (InventoryService.instance.hasTheMuaBan(this)) {
+                        int totalPrice = 0;
                         for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
                             ItemEquip it = this.inventory.getItemBody().get(i);
                             if (it != null && it.getTemplate() != null && it.getDurable() <= 0) {
-                                short mDur = it.getTemplate().getDurable();
-                                it.setDurable(mDur);
-                                it.setMDurable(mDur);
+                                int base = it.getTemplate().getPrice() / 10;
+                                totalPrice += Math.max(1, (int) Math.round(base * 1.5));
                             }
                         }
-                        anyBroken = false;
-                        anyDurableChanged = true;
-                        InventoryService.instance.sendItemPotion(this);
-                        ChatService.instance.sendChatOnlyMe(this, "Đã tiêu tốn " + Util.formatNumber(totalPrice) + " xu để sửa các trang bị hỏng.");
+                        if (totalPrice > 0 && this.inventory.minusXu(totalPrice)) {
+                            for (int i = 0; i < this.inventory.getItemBody().size(); i++) {
+                                ItemEquip it = this.inventory.getItemBody().get(i);
+                                if (it != null && it.getTemplate() != null && it.getDurable() <= 0) {
+                                    short mDur = it.getTemplate().getDurable();
+                                    it.setDurable(mDur);
+                                    it.setMDurable(mDur);
+                                }
+                            }
+                            anyBroken = false;
+                            anyDurableChanged = true;
+                            InventoryService.instance.sendItemPotion(this);
+                            ChatService.instance.sendChatOnlyMe(this, "Đã tiêu tốn " + Util.formatNumber(totalPrice) + " xu để sửa các trang bị hỏng.");
+                        }
                     }
                 }
-            }
-            if (anyDurableChanged) {
-                InventoryService.instance.sendItemBody(this);
-            }
-            if (anyBroken) {
-                this.point.initPoint();
-                Service.instance.sendMainCharInfo(this);
+                if (anyDurableChanged) {
+                    InventoryService.instance.sendItemBody(this);
+                }
+                if (anyBroken) {
+                    this.point.initPoint();
+                    Service.instance.sendMainCharInfo(this);
+                }
             }
             if (x2) {
                 this.point.minusHp(damage);

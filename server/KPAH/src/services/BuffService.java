@@ -301,7 +301,15 @@ public class BuffService {
         msg.writer().writeShort(0);
         msg.writer().writeByte(4);
         msg.writer().writeByte(idBuff);
-        msg.writer().writeByte(idBuff == BuffConst.BUFF_DOC_TO ? player.getBuffInfluence().getSecondPosonedLeft() : player.getBuffInfluence().getSecondOfStunned());
+        byte dur;
+        if (idBuff == BuffConst.BUFF_DOC_TO) {
+            dur = player.getBuffInfluence().getSecondPosonedLeft();
+        } else if (idBuff == BuffConst.BUFF_NHIEM_DOC) {
+            dur = player.getBuffInfluence().getSecondInstantPoisonLeft();
+        } else {
+            dur = (byte) player.getBuffInfluence().getSecondOfStunned();
+        }
+        msg.writer().writeByte(dur);
         MapService.instance.sendAllPlayerInMap(player, msg);
     }
 
@@ -313,7 +321,15 @@ public class BuffService {
         msg.writer().writeShort(0);
         msg.writer().writeByte(4);
         msg.writer().writeByte(idBuff);
-        msg.writer().writeByte(idBuff == BuffConst.BUFF_DOC_TO ? mob.getBuffInfluence().getSecondPosonedLeft() : mob.getBuffInfluence().getSecondOfStunned());
+        byte dur;
+        if (idBuff == BuffConst.BUFF_DOC_TO) {
+            dur = mob.getBuffInfluence().getSecondPosonedLeft();
+        } else if (idBuff == BuffConst.BUFF_NHIEM_DOC) {
+            dur = mob.getBuffInfluence().getSecondInstantPoisonLeft();
+        } else {
+            dur = (byte) mob.getBuffInfluence().getSecondOfStunned();
+        }
+        msg.writer().writeByte(dur);
         MapService.instance.sendAllPlayerInMap(mob, msg);
     }
 

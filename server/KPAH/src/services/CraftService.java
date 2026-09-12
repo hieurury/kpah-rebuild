@@ -72,21 +72,22 @@ public class CraftService {
         List<ItemEquipTemplate> list = new ArrayList<>();
 
         for (ItemEquipTemplate it : Manager.ITEM_EQUIPMENTS.values()) {
-            if (it == null || it.getColorItem() != 0 || it.getNdayLoan() != 0) continue;
+            if (it == null || it.getNdayLoan() != 0) continue;
+            if (it.getName() != null && it.getName().contains("_thuê")) continue;
 
             byte type = it.getType();
             byte lvl = it.getLevel();
             boolean match = false;
 
-            if (equipType == 0) { // Vũ khí: Lv 21, 26, 31, 36
-                if (lvl == 21 || lvl == 26 || lvl == 31 || lvl == 36) {
+            if (equipType == 0) { // Vũ khí: Lv 21, 26, 31, 36 (các item gốc có id < 268)
+                if (it.getId() < 268 && (lvl == 21 || lvl == 26 || lvl == 31 || lvl == 36)) {
                     byte expectedWpType = (byte) (3 + classChar);
                     if (type == expectedWpType) {
                         match = true;
                     }
                 }
             } else { // Trang bị: Lv 20, 25, 30, 35
-                if (lvl == 20 || lvl == 25 || lvl == 30 || lvl == 35) {
+                if (it.getColorItem() == 0 && (lvl == 20 || lvl == 25 || lvl == 30 || lvl == 35)) {
                     switch (equipType) {
                         case 1 -> { if (type == 0) match = true; }  // Áo (cả Nam và Nữ)
                         case 2 -> { if (type == 1) match = true; }  // Quần (cả Nam và Nữ)
@@ -178,39 +179,20 @@ public class CraftService {
             }
         }
 
-        // 2. Định mức tiêu hao theo level & rank (1=Nhất, 2=Nhị, 3=Tam, 4=Tứ, 5=Ngũ)
-        if (level <= 24) { // Lv 20, 21
-            switch (rank) {
-                case 5 -> { r.mat1Need = 15; r.mat2Need = 10; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 1; r.xuFee = 15000; }
-                case 4 -> { r.mat1Need = 22; r.mat2Need = 15; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 2; r.xuFee = 25000; }
-                case 3 -> { r.mat1Need = 30; r.mat2Need = 20; r.caoCap1Need = 4; r.caoCap2Need = 2; r.ngocRenNeed = 3; r.xuFee = 40000; }
-                case 2 -> { r.mat1Need = 45; r.mat2Need = 30; r.caoCap1Need = 8; r.caoCap2Need = 4; r.ngocRenNeed = 5; r.xuFee = 65000; }
-                default -> { r.mat1Need = 60; r.mat2Need = 40; r.caoCap1Need = 15; r.caoCap2Need = 8; r.ngocRenNeed = 8; r.xuFee = 100000; }
-            }
-        } else if (level <= 29) { // Lv 25, 26
-            switch (rank) {
-                case 5 -> { r.mat1Need = 20; r.mat2Need = 15; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 2; r.xuFee = 25000; }
-                case 4 -> { r.mat1Need = 30; r.mat2Need = 20; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 3; r.xuFee = 40000; }
-                case 3 -> { r.mat1Need = 45; r.mat2Need = 30; r.caoCap1Need = 6; r.caoCap2Need = 3; r.ngocRenNeed = 4; r.xuFee = 60000; }
-                case 2 -> { r.mat1Need = 60; r.mat2Need = 40; r.caoCap1Need = 12; r.caoCap2Need = 6; r.ngocRenNeed = 6; r.xuFee = 90000; }
-                default -> { r.mat1Need = 80; r.mat2Need = 55; r.caoCap1Need = 22; r.caoCap2Need = 12; r.ngocRenNeed = 10; r.xuFee = 140000; }
-            }
-        } else if (level <= 34) { // Lv 30, 31
-            switch (rank) {
-                case 5 -> { r.mat1Need = 25; r.mat2Need = 20; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 2; r.xuFee = 35000; }
-                case 4 -> { r.mat1Need = 40; r.mat2Need = 25; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 4; r.xuFee = 55000; }
-                case 3 -> { r.mat1Need = 60; r.mat2Need = 40; r.caoCap1Need = 9; r.caoCap2Need = 5; r.ngocRenNeed = 6; r.xuFee = 85000; }
-                case 2 -> { r.mat1Need = 80; r.mat2Need = 55; r.caoCap1Need = 18; r.caoCap2Need = 10; r.ngocRenNeed = 8; r.xuFee = 130000; }
-                default -> { r.mat1Need = 110; r.mat2Need = 75; r.caoCap1Need = 35; r.caoCap2Need = 18; r.ngocRenNeed = 12; r.xuFee = 200000; }
-            }
-        } else { // Lv 35, 36+
-            switch (rank) {
-                case 5 -> { r.mat1Need = 35; r.mat2Need = 25; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 3; r.xuFee = 50000; }
-                case 4 -> { r.mat1Need = 50; r.mat2Need = 35; r.caoCap1Need = 0; r.caoCap2Need = 0; r.ngocRenNeed = 5; r.xuFee = 80000; }
-                case 3 -> { r.mat1Need = 75; r.mat2Need = 50; r.caoCap1Need = 12; r.caoCap2Need = 6; r.ngocRenNeed = 7; r.xuFee = 120000; }
-                case 2 -> { r.mat1Need = 100; r.mat2Need = 70; r.caoCap1Need = 25; r.caoCap2Need = 12; r.ngocRenNeed = 10; r.xuFee = 180000; }
-                default -> { r.mat1Need = 140; r.mat2Need = 95; r.caoCap1Need = 48; r.caoCap2Need = 25; r.ngocRenNeed = 15; r.xuFee = 280000; }
-            }
+        // 2. Định mức tiêu hao theo level & rank (đồng bộ chuẩn xác 100% với CraftShopScreen của client)
+        int rankIndex = 5 - rank; // 0 (Ngũ phẩm) -> 4 (Nhất phẩm)
+        int levelFactor = level / 5;
+        r.mat1Need = levelFactor * (rankIndex + 1) * 3;
+        r.mat2Need = levelFactor * (rankIndex + 1) * 2;
+        r.ngocRenNeed = rankIndex + 1;
+        r.xuFee = (int) ((long) level * 1000L * (long) (rankIndex + 1));
+
+        if (rank <= 3) {
+            r.caoCap1Need = (rankIndex - 1) * 2;
+            r.caoCap2Need = (rankIndex - 1);
+        } else {
+            r.caoCap1Need = 0;
+            r.caoCap2Need = 0;
         }
 
         return r;

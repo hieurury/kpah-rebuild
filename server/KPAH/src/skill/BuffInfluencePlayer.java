@@ -81,7 +81,7 @@ public class BuffInfluencePlayer {
         }
         secondOfInstantPoison = time;
         lastTimeInstantPoisoned = System.currentTimeMillis();
-        BuffService.instance.sendAddBuffInfluence(this.player, BuffConst.BUFF_DOC_TO);
+        BuffService.instance.sendAddBuffInfluence(this.player, BuffConst.BUFF_NHIEM_DOC);
     }
 
     @Synchronized

@@ -729,4 +729,8 @@ extends class_ap {
     public final boolean w() {
         return this.a;
     }
+
+    public final boolean isMelee() {
+        return this.l % 2 == 0;
+    }
 }

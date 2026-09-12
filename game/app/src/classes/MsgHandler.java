@@ -6,6 +6,16 @@ public class MsgHandler {
 	public static void onMessage(class_bi globalMsgHandler, class_abs msg) {
 		try {
 			switch (msg.a) {
+			case 10: {
+				// MONSTER_ATTACK_PLAYER: Đạn đỏ cho quái cận chiến (bullet 21), đạn gốc cho quái đánh xa (bullet 20)
+				short mobId = msg.b().readShort();
+				short targetId = msg.b().readShort();
+				int damage = msg.b().readInt();
+				int targetHp = msg.b().readInt();
+
+				handleMonsterAttack(mobId, targetId, damage, targetHp);
+				return;
+			}
 			case 19: {
 				if (class_acv.s != null && class_acv.s.q != null) {
 					if (class_acv.s.q.bq == null || class_acv.s.q.bq.length < 256) {
@@ -154,6 +164,28 @@ public class MsgHandler {
 						MainCharInfo.poisonEndTime = System.currentTimeMillis() + (long) sec * 1000L;
 					}
 					return;
+				} else if (b4 == 6) {
+					// Áp dụng Nhiễm Độc (BUFF_NHIEM_DOC - khuếch đại sát thương nhận vào)
+					int sec = dur > 0 ? dur : 6;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_zx eff = new class_zx(entity.cK, entity.cL, 22);
+								eff.isDebuff = true;
+								eff.a(sec);
+								entity.a(eff);
+								break;
+							}
+						}
+					}
+					if (class_acv.s != null && class_acv.s.q != null && class_acv.s.q.cG == targetId) {
+						MainCharInfo.instantPoisonEndTime = System.currentTimeMillis() + (long) sec * 1000L;
+						if (MainCharInfo.instantPoisonStacks < 5) {
+							MainCharInfo.instantPoisonStacks++;
+						}
+					}
+					return;
 				} else if (b4 == 3) {
 					// Áp dụng Choáng (BUFF_STUN)
 					int sec = dur > 0 ? dur : 3;
@@ -242,7 +274,9 @@ public class MsgHandler {
 	}
 
 	/**
-	 * Thiết lập hào quang vàng (cấp 5) cho 10 loại nguyên liệu sơ cấp & cao cấp mới
+	 * Thiết lập hào quang cho nguyên liệu:
+	 * Sơ cấp: hào quang cấp 5 (item.s = 1)
+	 * Cao cấp: hào quang cấp 6 (item.s = 2)
 	 */
 	public static void updateMaterialVisuals() {
 		try {
@@ -251,16 +285,115 @@ public class MsgHandler {
 					class_xv item = (class_xv) class_yi.e.elementAt(i);
 					if (item != null) {
 						short id = item.o;
-						// Sơ cấp: 68 (Vải), 75 (Sắt), 82 (Ngọc), 89 (Gỗ thường), 96 (Da mềm)
-						// Cao cấp: 103 (Tơ lụa), 110 (Bạc), 117 (Thủy tinh), 124 (Gỗ sưa), 131 (Da cứng)
-						if (id == 68 || id == 75 || id == 82 || id == 89 || id == 96
-								|| id == 103 || id == 110 || id == 117 || id == 124 || id == 131) {
-							item.s = 1; // Hào quang vàng phẩm cấp 5
+						// Sơ cấp: 68 (Vải), 75 (Sắt), 82 (Ngọc), 89 (Gỗ thường), 96 (Da mềm) -> Cấp 5
+						if (id == 68 || id == 75 || id == 82 || id == 89 || id == 96) {
+							item.s = 1;
+						}
+						// Cao cấp: 103 (Tơ lụa), 110 (Bạc), 117 (Thủy tinh), 124 (Gỗ sưa), 131 (Da cứng) -> Cấp 6
+						else if (id == 103 || id == 110 || id == 117 || id == 124 || id == 131) {
+							item.s = 2;
 						}
 					}
 				}
 			}
 		} catch (Exception ignored) {
 		}
+	}
+
+	private static void handleMonsterAttack(short mobId, short targetId, int damage, int targetHp) {
+		try {
+			if (class_acv.s == null) return;
+			class_bb mob = findMonster(mobId);
+			if (mob != null) {
+				if (targetId == 32001) {
+					mob.r();
+					return;
+				}
+				if (mob.l != 84) {
+					mob.u();
+				}
+				if (class_acv.s.q != null && class_acv.s.q.cG == targetId) {
+					mob.a((class_ap) class_acv.s.q);
+					if (class_acv.s.q.ce) {
+						class_acv.s.q.cV = 0;
+						class_acv.s.q.ce = false;
+					}
+					class_acv.s.q.t = class_acv.s.q.v = targetHp;
+					if (mob.l == 90) {
+						class_acv.s.a(damage != 0 ? "-" + damage : "MISS", damage == 0 ? 0 : 4, (int) class_acv.s.q.cK, class_acv.s.q.cL - 40, 0, -1);
+						mob.a((class_ap) class_acv.s.q, damage, (byte) 8, (byte) 4);
+						if (class_acv.s.q.v <= 0) {
+							class_acv.s.q.cV = (byte) 3;
+						}
+						return;
+					}
+					mob.D = class_yg.b((class_vh) mob, (class_vh) class_acv.s.q);
+					if (class_acv.s.r == null) {
+						class_acv.s.r = mob;
+					}
+					int bulletType = mob.isMelee() ? 21 : 20;
+					class_abj.a(bulletType, (class_ap) mob, (class_ap) class_acv.s.q, (int) mob.cK, (int) mob.cL, damage, (byte) 0);
+					class_acv.s.q.l();
+					if (class_acv.s.q.v <= 0) {
+						class_acv.s.q.cV = (byte) 3;
+					}
+					class_acv.s.q.J();
+					if (mob.l == 84) {
+						java.util.Vector vector = new java.util.Vector();
+						vector.addElement(class_acv.s.q);
+						mob.a(vector, (byte) 0);
+					}
+				} else {
+					class_hw otherPl = findOtherPlayer(targetId);
+					if (otherPl != null) {
+						mob.a((class_ap) otherPl);
+						otherPl.t = otherPl.v = targetHp;
+						if (otherPl.v <= 0) {
+							otherPl.cV = (byte) 3;
+						}
+						mob.D = class_yg.b((class_vh) mob, (class_vh) otherPl);
+						otherPl.l();
+						if (mob.l == 90) {
+							class_acv.s.a(damage != 0 ? "-" + damage : "MISS", damage == 0 ? 0 : 4, (int) otherPl.cK, otherPl.cL - 40, 0, -1);
+							mob.a((class_ap) otherPl, damage, (byte) 8, (byte) 4);
+							return;
+						}
+						int bulletType = mob.isMelee() ? 21 : 20;
+						class_abj.a(bulletType, (class_ap) mob, (class_ap) otherPl, (int) mob.cK, (int) mob.cL, damage, (byte) 0);
+						class_abm.b(new class_di((int) otherPl.cK, otherPl.cL - 10, 9));
+						if (mob.l == 84) {
+							java.util.Vector vector = new java.util.Vector();
+							vector.addElement(otherPl);
+							mob.a(vector, (byte) 0);
+						}
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static class_bb findMonster(short mobId) {
+		if (class_acv.s == null || class_acv.s.l == null) return null;
+		for (int i = class_acv.s.l.size() - 1; i >= 0; i--) {
+			Object obj = class_acv.s.l.elementAt(i);
+			if (obj instanceof class_bb) {
+				class_bb mob = (class_bb) obj;
+				if (mob.cF == 1 && mob.cG == mobId) {
+					return mob;
+				}
+			}
+		}
+		return null;
+	}
+
+	public static class_hw findOtherPlayer(short plId) {
+		if (class_acv.s == null) return null;
+		class_vh vh = class_acv.s.b(plId);
+		if (vh instanceof class_hw) {
+			return (class_hw) vh;
+		}
+		return null;
 	}
 }

@@ -4,7 +4,9 @@ public class MainCharInfo {
 
 	private static long initialCoins = -1;
 	public static long expPlus = 0; // kinh nghiệm được cộng
-	public static long poisonEndTime = 0; // Mốc thời gian kết thúc trúng độc
+	public static long poisonEndTime = 0; // Mốc thời gian kết thúc trúng độc (DoT ăn mòn)
+	public static long instantPoisonEndTime = 0; // Mốc thời gian kết thúc nhiễm độc (khuếch đại sát thương)
+	public static int instantPoisonStacks = 0; // Số tầng nhiễm độc (tối đa 5)
 
 	public static String getPlayerName() {
 		return class_acv.s.q.a_();
@@ -265,7 +267,7 @@ public class MainCharInfo {
 				}
 			}
 
-			// 3. Trạng thái Trúng Độc (Quản lý chuẩn xác bằng poisonEndTime, chống lặp reset 10s vô tận)
+			// 3. Trạng thái Trúng Độc (DoT ăn mòn sát thương theo thời gian từ quái tinh anh / kỹ năng độc)
 			if (poisonEndTime > now) {
 				int secPoison = (int) ((poisonEndTime - now) / 1000L) + 1;
 				if (secPoison > 0 && !hasBuffNamed(list, "Trúng Độc")) {
@@ -287,6 +289,18 @@ public class MainCharInfo {
 						}
 					}
 				}
+			}
+
+			// 3b. Trạng thái Nhiễm Độc (Khuếch đại sát thương nhận vào, tích tầng 1-5)
+			if (instantPoisonEndTime > now) {
+				int secInstant = (int) ((instantPoisonEndTime - now) / 1000L) + 1;
+				if (secInstant > 0 && !hasBuffNamed(list, "Nhiễm Độc")) {
+					String pName = instantPoisonStacks > 1 ? ("Nhiễm Độc x" + instantPoisonStacks) : "Nhiễm Độc";
+					list.addElement(new BuffItem(pName, formatTime(secInstant), secInstant, true, 0xBA55D3));
+				}
+			} else {
+				instantPoisonEndTime = 0;
+				instantPoisonStacks = 0;
 			}
 
 			// 4. Quét các hiệu ứng buff/skill đang hoạt động trong mainChar.de
@@ -321,18 +335,14 @@ public class MainCharInfo {
 									color = 0x00E676;
 									break;
 								case 22:
-									// Hiệu ứng 22: Debuff Dính Độc (tím) hoặc Buff Tẩm Độc (xanh lá, chỉ Cung Thủ class 4)
-									if ((buff instanceof class_zx && ((class_zx) buff).isDebuff) || poisonEndTime > now) {
-										name = "Dính Độc";
-										color = 0xBA55D3;
-										isDebuff = true;
-									} else if (mainChar.aJ == 4) {
+									// Hiệu ứng 22: Buff Tẩm Độc (chỉ Cung Thủ class 4).
+									// Nếu là debuff thì đã được quản lý chuẩn xác bởi Trúng Độc / Nhiễm Độc ở trên, bỏ qua để tránh trùng lặp.
+									if (mainChar.aJ == 4 && (buff instanceof class_zx && !((class_zx) buff).isDebuff) && poisonEndTime <= now) {
 										name = "Tẩm Độc";
 										color = 0x00E676;
+										isDebuff = false;
 									} else {
-										name = "Dính Độc";
-										color = 0xBA55D3;
-										isDebuff = true;
+										continue;
 									}
 									break;
 								case 23:
@@ -357,7 +367,20 @@ public class MainCharInfo {
 									isDebuff = true;
 									break;
 								case 4:
-									name = "Độc Ăn Mòn";
+									// Độc ăn mòn định nghĩa chuẩn lại thành Trúng Độc
+									if (poisonEndTime > now || hasBuffNamed(list, "Trúng Độc")) {
+										continue;
+									}
+									name = "Trúng Độc";
+									color = 0xBA55D3;
+									isDebuff = true;
+									break;
+								case 6:
+									// Nhiễm độc
+									if (instantPoisonEndTime > now || hasBuffNamed(list, "Nhiễm Độc")) {
+										continue;
+									}
+									name = "Nhiễm Độc";
 									color = 0xBA55D3;
 									isDebuff = true;
 									break;

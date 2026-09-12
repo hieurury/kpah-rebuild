@@ -412,7 +412,7 @@ extends class_hw {
                     break;
                 case 5:
                     v.addElement("Tăng công theo MP có");
-                    v.addElement("Tăng thêm: " + (5 + (lv - 1) * 2) + "% MP");
+                    v.addElement("Tăng thêm: " + (2 + (lv - 1) * 1) + "% MP");
                     v.addElement("Bị động (Không tốn MP)");
                     break;
                 case 6:
@@ -422,8 +422,8 @@ extends class_hw {
                     break;
                 case 7:
                     v.addElement("Khiên hộ thể hấp thu");
-                    v.addElement("Hồi MP nhận đòn: " + (10 + (lv - 1) * 5) + "%");
-                    v.addElement("Hồi Máu tốn MP: " + (20 + (lv - 1) * 5) + "%");
+                    v.addElement("Hồi MP nhận đòn: " + (5 + (lv - 1) * 2) + "%");
+                    v.addElement("Hồi Máu tốn MP: " + (10 + (lv - 1) * 2) + "%");
                     v.addElement("Hồi chiêu: 60s | MP: " + class_qz.b(n, lv));
                     break;
                 case 8:

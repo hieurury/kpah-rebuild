@@ -118,26 +118,30 @@ public class Monster implements Cloneable {
     }
 
     private boolean isPlayerAttackable(@NonNull Player player) {
-        return !player.getSundry().isNewlyRevived() && !player.isDie() && ClientManager.containsPlayers(player) && player.getLocation().getZone().equals(this.zone) && Util.getDistance(player, this) <= Settings.DISTANCE_MOB_CAN_ATTACK;
+        int maxDist = isMelee() ? 130 : 200;
+        if (isElite) maxDist += 50;
+        return !player.getSundry().isNewlyRevived() && !player.isDie() && ClientManager.containsPlayers(player) && player.getLocation().getZone().equals(this.zone) && Util.getDistance(player, this) <= maxDist;
     }
 
     public int injured(@NonNull Player plAtt, int damage, boolean isXuyenGiap, boolean isInjuredByEffect, boolean x2) throws IOException {
         if (!this.isDie()) {
             this.lastTimeBeingAttacked = System.currentTimeMillis(); // Cập nhật thời điểm bị đánh
             if (!isKhoangSan()) {
-                if (!isXuyenGiap) {
-                    int level = this.template.getLevel();
-                    // 1. Giáp phòng thủ phẳng theo level quái
-                    int mobDef = isElite ? level * 5 : level * 2;
-                    damage -= mobDef;
-                    
-                    // 2. Kháng sát thương theo % (damage mitigation)
-                    // Quái tinh anh kháng 40% - 60% sát thương (người chơi yếu đánh gần như không thấm)
-                    int resistPercent = isElite ? Math.min(60, 35 + (int) (level * 0.6)) : Math.min(25, (int) (level * 0.7));
-                    damage -= damage * resistPercent / 100;
-                } else if (isElite) {
-                    // Kể cả bị xuyên giáp, quái tinh anh vẫn triệt tiêu 25% sát thương
-                    damage -= damage * 25 / 100;
+                if (!isInjuredByEffect) {
+                    if (!isXuyenGiap) {
+                        int level = this.template.getLevel();
+                        // 1. Giáp phòng thủ phẳng theo level quái
+                        int mobDef = isElite ? level * 5 : level * 2;
+                        damage -= mobDef;
+                        
+                        // 2. Kháng sát thương theo % (damage mitigation)
+                        // Quái tinh anh kháng 40% - 60% sát thương (người chơi yếu đánh gần như không thấm)
+                        int resistPercent = isElite ? Math.min(60, 35 + (int) (level * 0.6)) : Math.min(25, (int) (level * 0.7));
+                        damage -= damage * resistPercent / 100;
+                    } else if (isElite) {
+                        // Kể cả bị xuyên giáp, quái tinh anh vẫn triệt tiêu 25% sát thương
+                        damage -= damage * 25 / 100;
+                    }
                 }
             }
             if (damage <= 0) {
@@ -564,97 +568,76 @@ public class Monster implements Cloneable {
                 // Cuồng Nộ (Frenzy) khi máu < 50%: tốc độ đánh điên cuồng 800-1200ms, bình thường 1200-1800ms
                 this.nextAttackDelay = (this.hp < getMaxHp() / 2) ? Util.nextInt(800, 1200) : Util.nextInt(1200, 1800);
             } else if (isMelee()) {
-                this.nextAttackDelay = Util.nextInt(1800, 3200);
+                this.nextAttackDelay = Util.nextInt(1800, 2800);
             } else {
-                this.nextAttackDelay = Util.nextInt(2500, 4500);
+                this.nextAttackDelay = Util.nextInt(2200, 3600);
             }
             
             getPlayerCanAttack();
             if (playerTarget != null && !isAttacking) {
                 isAttacking = true;
-                final int attackDistance = isMelee() ? 20 : 120;
                 
                 Thread.startVirtualThread(() -> {
                     try {
-                        // Calculate position to move to (distance from target)
-                        int targetPx = playerTarget.getLocation().getX();
-                        int targetPy = playerTarget.getLocation().getY();
-                        
-                        double angle = Math.atan2(this.y - targetPy, this.x - targetPx);
-                        short targetX = (short) (targetPx + attackDistance * Math.cos(angle));
-                        short targetY = (short) (targetPy + attackDistance * Math.sin(angle));
-                        
-                        // Cập nhật vị trí và gửi packet di chuyển
-                        if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(targetX, targetY)) {
-                            this.x = targetX;
-                            this.y = targetY;
-                            MonsterService.instance.sendMonsterMove(this);
-                        }
-                        
-                        // Đợi một khoảng nhỏ để animation di chuyển (nếu có)
-                        Thread.sleep(250);
-                        
-                        // Danh sách mục tiêu: luôn có primaryTarget, nếu là Tinh Anh thì tấn công tối đa 3 người chơi cùng lúc
                         Player primaryTarget = playerTarget;
-                        if (primaryTarget == null || primaryTarget.isDie()) {
+                        if (primaryTarget == null || primaryTarget.isDie() || !isPlayerAttackable(primaryTarget)) {
                             return;
                         }
-                        List<Player> targetList = new ArrayList<>();
-                        targetList.add(primaryTarget);
-                        if (isElite && zone != null && zone.getPlayers() != null) {
-                            for (Player otherPl : zone.getPlayers()) {
-                                if (targetList.size() >= 3) {
-                                    break;
-                                }
-                                if (otherPl != null && otherPl.getIdPlayer() != primaryTarget.getIdPlayer() && !otherPl.isDie() && isPlayerAttackable(otherPl)) {
-                                    targetList.add(otherPl);
-                                }
-                            }
-                        }
 
-                        for (Player target : targetList) {
-                            if (target != null && !target.isDie()) {
-                                int damageDealt = 0;
-                                if (isMelee()) {
-                                    damageDealt = MonsterService.instance.sendMeleeHit(Monster.this, target);
-                                } else {
-                                    damageDealt = MonsterService.instance.sendMonsterAttack(Monster.this, target);
+                        int targetPx = primaryTarget.getLocation().getX();
+                        int targetPy = primaryTarget.getLocation().getY();
+                        double angle = Math.atan2(this.y - targetPy, this.x - targetPx);
+                        int curDist = Util.getDistance(this, primaryTarget);
+
+                        if (isMelee()) {
+                            // === QUÁI CẬN CHIẾN: VÒNG LẶP LAO VÀO -> ĐÁNH -> LUI VỀ ===
+                            // 1. Lao vào áp sát mục tiêu (cự ly 22 - 26px)
+                            short dashX = (short) (targetPx + 24 * Math.cos(angle));
+                            short dashY = (short) (targetPy + 24 * Math.sin(angle));
+                            if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(dashX, dashY)) {
+                                this.x = dashX;
+                                this.y = dashY;
+                                MonsterService.instance.sendMonsterMove(this);
+                            }
+                            Thread.sleep(180); // Nhịp lướt tới
+
+                            // 2. Tấn công (kèm đạn đỏ)
+                            performAttackOnTargets(primaryTarget);
+
+                            // 3. Lui về sau đòn đánh (khoảng cách 60 - 70px so với target để thủ thế)
+                            Thread.sleep(220); // Thời gian vung đòn
+                            short retreatX = (short) (targetPx + 65 * Math.cos(angle));
+                            short retreatY = (short) (targetPy + 65 * Math.sin(angle));
+                            if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(retreatX, retreatY)) {
+                                this.x = retreatX;
+                                this.y = retreatY;
+                                MonsterService.instance.sendMonsterMove(this);
+                            }
+                        } else {
+                            // === QUÁI ĐÁNH XA: HIT AND RUN (GIỮ KHOẢNG CÁCH, KHÔNG ĐI NHONG NHONG) ===
+                            if (curDist < 75) {
+                                // Bị áp sát -> di chuyển ra xa để tái lập khoảng cách an toàn (~110px)
+                                short retreatX = (short) (targetPx + 110 * Math.cos(angle));
+                                short retreatY = (short) (targetPy + 110 * Math.sin(angle));
+                                if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(retreatX, retreatY)) {
+                                    this.x = retreatX;
+                                    this.y = retreatY;
+                                    MonsterService.instance.sendMonsterMove(this);
+                                    Thread.sleep(200);
                                 }
-                                // Kỹ năng đặc biệt của Quái Tinh Anh
-                                if (isElite) {
-                                    // 1. Hút máu (Lifesteal): hồi 25% sát thương gây ra
-                                    if (damageDealt > 0 && !Monster.this.isDie()) {
-                                        int healAmount = (int) (damageDealt * 0.25);
-                                        if (healAmount > 0) {
-                                            healHp(healAmount);
-                                        }
-                                    }
-                                    // 2. Kỹ năng khống chế & thiêu đốt
-                                    int randSkill = Util.nextInt(1, 100);
-                                    if (randSkill <= 25) {
-                                        // 25% Gây Choáng 2s (Stun)
-                                        target.getBuffInfluence().addBuffStunned((short) 2);
-                                    } else if (randSkill <= 55) {
-                                        // 30% Gây Trúng Độc Quái Tinh Anh (2-5% HP tối đa mỗi giây, duy trì 10s)
-                                        int mobLv = template.getLevel();
-                                        int percentHp = 2;
-                                        if (mobLv > 60) {
-                                            percentHp = 5;
-                                        } else if (mobLv > 40) {
-                                            percentHp = 4;
-                                        } else if (mobLv > 20) {
-                                            percentHp = 3;
-                                        }
-                                        target.getBuffInfluence().addBuffPoisoned((short) 10, percentHp, mobLv * 2);
-                                    } else if (randSkill <= 75) {
-                                        // 20% Thiêu đốt (Burn: trừ trực tiếp MP người chơi khiến khó dùng skill)
-                                        if (target.getPoint() != null) {
-                                            int burnMp = Math.max(50, template.getLevel() * 15);
-                                            target.getPoint().minusMp(burnMp);
-                                        }
-                                    }
+                            } else if (curDist > 140) {
+                                // Mục tiêu di chuyển ra xa -> đuổi theo để đưa vào cự ly bắn hiệu quả (~110px)
+                                short advanceX = (short) (targetPx + 110 * Math.cos(angle));
+                                short advanceY = (short) (targetPy + 110 * Math.sin(angle));
+                                if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(advanceX, advanceY)) {
+                                    this.x = advanceX;
+                                    this.y = advanceY;
+                                    MonsterService.instance.sendMonsterMove(this);
+                                    Thread.sleep(200);
                                 }
                             }
+                            // Trong cự ly lý tưởng (75 - 140px): Đứng yên ngắm bắn, không di chuyển làm loãng bãi!
+                            performAttackOnTargets(primaryTarget);
                         }
                         
                     } catch (Exception e) {
@@ -667,7 +650,53 @@ public class Monster implements Cloneable {
         }
     }
 
+    private void performAttackOnTargets(Player primaryTarget) throws IOException {
+        if (primaryTarget == null || primaryTarget.isDie()) return;
 
+        List<Player> targetList = new ArrayList<>();
+        targetList.add(primaryTarget);
+        if (isElite && zone != null && zone.getPlayers() != null) {
+            for (Player otherPl : zone.getPlayers()) {
+                if (targetList.size() >= 3) break;
+                if (otherPl != null && otherPl.getIdPlayer() != primaryTarget.getIdPlayer() && !otherPl.isDie() && isPlayerAttackable(otherPl)) {
+                    targetList.add(otherPl);
+                }
+            }
+        }
+
+        for (Player target : targetList) {
+            if (target != null && !target.isDie()) {
+                int damageDealt = MonsterService.instance.sendMonsterAttack(Monster.this, target);
+                // Kỹ năng đặc biệt của Quái Tinh Anh
+                if (isElite) {
+                    // 1. Hút máu (Lifesteal): hồi 25% sát thương gây ra
+                    if (damageDealt > 0 && !Monster.this.isDie()) {
+                        int healAmount = (int) (damageDealt * 0.25);
+                        if (healAmount > 0) {
+                            healHp(healAmount);
+                        }
+                    }
+                    // 2. Kỹ năng khống chế & thiêu đốt
+                    int randSkill = Util.nextInt(1, 100);
+                    if (randSkill <= 15) {
+                        // 15% Gây Choáng 2s (Stun)
+                        target.getBuffInfluence().addBuffStunned((short) 2);
+                    } else if (randSkill <= 30) {
+                        // 15% Gây Trúng Độc Quái Tinh Anh (dame độc phẳng DoT mỗi giây tăng theo cấp quái, duy trì 10s)
+                        int mobLv = template.getLevel();
+                        int flatPoisonDame = (int) (mobLv * 3.5 + 20);
+                        target.getBuffInfluence().addBuffPoisoned((short) 10, 0, flatPoisonDame);
+                    } else if (randSkill <= 45) {
+                        // 15% Thiêu đốt (Burn: trừ trực tiếp MP người chơi khiến khó dùng skill)
+                        if (target.getPoint() != null) {
+                            int burnMp = Math.max(50, template.getLevel() * 15);
+                            target.getPoint().minusMp(burnMp);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public void update() throws IOException {
         if (this.isDie() && Util.canDoWithTime(lastTimeDie, Settings.TIME_LIVE_MOB)) {
@@ -717,6 +746,10 @@ public class Monster implements Cloneable {
         // Wandering logic
         // "tuy nhiên trong lúc đó logic di chuyển vẫn kích hoạt" - timer vẫn đếm và kiểm tra
         if (!this.isDie() && !this.buffInfluence.isStunned() && playerTarget == null) {
+            // Quái đánh xa không đi nhong nhong làm loãng bãi: chỉ quái cận chiến mới nhích nhẹ
+            if (!isMelee()) {
+                return;
+            }
             if (Util.canDoWithTime(lastTimeMove, nextMoveDelay)) {
                 lastTimeMove = System.currentTimeMillis();
                 nextMoveDelay = Util.nextInt(3000, 5000); // Random delay 3-5s
