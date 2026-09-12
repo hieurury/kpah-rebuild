@@ -172,4 +172,44 @@
 
 ---
 
+## [2026-09-12 20:45] — Task #105: Tách Biệt Độc Lập Ô Trang Bị Vũ Khí & Cuốc (Công Cụ), Sửa Tọa Độ Vẽ Icon Cuốc Chuẩn Xác, Và Kích Hoạt Tooltip Bằng Phím Giữa
 
+**Yêu cầu:**
+1. **Khắc phục lỗi trang bị Cuốc làm tháo Gậy phép (Vũ khí) và cả 2 ô đều trống:** Người chơi trang bị Cuốc (`type 13`) thì Gậy phép bị gỡ ra hành trang và cả 2 ô vũ khí, công cụ đều trống; không thể mang đồng thời cả vũ khí và cuốc.
+2. **Khắc phục lỗi ô công cụ (Cuốc) không hiển thị hình ảnh:** Dù có Cuốc trong `itemBody`, ô công cụ `(26, 84)` vẫn trống do mảng tọa độ `bj[13], bk[13]` bị trỏ sai sang ô thú cưỡi `(82, 92)`.
+3. **Khắc phục lỗi bấm phím giữa (phím 5 / FIRE) không hiện tooltip trong menu Trang bị:**
+   - Khi vừa vào tab Trang bị, tiêu điểm nằm trên thanh tiêu đề `< Trang bị >` (`this.r == true`), `this.bb` bị gán `null` nên bấm phím giữa không có bất kỳ phản hồi nào.
+   - Khi di chuyển con trỏ vào ô công cụ (`f == 4`), method `class_nu.f()` chỉ tìm item `type == 19` (ngoại trang/thời trang) mà không tìm Cuốc (`type == 13`), dẫn đến bấm phím giữa tại ô cuốc không hiện tooltip.
+   - Khắc phục nguy cơ crash `ArrayIndexOutOfBoundsException` trong `class_yi.b` khi đọc chỉ số mảng 3 chiều sprite vũ khí.
+
+**Files thay đổi:**
+- `server/KPAH/src/services/InventoryService.java`:
+  - Thêm method `findItemBodyWeapon(@NonNull Player player)` lọc các item thỏa mãn `it.isWeapon()`.
+  - Cập nhật `sendWeaponImage()` sử dụng `findItemBodyWeapon(player)` thay vì công thức tính hệ phái cứng để luôn gửi đúng hình ảnh vũ khí đang mang.
+- `server/KPAH/src/services/UseItemService.java`:
+  - Trong `useItemEquipment()`: Phân tách rõ ràng giữa Vũ khí (`isWeapon()`) và Cuốc (`type == 13`):
+    - Khi trang bị vũ khí: Chỉ hoán đổi với vũ khí hiện tại (`findItemBodyWeapon`).
+    - Khi trang bị cuốc: Chỉ hoán đổi với cuốc hiện tại (`findItemBodyByType(player, (byte) 13)`).
+    - Cả 2 slot hoạt động độc lập hoàn toàn, cho phép mang đồng thời cả vũ khí và cuốc.
+- `game/tools/Patcher.java`:
+  - Thêm patch vào `<clinit>` của `class_nu`: gán `bj[13] = 26; bk[13] = 84;` để Cuốc luôn vẽ chính xác tại ô công cụ bên trái.
+  - Thêm patch vào `class_nu.c()`: bắt sự kiện bấm phím giữa `class_acv.b(5)` khi đang ở tab Trang bị (`x[w] == 1`). Nếu `this.r == true`, tự động chuyển tiêu điểm xuống ô đầu tiên (`this.f = 0`) và gọi ngay `class_nu.f(this)` mở tooltip; nếu đã ở trong lưới, luôn gọi `class_nu.f(this)`.
+  - Thay thế body của `class_nu.f(class_nu)`:
+    - Khi `this.f == 4` (ô công cụ): tìm item Cuốc (`tmpl.c == 13`) hoặc `19`, hiển thị tooltip chính xác tại tọa độ `(31, 82)`.
+    - Khi `this.f % 3 == 1` và `this.f != 4`: mở menu Linh thú / Thú cưng.
+    - Với các ô trang bị khác (`f % 3 != 1`): tra cứu theo mảng loại trang bị `bl[n2]` và hiển thị tooltip.
+  - Thêm method `patchClassYi()`: chèn kiểm tra biên an toàn cho mảng 3 chiều `class_hw.co` trong `class_yi.b(int, int, int)` ngăn triệt để lỗi `ArrayIndexOutOfBoundsException`.
+- **Triển khai & Cập nhật môi trường:**
+  - Build server bằng Ant JDK 21 (`dist/KPAH.jar`), SCP triển khai lên thiết bị Termux Android (`192.168.1.37:8022`), khởi động lại server daemon tiến trình mới hoạt động hoàn hảo.
+  - Chạy `Patcher` inject bytecode đã vá vào `libs/KPAH_225_remade.jar`.
+  - Đóng gói Client distribution bằng Ant JDK 8 (`KPAH_PROD.jar` & `KPAH_MOD.jar`).
+  - Khởi động lại Server cục bộ và MicroEmulator chạy trơn tru, không phát sinh lỗi.
+
+**Kết quả:** ✅ Thành công (Đã xác nhận server và client biên dịch sạch, cuốc và vũ khí mang song song độc lập, cuốc vẽ đúng ô công cụ, bấm phím giữa hiện đầy đủ tooltip).
+**Ghi chú:**
+- Backup paths:
+  - `server/KPAH/src/services/_backup/InventoryService.java.bak.20260912_2034`
+  - `server/KPAH/src/services/_backup/UseItemService.java.bak.20260912_2034`
+  - `game/tools/_backup/Patcher.java.bak.20260912_2034`
+
+---
