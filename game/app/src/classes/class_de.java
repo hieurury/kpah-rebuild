@@ -48,11 +48,13 @@ public final class class_de extends class_acd {
     }
 
     public final void a(int n) {
-        this.j.a(n);
+        int gxBullet = (n == 21) ? 20 : n;
+        this.j.a(gxBullet);
     }
 
     public final void a(int n, int n2, int n3, int n4, byte by, class_ap class_ap2, class_ap class_ap3) {
-        this.j.a(n, n2, n3, (int)class_ap2.D, class_ap3);
+        int gxBullet = (n == 21) ? 20 : n;
+        this.j.a(gxBullet, n2, n3, (int)class_ap2.D, class_ap3);
         this.d = n;
         this.e = by;
         this.f = n4;
@@ -65,6 +67,12 @@ public final class class_de extends class_acd {
     public static Image getRedBullet() {
         if (bRed != null) {
             return bRed;
+        }
+        if (b == null) {
+            try {
+                b = class_acf.a("fire");
+            } catch (Exception ignored) {
+            }
         }
         if (b == null) {
             return null;
@@ -82,9 +90,9 @@ public final class class_de extends class_acd {
                     int g = (p >> 8) & 0xFF;
                     int bl = p & 0xFF;
                     // Chuyển sang tông đỏ rực (Crimson Fire)
-                    int newR = Math.min(255, (int)(r * 1.15) + (g / 2));
-                    int newG = g / 5;
-                    int newB = bl / 5;
+                    int newR = Math.min(255, (int)(r * 1.25) + (g / 2));
+                    int newG = g / 6;
+                    int newB = bl / 6;
                     rgb[idx] = (a << 24) | (newR << 16) | (newG << 8) | newB;
                 }
             }
@@ -253,10 +261,16 @@ public final class class_de extends class_acd {
         } else if (this.d == 21) {
             // Đạn màu đỏ quái cận chiến
             Image redImg = getRedBullet();
-            graphics.drawImage(redImg != null ? redImg : b, this.h, this.i, 3);
+            if (redImg != null) {
+                graphics.drawImage(redImg, this.h, this.i, 3);
+            } else if (b != null) {
+                graphics.drawImage(b, this.h, this.i, 3);
+            }
         } else {
             // Đạn lửa gốc quái đánh xa
-            graphics.drawImage(b, this.h, this.i, 3);
+            if (b != null) {
+                graphics.drawImage(b, this.h, this.i, 3);
+            }
         }
     }
 }

@@ -50,6 +50,10 @@ public class Monster implements Cloneable {
     @Builder.Default
     private long nextAttackDelay = 2000;
     @Builder.Default
+    private long lastTimeCombatMove = 0;
+    @Builder.Default
+    private int nextCombatMoveDelay = 1500;
+    @Builder.Default
     private boolean isElite = false;
     @Builder.Default
     private long lastTimeBeingAttacked = 0;
@@ -263,33 +267,33 @@ public class Monster implements Cloneable {
         int mobLv = this.template.getLevel();
         int plDef = (pl != null && pl.getPoint() != null) ? pl.getPoint().getDefend() : 0;
 
-        // 1. Sát thương cơ bản tự nhiên của quái theo level (đã giảm sức mạnh theo yêu cầu)
-        int minAtk = Math.max(10, mobLv * 7 + 3);
-        int maxAtk = Math.max(16, mobLv * 10 + 8);
+        // 1. Sát thương cơ bản tự nhiên của quái theo level
+        int minAtk = Math.max(16, mobLv * 11 + 5);
+        int maxAtk = Math.max(24, mobLv * 14 + 15);
         int baseAtk = Util.nextInt(minAtk, maxAtk);
 
         // 2. Bonus cận chiến hoặc tinh anh
         if (isMelee()) {
-            baseAtk = (int) (baseAtk * 1.05); // Cận chiến +5%
+            baseAtk = (int) (baseAtk * 1.1); // Cận chiến +10%
         }
         if (isElite) {
-            // Quái tinh anh cân bằng lại sát thương +40% (trước là +80%)
-            baseAtk = (int) (baseAtk * 1.4);
-            // Trạng thái Cuồng Nộ (Frenzy): dưới 50% HP tăng thêm 20% sát thương
+            // Quái tinh anh tăng mạnh sát thương +80% (người chơi trang bị kém sẽ chịu không nổi)
+            baseAtk = (int) (baseAtk * 1.8);
+            // Trạng thái Cuồng Nộ (Frenzy): dưới 50% HP tăng thêm 25% sát thương
             if (this.hp < getMaxHp() / 2) {
-                baseAtk = (int) (baseAtk * 1.2);
-            }
-            // 20% tỷ lệ Bạo Kích (Critical Hit) của Tinh Anh: x1.25 sát thương
-            if (Util.isTrue(20.0, 100.0)) {
                 baseAtk = (int) (baseAtk * 1.25);
+            }
+            // 25% tỷ lệ Bạo Kích (Critical Hit) của Tinh Anh: x1.5 sát thương
+            if (Util.isTrue(25.0, 100.0)) {
+                baseAtk = (int) (baseAtk * 1.5);
             }
         }
 
         // 3. Sát thương cào xước tối thiểu (min scratch damage) theo level quái
         // Khi giáp người chơi rất cao, quái vẫn gây ra lượng sát thương nhỏ hợp lý (không bị về 1 dame vô lý)
-        int minScratch = Math.max(2, (int) (mobLv * 1.1 + 1));
+        int minScratch = Math.max(3, (int) (mobLv * 1.5 + 2));
         if (isElite) {
-            minScratch = Math.max(16, (int) (mobLv * 2.5 + 10));
+            minScratch = Math.max(25, (int) (mobLv * 3.5 + 15));
         }
 
         int netDmg = Math.max(baseAtk - plDef, minScratch);
@@ -560,9 +564,86 @@ public class Monster implements Cloneable {
     }
 
     private void attackPlayer() throws IOException {
-        if (!isDie() && !this.buffInfluence.isStunned() && Util.canDoWithTime(lastTimeAttackPlayer, nextAttackDelay)) {
+        if (isDie() || this.buffInfluence.isStunned()) {
+            return;
+        }
+        getPlayerCanAttack();
+        if (playerTarget == null) {
+            return;
+        }
+
+        // 1. Quản lý di chuyển trong lúc chờ hồi chiêu đòn đánh (Cooldown Movement)
+        if (!isAttacking) {
+            int targetPx = playerTarget.getLocation().getX();
+            int targetPy = playerTarget.getLocation().getY();
+            int curDist = Util.getDistance(this, playerTarget);
+
+            if (isMelee()) {
+                // Quái cận chiến: di chuyển lượn quanh người chơi (38px - 65px), không đứng yên 1 chỗ
+                if (Util.canDoWithTime(lastTimeCombatMove, nextCombatMoveDelay)) {
+                    lastTimeCombatMove = System.currentTimeMillis();
+                    nextCombatMoveDelay = Util.nextInt(1200, 2000);
+
+                    int orbitDist = Util.nextInt(38, 65);
+                    double curAngle = Math.atan2(this.y - targetPy, this.x - targetPx);
+                    double offsetAngle = (Util.nextInt(35, 70) * Math.PI / 180.0) * (Util.nextInt(2) == 0 ? 1 : -1);
+                    double newAngle = curAngle + offsetAngle;
+
+                    short newX = (short) (targetPx + orbitDist * Math.cos(newAngle));
+                    short newY = (short) (targetPy + orbitDist * Math.sin(newAngle));
+                    if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(newX, newY)) {
+                        this.x = newX;
+                        this.y = newY;
+                        MonsterService.instance.sendMonsterMove(this);
+                    }
+                }
+            } else {
+                // Quái đánh xa: giữ cự ly và di chuyển qua lại nhẹ nhàng khi ngắm bắn
+                if (Util.canDoWithTime(lastTimeCombatMove, nextCombatMoveDelay)) {
+                    lastTimeCombatMove = System.currentTimeMillis();
+                    nextCombatMoveDelay = Util.nextInt(1800, 2800);
+
+                    if (curDist < 75) {
+                        // Bị áp sát quá gần -> lùi lại cự ly an toàn (~110px)
+                        double angle = Math.atan2(this.y - targetPy, this.x - targetPx);
+                        short retreatX = (short) (targetPx + 110 * Math.cos(angle));
+                        short retreatY = (short) (targetPy + 110 * Math.sin(angle));
+                        if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(retreatX, retreatY)) {
+                            this.x = retreatX;
+                            this.y = retreatY;
+                            MonsterService.instance.sendMonsterMove(this);
+                        }
+                    } else if (curDist > 140) {
+                        // Mục tiêu chạy ra xa -> tiến lại cự ly bắn (~110px)
+                        double angle = Math.atan2(this.y - targetPy, this.x - targetPx);
+                        short advanceX = (short) (targetPx + 110 * Math.cos(angle));
+                        short advanceY = (short) (targetPy + 110 * Math.sin(angle));
+                        if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(advanceX, advanceY)) {
+                            this.x = advanceX;
+                            this.y = advanceY;
+                            MonsterService.instance.sendMonsterMove(this);
+                        }
+                    } else {
+                        // Trong cự ly lý tưởng (75 - 140px): di chuyển qua lại nhẹ (12 - 20px) tạo cảm giác sống động
+                        double lineAngle = Math.atan2(this.y - targetPy, this.x - targetPx);
+                        double perpAngle = lineAngle + (Util.nextInt(2) == 0 ? Math.PI / 2 : -Math.PI / 2);
+                        int shift = Util.nextInt(12, 20);
+                        short newX = (short) (this.x + shift * Math.cos(perpAngle));
+                        short newY = (short) (this.y + shift * Math.sin(perpAngle));
+                        if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(newX, newY)) {
+                            this.x = newX;
+                            this.y = newY;
+                            MonsterService.instance.sendMonsterMove(this);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Thực hiện đòn đánh khi hết thời gian chờ hồi chiêu
+        if (Util.canDoWithTime(lastTimeAttackPlayer, nextAttackDelay)) {
             this.lastTimeAttackPlayer = System.currentTimeMillis();
-            
+
             // Randomize next attack delay based on monster type (đánh xa 5-10s, đánh gần 5-7s)
             if (isElite) {
                 // Tinh Anh: Cuồng Nộ (Frenzy) khi máu < 50%: 2.5 - 4s, bình thường: 4 - 6s
@@ -574,11 +655,10 @@ public class Monster implements Cloneable {
                 // Đánh xa: 5 - 10 giây
                 this.nextAttackDelay = Util.nextInt(5000, 10000);
             }
-            
-            getPlayerCanAttack();
-            if (playerTarget != null && !isAttacking) {
+
+            if (!isAttacking) {
                 isAttacking = true;
-                
+
                 Thread.startVirtualThread(() -> {
                     try {
                         Player primaryTarget = playerTarget;
@@ -589,7 +669,6 @@ public class Monster implements Cloneable {
                         int targetPx = primaryTarget.getLocation().getX();
                         int targetPy = primaryTarget.getLocation().getY();
                         double angle = Math.atan2(this.y - targetPy, this.x - targetPx);
-                        int curDist = Util.getDistance(this, primaryTarget);
 
                         if (isMelee()) {
                             // === QUÁI CẬN CHIẾN: VÒNG LẶP LAO VÀO -> ĐÁNH -> LUI VỀ ===
@@ -606,42 +685,20 @@ public class Monster implements Cloneable {
                             // 2. Tấn công (kèm đạn đỏ)
                             performAttackOnTargets(primaryTarget);
 
-                            // 3. Lui về sau đòn đánh (khoảng cách 60 - 70px so với target để thủ thế)
+                            // 3. Lui về sau đòn đánh (khoảng cách 50 - 65px so với target để thủ thế)
                             Thread.sleep(220); // Thời gian vung đòn
-                            short retreatX = (short) (targetPx + 65 * Math.cos(angle));
-                            short retreatY = (short) (targetPy + 65 * Math.sin(angle));
+                            short retreatX = (short) (targetPx + 55 * Math.cos(angle));
+                            short retreatY = (short) (targetPy + 55 * Math.sin(angle));
                             if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(retreatX, retreatY)) {
                                 this.x = retreatX;
                                 this.y = retreatY;
                                 MonsterService.instance.sendMonsterMove(this);
                             }
                         } else {
-                            // === QUÁI ĐÁNH XA: HIT AND RUN (GIỮ KHOẢNG CÁCH, KHÔNG ĐI NHONG NHONG) ===
-                            if (curDist < 75) {
-                                // Bị áp sát -> di chuyển ra xa để tái lập khoảng cách an toàn (~110px)
-                                short retreatX = (short) (targetPx + 110 * Math.cos(angle));
-                                short retreatY = (short) (targetPy + 110 * Math.sin(angle));
-                                if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(retreatX, retreatY)) {
-                                    this.x = retreatX;
-                                    this.y = retreatY;
-                                    MonsterService.instance.sendMonsterMove(this);
-                                    Thread.sleep(200);
-                                }
-                            } else if (curDist > 140) {
-                                // Mục tiêu di chuyển ra xa -> đuổi theo để đưa vào cự ly bắn hiệu quả (~110px)
-                                short advanceX = (short) (targetPx + 110 * Math.cos(angle));
-                                short advanceY = (short) (targetPy + 110 * Math.sin(angle));
-                                if (this.zone != null && this.zone.getMap() != null && this.zone.getMap().getMapData().isWalkable(advanceX, advanceY)) {
-                                    this.x = advanceX;
-                                    this.y = advanceY;
-                                    MonsterService.instance.sendMonsterMove(this);
-                                    Thread.sleep(200);
-                                }
-                            }
-                            // Trong cự ly lý tưởng (75 - 140px): Đứng yên ngắm bắn, không di chuyển làm loãng bãi!
+                            // === QUÁI ĐÁNH XA: BẮN ĐẠN VÀO MỤC TIÊU ===
                             performAttackOnTargets(primaryTarget);
                         }
-                        
+
                     } catch (Exception e) {
                         e.printStackTrace();
                     } finally {

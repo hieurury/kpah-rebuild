@@ -254,3 +254,38 @@
   - Termux: `~/data/programs/kpah-rebuild/_backup/db_users_players.sql.bak.20260912_2054`
 
 ---
+
+## [2026-09-12 21:40] — Task #107: Sửa Triệt Để Lỗi Quái Cận Chiến Không Tấn Công, Nâng Cấp Hành Vi Di Chuyển Khi Chờ Đòn & Khôi Phục Sát Thương Gốc Của Quái
+
+**Yêu cầu:**
+1. **Khắc phục lỗi quái cận chiến không tấn công và không hiện đạn đỏ:**
+   - Điều tra nguyên nhân quái cận chiến hoàn toàn không ra đòn, không hiển thị đạn đỏ và không gây sát thương lên người chơi.
+   - Sửa lỗi client xử lý loại đạn `bulletType = 21` bị crash / lỗi chỉ số mảng dẫn đến đứt gãy luồng tấn công.
+2. **Nâng cấp cơ chế di chuyển trong lúc chờ hồi chiêu (Cooldown Movement):**
+   - **Quái cận chiến:** Trong thời gian chờ hồi chiêu giữa 2 đòn đánh (5-7s), quái chủ động di chuyển lượn quanh mục tiêu (bán kính 38 - 65px), không đứng yên cứng đơ một chỗ, đảm bảo không vượt quá tầm đánh tối đa (130px) để không bị mất aggro.
+   - **Quái đánh xa:** Trong thời gian ngắm bắn (75 - 140px), quái di chuyển qua lại nhẹ nhàng (strafing 12 - 20px) tạo cảm giác sống động, nhịp thở tự nhiên thay vì đứng im như tượng.
+3. **Khôi phục sức mạnh sát thương của quái vật:**
+   - Trả lại toàn bộ công thức sát thương cơ bản và bạo kích của quái trong `getDameAttack()` như lúc ban đầu theo mong muốn của người dùng.
+
+**Files thay đổi:**
+- `game/app/src/classes/class_de.java`:
+  - Phát hiện nguyên nhân cốt lõi: lớp nội bộ `class_gx` của client chỉ có mảng tốc độ đạn `n` với kích thước 11 phần tử, khi nhận `bulletType = 21` sẽ văng ngoại lệ `ArrayIndexOutOfBoundsException: Index 21 out of bounds for length 11`, làm crash toàn bộ tiến trình render đạn và dừng chuỗi hiển thị dame.
+  - Sửa `class_de.a(...)`: ánh xạ `n == 21` sang `20` khi truyền vào `class_gx` để mượn quỹ đạo bay an toàn của đạn lửa, trong khi giữ nguyên `this.d = 21` cho `class_de` vẽ đạn màu đỏ rực rỡ (`getRedBullet()`).
+  - Lazy load an toàn ảnh `fire` nếu `b == null` và kiểm tra `null` tuyệt đối trước khi gọi `graphics.drawImage()`.
+- `server/KPAH/src/map/Monster.java`:
+  - Khôi phục `getDameAttack()` về các mốc sát thương ban đầu: `minAtk = mobLv * 11 + 5`, `maxAtk = mobLv * 14 + 15`, sát thương quái cận chiến `+10%`, quái tinh anh `+80%` và bạo kích x1.5, min scratch `mobLv * 1.5 + 2`.
+  - Tách bạch luồng di chuyển chiến đấu (`Cooldown Movement`) và luồng ra đòn (`attackPlayer()`):
+    - Quái cận chiến: Khi đang target người chơi và chờ cooldown, mỗi 1.2 - 2.0s tự động lượn góc quanh người chơi ở cự ly 38 - 65px (kiểm tra `isWalkable` an toàn). Khi hết cooldown, lướt vào áp sát (24px) $\rightarrow$ tấn công $\rightarrow$ bước lùi lại 55px.
+    - Quái đánh xa: Khi trong khoảng cách lý tưởng (75 - 140px), mỗi 1.8 - 2.8s đảo vị trí qua lại theo phương vuông góc 12 - 20px; nếu bị áp sát (< 75px) lùi ra 110px; nếu mục tiêu ra xa (> 140px) tiến tới 110px.
+- **Triển khai & Cập nhật môi trường:**
+  - Build lại client game distribution bằng Ant (`KPAH_PROD.jar` và `KPAH_MOD.jar`).
+  - Build lại `KPAH.jar` cho Server, SCP cập nhật trực tiếp lên Termux Android (`192.168.1.37:8022`).
+  - Khởi động lại Server Game trên điện thoại và máy cục bộ, lắng nghe thông suốt trên cổng `19129`.
+
+**Kết quả:** ✅ Thành công (Quái cận chiến ra đòn ổn định, đạn đỏ hiển thị rõ nét kèm hiệu ứng va chạm, quái di chuyển sống động trong lúc chờ hồi chiêu, dame quái đã khôi phục đầy đủ).
+**Ghi chú:**
+- Backup paths:
+  - `game/app/src/classes/_backup/class_de.java.bak.20260912_2138`
+  - `server/KPAH/src/map/_backup/Monster.java.bak.20260912_2139`
+
+---
