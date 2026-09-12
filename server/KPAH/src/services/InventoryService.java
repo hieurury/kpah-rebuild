@@ -320,6 +320,12 @@ public class InventoryService {
                 .findFirst().orElse(null);
     }
 
+    public ItemEquip findItemBodyWeapon(@NonNull Player player) {
+        return player.getInventory().getItemBody().stream()
+                .filter(it -> it != null && it.isWeapon())
+                .findFirst().orElse(null);
+    }
+
     public ItemEquip findItemBodyWeaponOrPickaxe(@NonNull Player player) {
         return player.getInventory().getItemBody().stream()
                 .filter(it -> it != null && (it.isWeapon() || it.getTemplate().getType() == 13))
@@ -438,7 +444,7 @@ public class InventoryService {
     public void sendWeaponImage(@NonNull Player player) throws IOException {
         Message m = new Message(CommandMessage.GET_WEAPONE);
         m.writer().writeByte(1);
-        ItemEquip weapon = findItemBodyByType(player, (byte) (3 + player.getInfo().getClassPlayer()));
+        ItemEquip weapon = findItemBodyWeapon(player);
         if (weapon != null) {
             m.writer().writeByte(weapon.getIdItem());
             byte[][] image = Manager.getImageWeapon(weapon.getTemplate().getId());

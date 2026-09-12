@@ -29,12 +29,14 @@ public class Patcher {
         pool.appendClassPath("../wtk/lib/midpapi20.jar");
         pool.appendClassPath("../wtk/lib/cldcapi11.jar");
         pool.insertClassPath("../build/classes");
+        pool.insertClassPath("../build/dist/KPAH_PROD.jar");
         pool.insertClassPath("_orig_classes");
 
         patchClassAbj(pool);
         patchClassBa(pool);
         patchClassNu(pool);
         patchClassHw(pool);
+        patchClassYi(pool);
 
         System.out.println("All patches applied successfully!");
     }
@@ -241,7 +243,14 @@ public class Patcher {
     private static void patchClassNu(ClassPool pool) throws Exception {
         CtClass cc = pool.get("classes.class_nu");
 
-        // Patch method c(): Fix right-column touch selection (weapon, necklace, rings, jade)
+        // Patch 1: Cuốc coordinates in <clinit> (bj[13]=26, bk[13]=84)
+        CtConstructor clinit = cc.getClassInitializer();
+        if (clinit != null) {
+            clinit.insertAfter("bj[13] = 26; bk[13] = 84;");
+            System.out.println("Patched class_nu.<clinit> (pickaxe slot coordinates bj[13]=26, bk[13]=84)");
+        }
+
+        // Patch 2: Patch method c(): Fix right-column touch selection (weapon, necklace, rings, jade)
         CtMethod m = cc.getDeclaredMethod("c", new CtClass[0]);
         MethodInfo mi = m.getMethodInfo();
         CodeAttribute ca = mi.getCodeAttribute();
@@ -260,7 +269,64 @@ public class Patcher {
             }
         }
 
-        // Patch method o(Graphics): Always draw mount even if pickaxe is equipped
+        // Patch 3: Center key (phím giữa / 5) in class_nu.c() opens tooltip
+        m.insertBefore(
+            "if (x[w] == 1 && classes.class_acv.b(5)) {" +
+            "    if (this.r) {" +
+            "        this.r = false;" +
+            "        this.n();" +
+            "        this.f = 0;" +
+            "    }" +
+            "    classes.class_acv.c[5] = false;" +
+            "    classes.class_nu.f(this);" +
+            "    return;" +
+            "}"
+        );
+        System.out.println("Patched class_nu.c() (center key tooltip)");
+
+        // Patch 4: Method f() for Cuốc (type 13) and all equipment tooltips
+        CtMethod mf = cc.getDeclaredMethod("f", new CtClass[] { cc });
+        mf.setBody("{\n" +
+            "    int n = 0;\n" +
+            "    int n2 = 0;\n" +
+            "    if ($1.f % 3 == 1) {\n" +
+            "        if ($1.f == 4) {\n" +
+            "            if (classes.class_nu.O != null && classes.class_nu.O.aT != null) {\n" +
+            "                int sz = classes.class_nu.O.aT.size();\n" +
+            "                for (int i = 0; i < sz; i++) {\n" +
+            "                    classes.class_ql item = (classes.class_ql)classes.class_nu.O.aT.elementAt(i);\n" +
+            "                    classes.class_yc tmpl = classes.class_yi.b((int)item.r);\n" +
+            "                    if (tmpl != null && (tmpl.c == 13 || tmpl.c == 19)) {\n" +
+            "                        $1.a(item, false, 31, 82);\n" +
+            "                        return;\n" +
+            "                    }\n" +
+            "                }\n" +
+            "            }\n" +
+            "            return;\n" +
+            "        } else {\n" +
+            "            java.util.Vector vec = new java.util.Vector();\n" +
+            "            vec.addElement(new classes.class_s(\"Linh thú\", new classes.class_vy($1)));\n" +
+            "            vec.addElement(new classes.class_s(\"Thú cưng\", new classes.class_vx($1)));\n" +
+            "            classes.class_acv.u.a(vec, 3);\n" +
+            "            return;\n" +
+            "        }\n" +
+            "    }\n" +
+            "    n2 = ($1.f / 3 << 1) + ($1.f % 3 - ($1.f % 3 > 0 ? 1 : 0));\n" +
+            "    if (classes.class_nu.O != null && classes.class_nu.O.aT != null) {\n" +
+            "        int sz = classes.class_nu.O.aT.size();\n" +
+            "        for (int i = 0; i < sz; i++) {\n" +
+            "            classes.class_ql item = (classes.class_ql)classes.class_nu.O.aT.elementAt(i);\n" +
+            "            classes.class_yc tmpl = classes.class_yi.b((int)item.r);\n" +
+            "            if (tmpl != null && ((tmpl.c == bl[n2]) || (bl[n2] == -1 && tmpl.c > 2 && tmpl.c < 8)) && (n2 != 7 || ++n != 1)) {\n" +
+            "                $1.a(item, false, bn[n2][0] + 5, bn[n2][1] - 2);\n" +
+            "                return;\n" +
+            "            }\n" +
+            "        }\n" +
+            "    }\n" +
+            "}");
+        System.out.println("Patched class_nu.f() (cuoc & equipment tooltip handling)");
+
+        // Patch 5: Patch method o(Graphics): Always draw mount even if pickaxe is equipped
         CtClass[] gParam = new CtClass[] { pool.get("javax.microedition.lcdui.Graphics") };
         CtMethod mo = cc.getDeclaredMethod("o", gParam);
         MethodInfo mio = mo.getMethodInfo();
@@ -297,5 +363,15 @@ public class Patcher {
         });
         cc.writeFile("patched_classes");
         System.out.println("class_hw patched successfully (safe elementAt & drawRegion).");
+    }
+
+    private static void patchClassYi(ClassPool pool) throws Exception {
+        CtClass cyi = pool.get("classes.class_yi");
+        CtMethod myib = cyi.getDeclaredMethod("b", new CtClass[] { CtClass.intType, CtClass.intType, CtClass.intType });
+        myib.insertBefore(
+            "if ($1 < 0 || $1 >= classes.class_hw.co.length || $2 < 0 || classes.class_hw.co[$1] == null || $2 >= classes.class_hw.co[$1].length || $3 < 0 || classes.class_hw.co[$1][$2] == null || $3 >= classes.class_hw.co[$1][$2].length) { return null; }"
+        );
+        cyi.writeFile("patched_classes");
+        System.out.println("class_yi patched successfully (safe class_yi.b).");
     }
 }

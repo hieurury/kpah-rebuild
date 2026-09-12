@@ -585,10 +585,12 @@ public class UseItemService {
             }
             InventoryService.instance.normalizeItemBodyRings(player);
         } else {
-            // Kiểm tra vũ khí và cuốc (cùng chia sẻ slot vũ khí)
+            // Kiểm tra trang bị: Vũ khí và Cuốc là 2 slot độc lập hoàn toàn
             ItemEquip hasEquipment = null;
-            if (equipment.isWeapon() || equipment.getTemplate().getType() == 13) {
-                hasEquipment = InventoryService.instance.findItemBodyWeaponOrPickaxe(player);
+            if (equipment.isWeapon()) {
+                hasEquipment = InventoryService.instance.findItemBodyWeapon(player);
+            } else if (equipment.getTemplate().getType() == 13) {
+                hasEquipment = InventoryService.instance.findItemBodyByType(player, (byte) 13);
             } else {
                 hasEquipment = InventoryService.instance.findItemBodyByType(player, equipment.getTemplate().getType());
             }
