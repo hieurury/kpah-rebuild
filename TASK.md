@@ -289,3 +289,62 @@
   - `server/KPAH/src/map/_backup/Monster.java.bak.20260912_2139`
 
 ---
+
+## [2026-09-15 17:35] — Task #108: Cân Bằng Cấp Độ Kỹ Năng 4 & 5 (Chiến Binh, Đấu Sĩ, Cung Thủ), Thông Báo Nâng Kỹ Năng & Phân Loại Kháng Ma / Kháng Vật Cho Trang Bị Giáp Chế Tạo
+
+**Yêu cầu:**
+1. **Chuẩn hóa cấp độ yêu cầu kỹ năng 4 & 5 cho 3 lớp (Chiến Binh, Đấu Sĩ, Cung Thủ)**: Mở cộng từ cấp 3 (`lvSkill = 0`), tăng mỗi 3 level (lv 3, 6, 9, 12, 15, 18, 21, 24, 27). Giới hạn cộng thủ công tối đa 9 điểm cho tất cả kỹ năng.
+2. **Cải tiến thông báo nâng kỹ năng**: Thông báo rõ nguyên nhân thất bại qua popup (`Kĩ năng đã đạt cấp tối đa (9 điểm)`, `Bạn không đủ điểm tiềm năng kỹ năng!`, `Cần đạt cấp X để nâng cấp kĩ năng này!`).
+3. **Phân loại Kháng Ma / Kháng Vật cho trang bị chế tạo**:
+   - Áp dụng cho các loại trang bị Giáp (Áo, Quần, Nón, Giày, Găng tay - types 0, 1, 2, 10, 11).
+   - Khi bấm Chế tạo trên giao diện client, hiển thị popup cho phép chọn "Kháng Vật" hoặc "Kháng Ma" (kèm nút Đóng/Hủy).
+   - Trang bị công (Vũ khí, Nhẫn, Dây chuyền, Ngọc) không hỏi chọn kháng, giữ nguyên `DAMAGE_NONE`.
+   - Thuộc tính cơ bản của giáp: Tỉ lệ 80% cho loại kháng được chọn và 20% cho loại kháng còn lại.
+   - Thuộc tính phụ (Pool A): Giáp Kháng Ma chỉ roll ra Kháng Ma (attribute 6), giáp Kháng Vật chỉ roll ra Kháng Vật (attribute 1). Trang bị công (Vũ khí, Nhẫn, Dây chuyền, Ngọc) có thể roll ngẫu nhiên Kháng Vật (+50..100) hoặc Kháng Ma (+50..100).
+   - Ngũ hành: Tạm thời giữ nguyên chưa can thiệp theo yêu cầu.
+
+**Files thay đổi:**
+- `server/KPAH/src/manager/Manager.java` — Điều chỉnh hàm `getLevelAddSkill`: skill 4 và 5 của Chiến Binh, Đấu Sĩ, Cung Thủ yêu cầu `(short) (3 + Math.min(lvSkill, 9) * 3)`.
+- `server/KPAH/src/player/Point.java` — Bổ sung thông báo chi tiết khi tăng điểm kỹ năng thất bại (đạt max 9 điểm, thiếu điểm, chưa đủ cấp độ yêu cầu).
+- `server/KPAH/src/services/CraftService.java` — Quá tải `craftEquipment` nhận thêm `damageType`; phân bổ 80% / 20% thủ ma / thủ vật cho giáp; điều chỉnh Pool A phụ thuộc loại kháng; cập nhật log và thông báo chế tạo.
+- `server/KPAH/src/network/MessageHandler.java` — Đọc byte `damageType` từ opcode `-116` (`CRAFT_ITEM`) và truyền vào `CraftService.craftEquipment`.
+- `game/app/src/classes/class_go.java` — Quá tải `sendCraftItem(short idItem, byte rank, byte damageType)` gửi opcode `-116`.
+- `game/app/src/classes/CraftShopScreen.java` — Kiểm tra loại trang bị khi bấm "Chế tạo"; nếu là Giáp thì mở popup chọn "Kháng Vật" (phím trái) hoặc "Kháng Ma" (phím phải) kèm "Đóng" (phím giữa).
+- Backup paths: Đã tạo backup cho toàn bộ các file tại thư mục `_backup/` tương ứng trước khi chỉnh sửa.
+
+**Kết quả:** ✅ Thành công. Biên dịch thành công 100% cả Server (`server/KPAH/dist/KPAH.jar`) và Game Client (`game/build/dist/kpah_mod_v1.0.0.1.jar`) bằng Ant.
+
+---
+
+## [2026-09-15 18:25] — Task #109: Tổng Hợp File SQL Khởi Tạo Toàn Diện Hệ Thống, Tạo Tài Khoản Test Max Cấp 3 Phái & Chạy Thử Nghiệm Local Server / Client
+
+**Yêu cầu:**
+1. **Tổng hợp SQL khởi tạo hoàn chỉnh:**
+   - Dựa trên toàn bộ các cập nhật DB từ trước đến nay (quái tinh anh, chỉ số quái, kỹ năng, mana, mô tả skill, thuộc tính trang bị, shop, others...).
+   - Tạo ra file SQL khởi tạo hoàn chỉnh (`server/init_kpah.sql` và cập nhật `server/kpah.sql`) để khởi tạo toàn bộ hệ thống từ đầu dễ dàng.
+2. **Tạo tài khoản test với 3 nhân vật max cấp:**
+   - Tài khoản: `admin` / `123456`, quyền Admin, kích hoạt sẵn.
+   - Tài nguyên: 900,000 Lượng và 9,000,000,000 Xu (9 tỷ Xu).
+   - 3 nhân vật thuộc 3 phái:
+     - **Cung Thủ** (`CungThuMax`, Class 4, Hệ Mộc)
+     - **Chiến Binh** (`ChienBinhMax`, Class 1, Hệ Hỏa)
+     - **Đấu Sĩ** (`DauSiMax`, Class 3, Hệ Thổ)
+   - Thông số nhân vật: Level 100, exp 5 tỷ, toàn bộ 9 kỹ năng môn phái đều max cấp 9 điểm.
+   - Trang bị trên người (`itemBody`): Full 11 món đồ cấp max (Vũ khí +15, Áo +15, Quần +15, Nón +15, Giày +15, Găng +15, 2 Nhẫn +15, Dây chuyền +15, Ngọc bội +15, Phi phong +15). Tất cả đều là Nhất phẩm (Rank 1), phẩm chất hoàng kim, độ bền tối đa 480/480, chỉ số thuộc tính tối ưu.
+3. **Chạy Server và Game Client ở Local để kiểm thử:**
+   - Chạy Server KPAH (Java 21) lắng nghe cổng `19129`.
+   - Build client mod kết nối Localhost 127.0.0.1:19129 (`kpah_mod_v1.0.0.1_local.jar`) và khởi chạy trên MicroEmulator.
+
+**Files thay đổi:**
+- `server/gen_test_account.py` — Script sinh dữ liệu tài khoản admin và 3 nhân vật max cấp với trang bị, kỹ năng, tiền tệ chuẩn xác theo cấu trúc KPAH.
+- `server/init_kpah.sql` — File SQL khởi tạo toàn diện hệ thống xuất từ MariaDB container `kpah-mysql` (dung lượng 2.2MB).
+- `server/kpah.sql` — Cập nhật file SQL gốc của game đồng bộ với dữ liệu đã tối ưu và bổ sung tài khoản test.
+- `server/_backup/kpah.sql.bak.20260915_1817` — Bản sao lưu trước khi cập nhật `server/kpah.sql`.
+- `game/build/dist/kpah_mod_v1.0.0.1_local.jar` — Client jar mod kết nối server cục bộ (127.0.0.1:19129).
+
+**Kết quả:** ✅ Thành công
+- Đã import tài khoản `admin` và 3 nhân vật max cấp vào database MariaDB (`kpah`).
+- Server KPAH khởi động thành công, nạp đủ 755 item template, 15 skill template, 131 quái vật, 56 map, lắng nghe cổng `19129`.
+- Game client local đã build thành công và khởi chạy giao diện GUI MicroEmulator trên display local (`DISPLAY=:0`).
+
+---

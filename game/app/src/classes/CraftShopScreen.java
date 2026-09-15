@@ -82,11 +82,37 @@ public class CraftShopScreen extends class_aae {
 		final byte rank = (byte) TAB_RANKS[currentTab];
 		final String rankName = TAB_NAMES[currentTab];
 
-		class_acv.b("Bạn có chắc muốn chế tạo " + it.name + " (" + rankName + ") không?", new IAction() {
-			public void perform() {
-				class_go.a().sendCraftItem(it.id, rank);
-			}
-		});
+		boolean isArmor = it.type == 0 || it.type == 1 || it.type == 2 || it.type == 10 || it.type == 11;
+		if (isArmor) {
+			class_acv.x.a = false;
+			class_acv.x.a(
+				"Chọn loại kháng cho " + it.name + " (" + rankName + "):",
+				new class_s("Kháng Vật", new IAction() {
+					public void perform() {
+						class_acv.g();
+						class_go.a().sendCraftItem(it.id, rank, (byte) 1);
+					}
+				}),
+				new class_s("Đóng", new IAction() {
+					public void perform() {
+						class_acv.g();
+					}
+				}),
+				new class_s("Kháng Ma", new IAction() {
+					public void perform() {
+						class_acv.g();
+						class_go.a().sendCraftItem(it.id, rank, (byte) 0);
+					}
+				})
+			);
+			class_acv.w = class_acv.x;
+		} else {
+			class_acv.b("Bạn có chắc muốn chế tạo " + it.name + " (" + rankName + ") không?", new IAction() {
+				public void perform() {
+					class_go.a().sendCraftItem(it.id, rank, (byte) 2);
+				}
+			});
+		}
 	}
 
 	public void b() {

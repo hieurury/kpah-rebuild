@@ -63,11 +63,20 @@ public class Point {
 
     public void increaseSkillPoint(byte type) throws IOException {
         byte levelSkill = player.getSkill().getLevelSkill()[type];
-        if (levelSkill == -1 || skillPoint <= 0 || player.getInfo().getLevel() < Manager.getLevelAddSkill(player.getInfo().getClassPlayer(), type, levelSkill)) {
+        if (levelSkill == -1) {
             return;
         }
         if (levelSkill >= 9) {
-            Service.instance.sendLogOut(player.getSession(), "Kĩ năng đạt cấp tối đa");
+            Service.instance.sendLogOut(player.getSession(), "Kĩ năng đã đạt cấp tối đa (9 điểm)");
+            return;
+        }
+        if (skillPoint <= 0) {
+            Service.instance.sendLogOut(player.getSession(), "Bạn không đủ điểm tiềm năng kỹ năng!");
+            return;
+        }
+        short reqLevel = Manager.getLevelAddSkill(player.getInfo().getClassPlayer(), type, levelSkill);
+        if (player.getInfo().getLevel() < reqLevel) {
+            Service.instance.sendLogOut(player.getSession(), "Cần đạt cấp " + reqLevel + " để nâng cấp kĩ năng này!");
             return;
         }
         skillPoint -= 1;

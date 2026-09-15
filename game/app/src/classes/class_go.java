@@ -851,15 +851,20 @@ public final class class_go extends class_kr {
 		}
 	}
 
-	public final void sendCraftItem(short idItem, byte rank) {
+	public final void sendCraftItem(short idItem, byte rank, byte damageType) {
 		class_abs var2 = b((byte) -116);
 		try {
 			var2.c().writeShort(idItem);
 			var2.c().writeByte(rank);
+			var2.c().writeByte(damageType);
 			this.a.a(var2);
 			var2.d();
 		} catch (IOException ignored) {
 		}
+	}
+
+	public final void sendCraftItem(short idItem, byte rank) {
+		sendCraftItem(idItem, rank, (byte) 2);
 	}
 
 	public final void a(String var1) {

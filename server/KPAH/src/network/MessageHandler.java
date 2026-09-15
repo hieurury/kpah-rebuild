@@ -32,6 +32,7 @@ import services.TradeService;
 import services.UseItemService;
 import consts.ClanConst;
 import consts.CombineConst;
+import consts.ItemEquipConst;
 import utils.CommandMessage;
 import consts.Const;
 import consts.ItemEquipConst;
@@ -670,7 +671,14 @@ public class MessageHandler {
                     if (player != null) {
                         short idItem = msg.reader().readShort();
                         byte rank = msg.reader().readByte();
-                        CraftService.instance.craftEquipment(player, idItem, rank);
+                        byte damageType = ItemEquipConst.DAMAGE_NONE;
+                        try {
+                            if (msg.reader().available() > 0) {
+                                damageType = msg.reader().readByte();
+                            }
+                        } catch (Exception ignored) {
+                        }
+                        CraftService.instance.craftEquipment(player, idItem, rank, damageType);
                     }
                 }
                 case CommandMessage.FINISH_PUT_ITEM_2_BAG, CommandMessage.CONFIG, CommandMessage.QUEST_CLAN -> {

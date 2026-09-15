@@ -366,8 +366,8 @@ public class Manager {
         // Chiến Binh (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
         if (clazz == Const.CHIEN_BINH) {
             return switch (idSkill) {
-                case 4 -> (short) (20 + Math.min(lvSkill, 9)); // Cường thân giáp / Tăng giáp (base lv 20)
-                case 5 -> (short) (21 + Math.min(lvSkill, 9)); // Hộ công tiến / Tăng công (base lv 21)
+                case 4 -> (short) (3 + Math.min(lvSkill, 9) * 3); // Cường thân giáp / Tăng giáp (base lv 3, +3 lv mỗi cấp)
+                case 5 -> (short) (3 + Math.min(lvSkill, 9) * 3); // Hộ công tiến / Tăng công (base lv 3, +3 lv mỗi cấp)
                 case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Thiên long bạo kích (AoE 1, lv 25)
                 case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Liệt hỏa bạo kích (AoE 2, lv 30)
                 case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Sao băng giáng thế (AoE 3, lv 45)
@@ -378,8 +378,8 @@ public class Manager {
         // Đấu Sĩ (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
         if (clazz == Const.DAU_SI) {
             return switch (idSkill) {
-                case 4 -> (short) (19 + Math.min(lvSkill, 9)); // Bất di biến / Gây choáng (base lv 19)
-                case 5 -> (short) (20 + Math.min(lvSkill, 9)); // Hộ thủ tiến / Tăng thủ (base lv 20)
+                case 4 -> (short) (3 + Math.min(lvSkill, 9) * 3); // Bất di biến / Gây choáng (base lv 3, +3 lv mỗi cấp)
+                case 5 -> (short) (3 + Math.min(lvSkill, 9) * 3); // Hộ thủ tiến / Tăng thủ (base lv 3, +3 lv mỗi cấp)
                 case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Kinh thiên động địa (AoE 1, lv 25)
                 case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Sơn Tinh bộ thiên (AoE 2, lv 30)
                 case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Thạch nhũ công tâm (AoE 3, lv 45)
@@ -390,8 +390,8 @@ public class Manager {
         // Cung Thủ (9 skills: 0-3 cơ bản, 4-5 buff, 6-8 AoE mới)
         if (clazz == Const.CUNG_THU) {
             return switch (idSkill) {
-                case 4 -> (short) (22 + Math.min(lvSkill, 9)); // Độc lưu tiễn / Tẩm độc (base lv 22)
-                case 5 -> (short) (19 + Math.min(lvSkill, 9)); // Hộ độc tiễn / Tăng độc (base lv 19)
+                case 4 -> (short) (3 + Math.min(lvSkill, 9) * 3); // Độc lưu tiễn / Tẩm độc (base lv 3, +3 lv mỗi cấp)
+                case 5 -> (short) (3 + Math.min(lvSkill, 9) * 3); // Hộ độc tiễn / Tăng độc (base lv 3, +3 lv mỗi cấp)
                 case 6 -> (short) (6 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[6].length ? LEVEL_ADD_SKILL[6][lvSkill] : 25); // Thập diện tâm tiễn (AoE 1, lv 25)
                 case 7 -> (short) (7 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[7].length ? LEVEL_ADD_SKILL[7][lvSkill] : 30); // Thăng thiên loạn tiễn (AoE 2, lv 30)
                 case 8 -> (short) (8 < LEVEL_ADD_SKILL.length && lvSkill < LEVEL_ADD_SKILL[8].length ? LEVEL_ADD_SKILL[8][lvSkill] : 45); // Vạn tiễn quy tâm (AoE 3, lv 45)

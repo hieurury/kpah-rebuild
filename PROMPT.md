@@ -1,28 +1,14 @@
-Đầu tiên về vấn đề chế tạo trang bị đã khá ổn
-tuy nhiên vài vấn đề cần khắc phục và nâng cấp
-- vấn đề đeo trang bị, mặc dù tôi đã đeo đủ trang bị, kể cả 2 nhẫn nhưng trong menu trang bị không hiện nhẫn trên. Thứ 2 là khi bấm vào trang bị trong menu thì nó ko hiện tooltip như bình thường.
-- khi đeo trang bị, đồ khác giới, hiển thị thông báo không mặc được rồi cái đồ biến mất luôn, cần check lại.
-- có vài trang bị đeo vào cũng không thấy hiển thị (ví dụ như tôi đang đeo cuốc nhưng trong ô trang bị cuốc lại không hiện, làm tôi không tháo ra được)
-- về ngựa/thú cưỡi cũng không được hiển thị trong ô trang bị thú cưỡi, cũng cần xem lại
-- không thể trang bị lại vũ khí sau khi trang bị cuốc.
+một vài thông tin cần kiểm tra lại trước khi đi vào chỉnh sửa.
+
+Hiện tại thì các quái tinh anh (có vẻ từ lv10 trở lên) đang không cho rương tinh anh hoặc là cái rương tinh anh bị lỗi gì đó. Vấn đề tiếp là về hình ảnh, khi giết 1 con quái tinh anh đôi lúc sẽ bị lỗi khiến hình ảnh quái và người chơi bị biến mất, cần xem nguyên nhân.
+
+Về bộ kỹ năng, lớp pháp sư và kiếm khách đã nói qua, tuy nhiên các lớp khác vẫn đang lỗi về cấp độ cộng kỹ năng, cần xem qua.
+
+Lỗi  về thanh HP và MP bar của người chơi, hiện trạng bơm MP liên tục và thanh MP trôi cực nhanh vẫn còn diễn ra, kiểm tra lý do xem, tôi nghĩ là do khi người chơi làm tụt thanh MP hoặc HP quá nhanh xuống dưới mức auto thì nó sẽ bơm HP để đẩy thanh HO lên, tuy nhiên trong thời gian phản hồi thì hệ thống lại trả dame và hp còn lại của người chơi (lượng hp/mp nạp chưa được phản hồi) làm client tiếp tục bấm bơm, cứ thế mà bị lỗi
+
+Lỗi về chế tạo trang bị, trang bị game chia ra là kháng ma (thủ ma) và kháng vật lý (thủ ma), lúc chế tạo trang bị nên thêm 1 công đoạn hỏi điều này. Hiện tại trang bị chế ra luôn cho chỉ số kháng ma và kháng vật lý bằng nhau, điều này là quá OP, trang bị kháng ma có chỉ số kháng ma chiếm 80% và kháng vật lý 20%, trang bị thủ vật lý thì ngược lại.
+
+Xem cơ chế ngũ hành game và xem có thể tiến hành loại bỏ triệt để ra khỏi tất cả hệ thống và chức năng.
 
 ---
-Vấn đề hiển thị tooltip trang bị.
-Hiên tại trang bị chế tạo cộng chỉ số nó đang hiển thị kiểu
-
-```
-chỉ số 7: 5
-chỉ số 8: 5
-```
-chứ không ghi rõ là tăng cái gì hay cộng cái gì. Đảm bảo ghi đầy đủ kiểu
-```
-Sức khỏe: +5
-Tấn công: +100
-Né: +5%
-```
-các chỉ số thường thì để màu xanh dương, các chỉ số đặc biệt để màu vàng.
-chỉ số HP thì để màu đỏ, chỉ số MP thì để màu màu xanh dương cho đúng style.
-
-
----
-trước mắt xem các vấn đề này và thực hiện lên kế hoạch chỉnh sửa. Trong quá tình xem xét, nếu phát hiện các vấn đề tương tự hoặc rủi ro, có thể bổ sung thêm
+Trước mắt xem kế hoạch và tìm hiểu các phần đó, tổng hợp và lên kế hoạch

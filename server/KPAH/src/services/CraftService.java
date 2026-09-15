@@ -250,6 +250,10 @@ public class CraftService {
      * Thực hiện chế tạo trang bị.
      */
     public void craftEquipment(@NonNull Player player, short idItem, byte rank) throws IOException {
+        craftEquipment(player, idItem, rank, ItemEquipConst.DAMAGE_NONE);
+    }
+
+    public void craftEquipment(@NonNull Player player, short idItem, byte rank, byte damageType) throws IOException {
         ItemEquipTemplate template = Manager.getItemEquipment(idItem);
         if (template == null) {
             Service.instance.sendLogOut(player.getSession(), "Không tìm thấy thông tin trang bị!");
@@ -330,6 +334,16 @@ public class CraftService {
         byte he = (byte) Util.nextInt(ItemEquipConst.THUY, ItemEquipConst.KIM);
         short durable = (short) (template.getDurable() * 1.5);
 
+        // Xác định loại trang bị: Giáp (áo, quần, nón, giày, găng tay) vs Công (vũ khí, nhẫn, dây chuyền, ngọc)
+        boolean isArmor = template.getType() == 0 || template.getType() == 1 || template.getType() == 2 || template.getType() == 10 || template.getType() == 11;
+        if (isArmor) {
+            if (damageType != ItemEquipConst.DAMAGE_MAGIC && damageType != ItemEquipConst.DAMAGE_PHYSIC) {
+                damageType = ItemEquipConst.DAMAGE_PHYSIC;
+            }
+        } else {
+            damageType = ItemEquipConst.DAMAGE_NONE;
+        }
+
         ItemEquip item = ItemEquip.builder()
                 .idItem((short) 0)
                 .template(template)
@@ -343,7 +357,7 @@ public class CraftService {
                 .viTriVe((byte) 0)
                 .rank(rank)
                 .he(he)
-                .damageType(ItemEquipConst.DAMAGE_NONE)
+                .damageType(damageType)
                 .nameCharSeal(player.getName())
                 .dayUse(0)
                 .timeCreateItem(System.currentTimeMillis())
@@ -355,15 +369,43 @@ public class CraftService {
             short baseAtk = (short) Math.round(template.getAttribute()[0] * baseMultiplier);
             item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate((short) 0), baseAtk));
         }
-        for (short i = 1; i < 7; i++) {
-            short val = template.getAttribute()[i];
-            if (val > 0 && Manager.ATTRIBUTE_FOR_TYPE[template.getType()][i]) {
-                short baseDef = (short) Math.round(val * baseMultiplier);
-                item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate(i), baseDef));
+
+        if (isArmor) {
+            short rawDef = template.getAttribute()[1] > 0 ? template.getAttribute()[1] : template.getAttribute()[6];
+            short totalDef = (short) Math.round(rawDef * baseMultiplier);
+            if (damageType == ItemEquipConst.DAMAGE_MAGIC) {
+                // Kháng Ma: 80% thủ ma, 20% thủ vật
+                short thuMa = (short) Math.max(1, Math.round(totalDef * 0.80));
+                short thuVat = (short) Math.max(1, Math.round(totalDef * 0.20));
+                item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate((short) 6), thuMa));
+                item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate((short) 1), thuVat));
+            } else {
+                // Kháng Vật: 80% thủ vật, 20% thủ ma
+                short thuVat = (short) Math.max(1, Math.round(totalDef * 0.80));
+                short thuMa = (short) Math.max(1, Math.round(totalDef * 0.20));
+                item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate((short) 1), thuVat));
+                item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate((short) 6), thuMa));
+            }
+            // Các thuộc tính cơ bản phụ khác nếu có (né tránh, chính xác...)
+            for (short i = 2; i <= 5; i++) {
+                short val = template.getAttribute()[i];
+                if (val > 0 && Manager.ATTRIBUTE_FOR_TYPE[template.getType()][i]) {
+                    short stat = (short) Math.round(val * baseMultiplier);
+                    item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate(i), stat));
+                }
+            }
+        } else {
+            // Trang bị công (Vũ khí, Nhẫn, Dây chuyền, Ngọc): nạp theo template gốc
+            for (short i = 1; i < 7; i++) {
+                short val = template.getAttribute()[i];
+                if (val > 0 && Manager.ATTRIBUTE_FOR_TYPE[template.getType()][i]) {
+                    short baseDef = (short) Math.round(val * baseMultiplier);
+                    item.getItemAttributes().add(new Attribute(Manager.getAttributeTemplate(i), baseDef));
+                }
             }
         }
 
-        // 6. Nhóm A: 14 Thuộc tính bổ sung chung (Ngũ phẩm -> Nhất phẩm)
+        // 6. Nhóm A: Thuộc tính bổ sung chung (Ngũ phẩm -> Nhất phẩm)
         // 7: Tăng %HP (2-5%)
         // 8: Tăng %MP (2-5%)
         // 33: Tăng HP (1000-5000)
@@ -378,7 +420,19 @@ public class CraftService {
         // 11: Tăng khéo léo (5-10)
         // 13: Tăng sức khỏe (5-10)
         // 9: Tăng may mắn (5-10)
-        byte[] poolA = {7, 8, 33, 34, 88, 1, 6, 30, 0, 10, 12, 11, 13, 9};
+        byte[] poolA;
+        if (isArmor) {
+            if (damageType == ItemEquipConst.DAMAGE_MAGIC) {
+                // Kháng Ma: roll thuộc tính phụ ra Kháng Ma (6)
+                poolA = new byte[]{7, 8, 33, 34, 88, 6, 30, 0, 10, 12, 11, 13, 9};
+            } else {
+                // Kháng Vật: roll thuộc tính phụ ra Kháng Vật (1)
+                poolA = new byte[]{7, 8, 33, 34, 88, 1, 30, 0, 10, 12, 11, 13, 9};
+            }
+        } else {
+            // Trang bị công (Vũ khí, Nhẫn, Dây chuyền, Ngọc): giữ cả Kháng Vật (1) và Kháng Ma (6)
+            poolA = new byte[]{7, 8, 33, 34, 88, 1, 6, 30, 0, 10, 12, 11, 13, 9};
+        }
         List<Byte> availableA = new ArrayList<>();
         for (byte b : poolA) availableA.add(b);
 
@@ -388,7 +442,7 @@ public class CraftService {
             short val = switch (attId) {
                 case 7, 8, 88, 30 -> (short) Util.nextInt(2, 5);      // % HP, % MP, % thủ, % công
                 case 33, 34 -> (short) Util.nextInt(1000, 5000);       // Flat HP, Flat MP
-                case 1, 6, 0 -> (short) Util.nextInt(50, 100);         // Thủ vật, Thủ ma, Công
+                case 1, 6, 0 -> (short) Util.nextInt(50, 100);         // Thủ vật (kháng vật), Thủ ma (kháng ma), Công
                 case 10, 12, 11, 13, 9 -> (short) Util.nextInt(5, 10); // Sức mạnh, Tinh thần, Khéo léo, Sức khỏe, May mắn
                 default -> (short) Util.nextInt(5, 10);
             };
@@ -432,10 +486,11 @@ public class CraftService {
         InventoryService.instance.sendItemGemLock(player);
 
         String rankName = getRankName(rank);
-        ServerLog.shop("Nhân vật '%s' (ID: %d) chế tạo thành công [%s - %s] (Cấp %d) tiêu tốn %s xu.",
-                player.getName(), player.getIdPlayer(), template.getName(), rankName, template.getLevel(), Util.formatNumber(recipe.xuFee));
+        String typeResName = isArmor ? (damageType == ItemEquipConst.DAMAGE_MAGIC ? " - Kháng Ma" : " - Kháng Vật") : "";
+        ServerLog.shop("Nhân vật '%s' (ID: %d) chế tạo thành công [%s - %s%s] (Cấp %d) tiêu tốn %s xu.",
+                player.getName(), player.getIdPlayer(), template.getName(), rankName, typeResName, template.getLevel(), Util.formatNumber(recipe.xuFee));
 
-        Service.instance.sendLogOut(player.getSession(), String.format("Chế tạo thành công %s (%s)!", template.getName(), rankName));
+        Service.instance.sendLogOut(player.getSession(), String.format("Chế tạo thành công %s (%s%s)!", template.getName(), rankName, typeResName));
     }
 
     public static String getRankName(byte rank) {
