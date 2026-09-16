@@ -15,7 +15,7 @@
 | **2** | **Thần long thủy** | Đơn thể | Lv 11 – 20 | 160% – 265% | 1.6s – 2.0s | 35 – 120 | Chưởng thủy long |
 | **3** | **Bát đại hải long** | Đơn thể | Lv 17 – 42 | 200% – 300% | 1.8s – 2.6s | 50 – 175 | Tuyệt kỹ hải long đơn thể |
 | **4** | **Hồi công lực đan** | Buff chủ động | Lv 3 – 32 | — | 120s | 80 – 220 | Tăng Max HP và Max MP: 10% – 85% trong 90s |
-| **5** | **Hồi lực tiến** | Bị động | Lv 3 – 32 | — | Không có | 0 | Tăng sát thương theo Mana hiện có: 2% – 11% |
+| **5** | **Hồi lực tiến** | Bị động | Lv 3 – 32 | — | Không có | 0 | Tăng sát thương theo Mana tối đa: 2% – 11% |
 | **6** | **Hồi sinh** | Hồi sinh | Lv 6 – 33 | — | 180s – 90s | 50 – 140 | Rút HP/MP bản thân truyền cho mục tiêu (tối đa 80%) |
 | **7** | **Song hộ công thủ** | Buff chủ động | Lv 6 – 33 | — | 60s | 100 – 240 | Hồi Mana khi nhận đòn 5% – 23%, Hồi Máu khi tốn MP 10% – 28% |
 | **8** | **Hải long xuất thế** | Đánh lan | Lv 25 – 41 | Đánh lan | 4s | 80 – 220 | Rồng nước cuộn sóng đánh diện rộng |
@@ -89,20 +89,22 @@
 
 ### Skill 5: Hồi lực tiến
 * **Tên chiêu:** Hồi lực tiến
-* **Mô tả:** Nội tại chuyển hóa năng lượng, tăng sát thương cho mọi đòn đánh dựa trên lượng Mana hiện có (đã cân bằng).
+* **Mô tả:** Nội tại chuyển hóa năng lượng, tăng sát thương cho mọi đòn đánh dựa trên **lượng Mana tối đa (Max MP)**.
 * **Hồi chiêu:** Không có (Bị động)
 * **Mana tiêu hao:** 0
+* **Công thức sát thương cộng thêm:**
+  $$\text{Bonus Damage} = \text{MP}_{\max} \times [2\% + (\text{Level} - 1) \times 1\%]$$
 * **Chỉ số tăng sát thương theo từng cấp:**
-  * Cấp 1: Tăng thêm 2% lượng Mana hiện có thành sát thương
-  * Cấp 2: Tăng thêm 3% lượng Mana hiện có thành sát thương
-  * Cấp 3: Tăng thêm 4% lượng Mana hiện có thành sát thương
-  * Cấp 4: Tăng thêm 5% lượng Mana hiện có thành sát thương
-  * Cấp 5: Tăng thêm 6% lượng Mana hiện có thành sát thương
-  * Cấp 6: Tăng thêm 7% lượng Mana hiện có thành sát thương
-  * Cấp 7: Tăng thêm 8% lượng Mana hiện có thành sát thương
-  * Cấp 8: Tăng thêm 9% lượng Mana hiện có thành sát thương
-  * Cấp 9: Tăng thêm 10% lượng Mana hiện có thành sát thương
-  * Cấp 10: Tăng thêm 11% lượng Mana hiện có thành sát thương
+  * Cấp 1: Tăng thêm 2% lượng Mana tối đa thành sát thương
+  * Cấp 2: Tăng thêm 3% lượng Mana tối đa thành sát thương
+  * Cấp 3: Tăng thêm 4% lượng Mana tối đa thành sát thương
+  * Cấp 4: Tăng thêm 5% lượng Mana tối đa thành sát thương
+  * Cấp 5: Tăng thêm 6% lượng Mana tối đa thành sát thương
+  * Cấp 6: Tăng thêm 7% lượng Mana tối đa thành sát thương
+  * Cấp 7: Tăng thêm 8% lượng Mana tối đa thành sát thương
+  * Cấp 8: Tăng thêm 9% lượng Mana tối đa thành sát thương
+  * Cấp 9: Tăng thêm 10% lượng Mana tối đa thành sát thương
+  * Cấp 10: Tăng thêm 11% lượng Mana tối đa thành sát thương
 * **Cấp độ yêu cầu:** Lv 3 – 32 (`[3, 6, 9, 12, 18, 24, 26, 28, 30, 32]`)
 
 ---

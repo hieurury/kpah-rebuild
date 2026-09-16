@@ -228,6 +228,9 @@ public class ModController {
 
 				// Kiểm tra hồi chiêu
 				if (player.aq != null && player.at != null && skillId < player.aq.length && skillId < player.at.length) {
+					if (player.at[skillId] <= 0) {
+						player.at[skillId] = class_qz.a((byte) skillId, (int) class_hw.aS[skillId]);
+					}
 					if (now - player.aq[skillId] <= player.at[skillId]) {
 						continue;
 					}

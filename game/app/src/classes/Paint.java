@@ -38,76 +38,11 @@ public class Paint {
 
 	/**
 	 * Hiệu ứng Bất Di Biến (Skill 4 Đấu Sĩ):
-	 * Tạo thể hình khổng lồ, hào quang thổ thạch bao quanh thân thể và trận đồ dưới chân
+	 * Giữ nguyên hiệu ứng vòng xoáy nguyên bản của game gốc dưới chân (class_di / class_zx ID 19),
+	 * hoàn toàn không vẽ chữ và không vẽ thời gian lên đầu nhân vật.
 	 */
 	private static void paintBatDiBienTitanAura(Graphics g) {
-		try {
-			if (class_acv.s == null || class_acv.s.q == null) return;
-			class_sc mainChar = class_acv.s.q;
-			if (mainChar.de == null || (mainChar.aO != 3 && mainChar.aJ != 3)) return;
-
-			boolean hasBatDiBien = false;
-			long now = System.currentTimeMillis();
-
-			// 1. Kiểm tra mảng buff chủ động bC (chỉ có khi bật Bất Di Biến)
-			if (mainChar.bC != null) {
-				for (int b = 0; b < mainChar.bC.length; b++) {
-					if (mainChar.bC[b] == 19) {
-						hasBatDiBien = true;
-						break;
-					}
-				}
-			}
-
-			// 2. Kiểm tra trong danh sách hiệu ứng de (thời gian hiệu lực > 4s để loại trừ choáng thường 3s)
-			if (!hasBatDiBien && mainChar.de != null) {
-				for (int i = 0; i < mainChar.de.size(); i++) {
-					Object obj = mainChar.de.elementAt(i);
-					if (obj instanceof class_zx && ((class_zx) obj).h == 19) {
-						if (((class_zx) obj).a - now > 4000L) {
-							hasBatDiBien = true;
-							break;
-						}
-					}
-				}
-			}
-
-			int camX = class_abj.j;
-			int camY = class_abj.k;
-			int sx = mainChar.cK - camX;
-			int sy = mainChar.cL - camY;
-
-			if (hasBatDiBien) {
-				// Vẽ chữ "Bất Di Biến" màu vàng đỏ trên đầu nhân vật (không vẽ các vòng hiệu ứng và không kèm thời gian)
-				String tag = "Bất Di Biến";
-				int tagY = sy - 52;
-				if (class_d.j != null && class_d.j.length > 3) {
-					// Viền đỏ (class_d.j[2])
-					class_d.j[2].a(g, tag, sx - 1, tagY, 2);
-					class_d.j[2].a(g, tag, sx + 1, tagY, 2);
-					class_d.j[2].a(g, tag, sx, tagY - 1, 2);
-					class_d.j[2].a(g, tag, sx, tagY + 1, 2);
-					// Chữ vàng rực rỡ (class_d.j[3]) ở giữa tạo màu vàng đỏ nổi bật
-					class_d.j[3].a(g, tag, sx, tagY, 2);
-				} else if (class_d.a != null) {
-					class_d.a.a(g, tag, sx, tagY, 2);
-				}
-				return;
-			}
-
-			// Nếu vừa hết buff nhưng đang trong 20s hồi chiêu còn lại
-			if (mainChar.aq != null && mainChar.at != null && 4 < mainChar.aq.length && 4 < mainChar.at.length) {
-				long passed = now - mainChar.aq[4];
-				long totalCd = mainChar.at[4];
-				if (passed > 0 && passed < totalCd) {
-					long cdRemain = (totalCd - passed + 999L) / 1000L;
-					if (cdRemain > 0 && cdRemain <= 25) {
-						class_d.a.a(g, "[Hồi chiêu: " + cdRemain + "s]", sx, sy - 48, 2);
-					}
-				}
-			}
-		} catch (Exception ignored) {
-		}
+		// Loại bỏ vẽ chữ "Bất Di Biến" và thời gian hồi chiêu trên đầu nhân vật theo yêu cầu
 	}
 
 	/**
@@ -164,16 +99,17 @@ public class Paint {
 				int baseDefend = Math.max(0, totalDefend - bonusDefendTinhAnh);
 				int baseDefendMagic = Math.max(0, totalDefendMagic - bonusDefendMagicTinhAnh);
 
-				// Bonus nội tại Pháp Sư Skill 5 (Hồi lực tiến)
+				// Bonus nội tại Pháp Sư Skill 5 (Hồi lực tiến): tăng công theo lượng MP tối đa (2% + 1%/cấp)
 				int bonusAttackPhapSu = 0;
 				if (mainChar.aO == 2 && class_hw.aS != null && class_hw.aS.length > 5) {
 					byte lvSkill5 = class_hw.aS[5];
 					if (lvSkill5 > 0) {
-						bonusAttackPhapSu = (int) ((long) mainChar.bz * (5 + (lvSkill5 - 1) * 2) / 100);
+						int maxMp = mainChar.by > 0 ? mainChar.by : mainChar.bz;
+						bonusAttackPhapSu = (int) ((long) maxMp * (2 + (lvSkill5 - 1) * 1) / 100);
 					}
 				}
 
-				// Bonus Đấu Sĩ Skill 4 (Bất di biến): tăng công theo % Max HP khi đang có buff Bất Di Biến (eff 19)
+				// Bonus Đấu Sĩ Skill 4 (Bất di biến): tăng công theo % HP hiện tại khi đang có buff Bất Di Biến (eff 19)
 				int bonusAttackDauSi = 0;
 				if ((mainChar.aO == 3 || mainChar.aJ == 3) && class_hw.aS != null && class_hw.aS.length > 4) {
 					boolean hasBatDiBien = false;
@@ -200,8 +136,8 @@ public class Paint {
 					if (hasBatDiBien) {
 						byte lvSkill4 = class_hw.aS[4];
 						if (lvSkill4 > 0) {
-							int maxHp = mainChar.w > 0 ? mainChar.w : mainChar.v;
-							bonusAttackDauSi = (int) ((long) maxHp * (5 + (lvSkill4 - 1) * 3) / 100);
+							int currentHp = mainChar.v;
+							bonusAttackDauSi = (int) ((long) currentHp * (5 + (lvSkill4 - 1) * 3) / 100);
 						}
 					}
 				}

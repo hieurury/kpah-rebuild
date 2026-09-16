@@ -12,10 +12,10 @@
 
 | Chỉ số | Trước thay đổi | Thiết kế mới (Sau Rebalance) | Ý nghĩa chiến lược |
 |:---|:---:|:---:|:---|
-| **Máu cơ bản (Health / Hea)** | `20` | **`30`** (+50%) | Tăng lượng HP khởi đầu và khả năng chống chịu |
+| **Máu cơ bản (Health / Hea)** | `20` | **`25`** (+25%) | Cân bằng lại lượng HP khởi đầu, tránh quá vượt trội so với các phái khác |
 | **Thân pháp (Agility / Agi)** | `30` | **`20`** (-33%) | Giảm nhẹ né tránh/tốc đánh để chuẩn tanker |
-| **Hệ số tính HP Tối Đa (Max HP Factor)** | `70` | **`90`** (+28.5%) | Lượng HP tăng thêm theo từng điểm cộng Health cao nhất game |
-| **Mana tiêu hao & Cooldown** | Tiêu chuẩn cũ | **Được tối ưu lại** | CD trung bình và Mana tiêu hao hợp lý để tránh spam vô hạn khống chế |
+| **Hệ số tính HP Tối Đa (Max HP Factor)** | `70` | **`80`** (+14.3%) | Lượng HP tăng thêm theo từng điểm Health được điều chỉnh vừa phải |
+| **Mana tiêu hao & Cooldown** | Tiêu chuẩn cũ | **Tăng MP tiêu tốn** | Tăng lượng mana tiêu hao của tất cả các chiêu thức Đấu Sĩ để yêu cầu quản lý tài nguyên tốt hơn |
 
 ---
 
@@ -24,14 +24,14 @@
 | ID | Tên Chiêu | Loại Chiêu | Cấp Học | Sát Thương Skill | Hồi Chiêu | Mana Tiêu Hao | Hiệu Ứng Đặc Trưng / Khống Chế |
 |:---:|:---|:---:|:---:|:---:|:---:|:---:|:---|
 | **0** | **Đập** | Đơn thể | Lv 1 – 10 | 70% – 110% | 0.8s | 0 | Đòn vung búa cận chiến cơ bản |
-| **1** | **Thổ Tú** | Đơn thể | Lv 6 – 15 | 110% – 160% | 1.5s | 8 | Đòn đánh dồn thổ kình đơn thể |
-| **2** | **Kim sơn thủy** | Đơn thể | Lv 11 – 20 | 130% – 190% | 1.8s | 12 | Khí thế như núi non sông nước |
-| **3** | **Khổng kình bát vĩ** | Đơn thể (Multi-hit) | Lv 17 – 42 | 50% – 85% / đòn | 3.0s – 4.0s | 18 – 30 | **Đòn đơn mạnh nhất:** Cấp 1-3 tung 3 đòn; Cấp 4+ tung số đòn bằng cấp (max 9 đòn ở cấp 9). Mỗi đòn gây sát thương riêng và có **50% tỉ lệ gây Choáng 1s**. |
-| **4** | **Bất di biến** | Buff chủ động | Lv 3 – 30 | Thêm dame theo HP | **80s** | 45 – 65 | **Phóng to kích thước nhân vật**, duy trì **60s**. Tăng thêm sát thương = **`5% + 3%/cấp` lượng HP tối đa**. |
+| **1** | **Thổ Tú** | Đơn thể | Lv 6 – 15 | 110% – 160% | 1.5s | **6 – 10** | Đòn đánh dồn thổ kình đơn thể |
+| **2** | **Kim sơn thủy** | Đơn thể | Lv 11 – 20 | 130% – 190% | 1.8s | **8 – 12** | Khí thế như núi non sông nước |
+| **3** | **Khổng kình bát vĩ** | Đơn thể (Multi-hit) | Lv 17 – 42 | 50% – 85% / đòn | 3.0s – 4.0s | **15 – 32** | **Đòn đơn mạnh nhất:** Cấp 1-3 tung 3 đòn; Cấp 4+ tung số đòn bằng cấp (max 9 đòn ở cấp 9). Mỗi đòn gây sát thương riêng và có **50% tỉ lệ gây Choáng 1s**. |
+| **4** | **Bất di biến** | Buff chủ động | Lv 3 – 30 | Thêm dame theo HP hiện tại | **80s** | **40 – 75** | **Vòng xoáy đất dưới chân** như game gốc (loại bỏ chữ và timer trên đầu). Duy trì **60s**. Tăng thêm sát thương = **`5% + 3%/cấp` lượng HP hiện tại**. Đã fix lỗi reset hồi chiêu về 80s khi hết buff. |
 | **5** | **Khí huyết sinh sôi** | Bị động (Nội tại) | Lv 3 – 30 | — | Nội tại | 0 | **Tăng vĩnh viễn `10% - 55%` HP tối đa**. Khi không nhận sát thương trong 10s, tự động **hồi 2% HP/giây**. |
-| **6** | **Kinh thiên động địa** | AoE (Đánh lan) | Lv 25 – 41 | 180% – 250% | **5.0s** | 35 – 55 | Địa chấn rung chuyển mặt đất, làm **GIẢM 10% GIÁP** của tất cả kẻ địch trúng đòn trong **5 giây**. |
-| **7** | **Sơn Tinh bộ thiên** | AoE (Đánh lan) | Lv 30 – 46 | 210% – 280% | **6.0s** | 45 – 70 | Mưa đá thiên thạch, có **tỉ lệ 20% – 65% gây HÓA ĐÁ đối thủ trong 1 giây** (bất động hoàn toàn). |
-| **8** | **Thạch nhũ công tâm** | AoE (Đánh lan) | Lv 45 – 61 | 240% – 320% | **7.0s** | 60 – 95 | Trồi cột thạch nhũ giáng đòn hủy diệt, **gây Choáng 1 giây** diện rộng và **tăng 1% sát thương cho mỗi 1.000 HP tối đa**. |
+| **6** | **Kinh thiên động địa** | AoE (Đánh lan) | Lv 25 – 41 | 180% – 250% | **5.0s** | **25 – 60** | Địa chấn rung chuyển mặt đất, làm **GIẢM 10% GIÁP** của tất cả kẻ địch trúng đòn trong **5 giây**. |
+| **7** | **Sơn Tinh bộ thiên** | AoE (Đánh lan) | Lv 30 – 46 | 210% – 280% | **6.0s** | **30 – 70** | Mưa đá thiên thạch, có **tỉ lệ 20% – 65% gây HÓA ĐÁ đối thủ trong 1 giây** (bất động hoàn toàn). |
+| **8** | **Thạch nhũ công tâm** | AoE (Đánh lan) | Lv 45 – 61 | 240% – 320% | **7.0s** | **45 – 90** | Trồi cột thạch nhũ giáng đòn hủy diệt, **gây Choáng 1 giây** diện rộng và **tăng 1% sát thương cho mỗi 1.000 HP tối đa**. |
 
 ---
 
@@ -46,15 +46,19 @@
   * **Cấp 4 – 9:** Số đòn đánh bằng chính **cấp độ kỹ năng** (Cấp 4 = 4 đòn, Cấp 5 = 5 đòn ... Cấp 9 = 9 đòn).
 * **Khống chế:** Mỗi đòn đánh có **50% tỷ lệ gây Choáng (Stun) trong 1 giây**. Khả năng khóa chết mục tiêu nếu trúng trọn combo!
 
-### 🏔️ Skill 4: Bất di biến (Buff Kích Thước & Scale HP)
-* **Mô tả:** Vận chuyển thổ khí kích thích cơ bắp phình to, hóa thân thành người khổng lồ hộ vệ.
+### 🏔️ Skill 4: Bất di biến (Buff Vòng Xoáy & Scale HP Hiện Tại)
+* **Mô tả:** Vận chuyển thổ khí cường hóa sức mạnh, tạo vòng xoáy cát đá dưới chân.
 * **Thời gian duy trì:** **60 giây** cố định.
-* **Thời gian hồi chiêu:** **80 giây** (Đảm bảo có khoảng nghỉ 20s, không thể buff liên tục).
-* **Hiệu ứng đặc biệt:**
-  * **Tăng kích thước cơ thể:** Server đồng bộ trạng thái, Client render phóng to nhân vật Đấu Sĩ.
-  * **Sát thương gia tăng theo Máu tối đa:**
-    $$\text{Bonus Damage} = \text{HP}_{\max} \times [5\% + (\text{Level} - 1) \times 3\%]$$
-    *(Ví dụ: Cấp 1 thêm 5% Max HP vào đòn đánh, cấp 10 thêm tới 32% Max HP vào từng đòn đánh!)*
+* **Thời gian hồi chiêu:** **80 giây** (Đảm bảo có khoảng nghỉ 20s sau khi buff kết thúc).
+* **Sửa lỗi Hồi Chiêu Client bị reset về 80s:**
+  * Nguyên nhân gốc: Khi hết 60s buff, cờ `bB` trong client gốc cưỡng ép `l = at + 1` và gán lại timestamp `aq = now`, làm UI client reset 80s từ đầu.
+  * Đã vá qua Bytecode Patcher: Chặn đọc cờ `bB` trong `class_abj.d(int, int)`, giữ nguyên bộ đếm hồi chiêu trôi tự nhiên chuẩn 80s kể từ lúc tung chiêu.
+* **Hiệu ứng hiển thị:**
+  * Giữ nguyên vòng xoáy thổ linh nguyên bản dưới chân (`eff19`).
+  * Loại bỏ hoàn toàn chữ "Bất Di Biến" và bộ đếm thời gian trên đỉnh đầu nhân vật.
+* **Sát thương gia tăng theo HP Hiện Tại:**
+  $$\text{Bonus Damage} = \text{HP}_{\text{hiện tại}} \times [5\% + (\text{Level} - 1) \times 3\%]$$
+  *(Ví dụ: Khi đầy máu tăng sát thương cực lớn; khi còn ít máu sát thương cộng thêm sẽ giảm theo, tạo tính chiến thuật sâu sắc).*
 
 ### 🩸 Skill 5: Khí huyết sinh sôi (Nội Tại HP & Hồi Phục)
 * **Mô tả:** Cơ thể tôi luyện qua ngàn đòn roi, sở hữu huyết mạch dồi dào và khả năng tái sinh mạnh mẽ.

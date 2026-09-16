@@ -176,6 +176,26 @@ public class Patcher {
             System.out.println("Warning: Could not patch movePlayer_: " + e.getMessage());
         }
 
+        // === Patch 7: Fix bug reset hồi chiêu Skill 4 Đấu Sĩ (và các skill buff có cooldown > duration) ===
+        // Trong method d(int, int) của class_abj:
+        // Client gốc có điều kiện: if (au && l <= at && bI - now < 0 && this.bB) { l = at + 1; this.bB = false; }
+        // Khi buff hết ở giây 60, bB làm client ép l = at + 1 và reset aq = now (bắt đầu đếm lại 80s từ đầu).
+        // Ta chặn đọc field bB trong method d(int, int) luôn trả về false để thời gian hồi chiêu trôi tự nhiên.
+        try {
+            CtClass[] dParams = new CtClass[]{ CtClass.intType, CtClass.intType };
+            CtMethod dMethod = cc.getDeclaredMethod("d", dParams);
+            dMethod.instrument(new ExprEditor() {
+                public void edit(FieldAccess fa) throws CannotCompileException {
+                    if (fa.getFieldName().equals("bB") && fa.isReader()) {
+                        fa.replace("$_ = false;");
+                    }
+                }
+            });
+            System.out.println("Patch 7 (cooldown reset bugfix) applied to method d(int,int).");
+        } catch (Exception e) {
+            System.out.println("Warning: Could not patch d(int,int): " + e.getMessage());
+        }
+
         cc.writeFile("patched_classes");
         System.out.println("class_abj patched.");
     }

@@ -117,21 +117,21 @@ public class Point {
         int dameAttack = (int) (this.attack * (isAttackMob ? 2.5 : 2));
         dameAttack += dameAttack * (Manager.getSkillDamPercent(player.getInfo().getClassPlayer(), player.getSkill().getTypeSkill(), player.getSkill().getLevelSkill()[player.getSkill().getTypeSkill()]) / 100);
         if (player.getInfo().getClassPlayer() == Const.PHAP_SU) {
-            // Hồi lực tiến (Skill 5 nội tại): tăng dame theo lượng mana đang có, cấp 1 là 2% mana, tăng 1% mỗi cấp (Lv 1: 2%, Lv 10: 11%)
+            // Hồi lực tiến (Skill 5 nội tại): tăng dame theo lượng mana tối đa, cấp 1 là 2% mana, tăng 1% mỗi cấp (Lv 1: 2%, Lv 10: 11%)
             byte lvSkill5 = player.getSkill().getLevelSkill()[5];
             if (lvSkill5 > 0) {
                 int percentMana = 2 + (lvSkill5 - 1) * 1;
-                int bonusDame = (int) ((long) this.mp * percentMana / 100);
+                int bonusDame = (int) ((long) this.mpMax * percentMana / 100);
                 dameAttack += bonusDame;
             }
         }
         if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
-            // Bất di biến (Skill 4 buff active): khi đang có buff BAT_DI_BIEN, sát thương tăng thêm theo % HP tối đa (5% + 3% * (cấp-1))
+            // Bất di biến (Skill 4 buff active): khi đang có buff BAT_DI_BIEN, sát thương tăng thêm theo % HP hiện tại (5% + 3% * (cấp-1))
             if (player.getSkillBuff() != null && player.getSkillBuff().isExistBuff(BuffConst.BAT_DI_BIEN)) {
                 byte lvSkill4 = player.getSkill().getLevelSkill()[4];
                 if (lvSkill4 > 0) {
                     int percentHp = 5 + (lvSkill4 - 1) * 3;
-                    int bonusDame = (int) ((long) this.hpMax * percentHp / 100);
+                    int bonusDame = (int) ((long) this.hp * percentHp / 100);
                     dameAttack += bonusDame;
                 }
             }
@@ -294,7 +294,7 @@ public class Point {
                 defaultStr = 10; defaultAgi = 25; defaultSpi = 35; defaultHea = 10; defaultLuck = 10;
             }
             case Const.DAU_SI -> {
-                defaultStr = 20; defaultAgi = 20; defaultSpi = 10; defaultHea = 30; defaultLuck = 10;
+                defaultStr = 20; defaultAgi = 20; defaultSpi = 10; defaultHea = 25; defaultLuck = 10;
             }
             case Const.CUNG_THU -> {
                 defaultStr = 20; defaultAgi = 30; defaultSpi = 15; defaultHea = 15; defaultLuck = 10;
@@ -342,7 +342,7 @@ public class Point {
             case Const.KIEM_KHACH ->
                 hpMax += (health + healthAdd) * 80;
             case Const.DAU_SI ->
-                hpMax += (health + healthAdd) * 90;
+                hpMax += (health + healthAdd) * 80;
             case Const.CHIEN_BINH ->
                 hpMax += (health + healthAdd) * 70;
             case Const.PHAP_SU, Const.CUNG_THU ->

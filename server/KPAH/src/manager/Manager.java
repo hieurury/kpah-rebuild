@@ -469,16 +469,16 @@ public class Manager {
         SKILL_MP[Const.PHAP_SU][9] = new short[]{0, 100, 115, 130, 145, 160, 175, 190, 205, 220, 235}; // Song long 5s CD
         SKILL_MP[Const.PHAP_SU][10] = new short[]{0, 120, 135, 150, 165, 180, 195, 210, 225, 240, 250}; // Hàn băng vũ 6s CD
 
-        // Đấu Sĩ: Tanker & khống chế, tiêu hao MP vừa phải, tránh spam liên tục
+        // Đấu Sĩ: Tăng lượng mana tiêu tốn các chiêu thức để tránh spam liên tục
         SKILL_MP[Const.DAU_SI][0] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // Đập
-        SKILL_MP[Const.DAU_SI][1] = new short[]{0, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5}; // Thổ Tú
-        SKILL_MP[Const.DAU_SI][2] = new short[]{0, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5}; // Kim sơn thủy
-        SKILL_MP[Const.DAU_SI][3] = new short[]{0, 7, 7, 8, 8, 9, 9, 10, 10, 12, 12}; // Khổng kình bát vĩ (multi-hit)
-        SKILL_MP[Const.DAU_SI][4] = new short[]{0, 10, 10, 11, 11, 12, 12, 13, 13, 14, 15}; // Bất di biến (buff HP dame + size)
+        SKILL_MP[Const.DAU_SI][1] = new short[]{0, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10}; // Thổ Tú
+        SKILL_MP[Const.DAU_SI][2] = new short[]{0, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12}; // Kim sơn thủy
+        SKILL_MP[Const.DAU_SI][3] = new short[]{0, 15, 16, 18, 20, 22, 24, 26, 28, 30, 32}; // Khổng kình bát vĩ (multi-hit)
+        SKILL_MP[Const.DAU_SI][4] = new short[]{0, 40, 42, 45, 48, 52, 56, 60, 64, 68, 75}; // Bất di biến (buff HP dame + size)
         SKILL_MP[Const.DAU_SI][5] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // Khí huyết sinh sôi (passive)
-        SKILL_MP[Const.DAU_SI][6] = new short[]{0, 12, 15, 18, 21, 24, 27, 30, 33, 36, 36}; // Kinh thiên động địa (giảm giáp)
-        SKILL_MP[Const.DAU_SI][7] = new short[]{0, 14, 17, 20, 23, 26, 29, 32, 35, 38, 38}; // Sơn Tinh bộ thiên (hóa đá)
-        SKILL_MP[Const.DAU_SI][8] = new short[]{0, 20, 24, 28, 32, 36, 40, 44, 48, 52, 55}; // Thạch nhũ công tâm (choáng AoE + dame HP)
+        SKILL_MP[Const.DAU_SI][6] = new short[]{0, 25, 28, 32, 36, 40, 44, 48, 52, 56, 60}; // Kinh thiên động địa (giảm giáp)
+        SKILL_MP[Const.DAU_SI][7] = new short[]{0, 30, 34, 38, 42, 46, 50, 55, 60, 65, 70}; // Sơn Tinh bộ thiên (hóa đá)
+        SKILL_MP[Const.DAU_SI][8] = new short[]{0, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90}; // Thạch nhũ công tâm (choáng AoE + dame HP)
     }
 
     public static void applySkillCooldownRebalance() {

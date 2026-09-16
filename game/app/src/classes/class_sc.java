@@ -411,8 +411,8 @@ extends class_hw {
                     v.addElement("Duy trì: 90s");
                     break;
                 case 5:
-                    v.addElement("Tăng công theo MP có");
-                    v.addElement("Tăng thêm: " + (2 + (lv - 1) * 1) + "% MP");
+                    v.addElement("Tăng công theo MP tối đa");
+                    v.addElement("Tăng thêm: " + (2 + (lv - 1) * 1) + "% Max MP");
                     v.addElement("Bị động (Không tốn MP)");
                     break;
                 case 6:
@@ -476,8 +476,8 @@ extends class_hw {
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 4:
-                    v.addElement("Khổng lồ hóa cơ thể");
-                    v.addElement("Tăng công: +" + (5 + (lv - 1) * 3) + "% Max HP");
+                    v.addElement("Bất di biến (Vòng xoáy đất)");
+                    v.addElement("Tăng công: +" + (5 + (lv - 1) * 3) + "% HP hiện tại");
                     v.addElement("Thời gian duy trì: 60s");
                     v.addElement("Hồi chiêu: 80s | MP: " + class_qz.b(n, lv));
                     break;

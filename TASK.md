@@ -125,3 +125,40 @@
 - Đã tạo backup các file trong `_backup/` trước khi sửa.
 
 ---
+
+## [2026-09-16 20:25] — Task #114: Khắc Phục Lỗi Hồi Chiêu Skill 4 Đấu Sĩ, Tối Ưu Hiệu Ứng/Cơ Chế Bất Di Biến, Tái Cân Bằng HP & MP Đấu Sĩ, Đổi Skill 5 Pháp Sư Theo Max MP
+
+**Yêu cầu:**
+1. Khắc phục lỗi thời gian hồi chiêu Skill 4 (Bất di biến) thực tế ở client bị reset về 80s sau khi vừa hết 60s tác dụng:
+   - Tìm rõ nguyên nhân: Trong `class_abj.d(int, int)` của client gốc KPAH, khi buff hết (`bI - now < 0`) nếu auto bật (`au == true`), cờ `this.bB` bị kích hoạt làm game gốc cưỡng ép `l = at + 1L`, lập tức gửi packet 51 lên server và gán lại `aq[4] = System.currentTimeMillis()`. Server reject packet vì chưa trôi qua đủ 80s cooldown, nhưng client đã trót reset mốc thời gian `aq`, dẫn đến UI client bắt đầu đếm 80s lại từ đầu ngay tại giây thứ 60.
+   - Xử lý: Áp dụng Javassist Patch 7 trong `game/tools/Patcher.java`, chặn đọc field `bB` trong `class_abj.d(int, int)` (luôn trả về `false`). Nhờ đó client không bao giờ cưỡng ép hồi chiêu sớm, bảo toàn bộ đếm 80s trôi tự nhiên chuẩn xác. Đồng thời cập nhật `ModController.handleAutoSupportSkills` khởi tạo đầy đủ `player.at[skillId]` trước khi so sánh thời gian.
+2. Skill 4 Đấu Sĩ (Bất di biến):
+   - Loại bỏ hoàn toàn cơ chế ghi chữ "Bất Di Biến" và hiển thị timer trên đỉnh đầu nhân vật, giữ nguyên vẹn hiệu ứng vòng xoáy nguyên bản dưới chân (`eff19`) như game gốc.
+   - Thay đổi cơ chế buff sát thương: Chuyển từ scale theo HP tối đa sang scale theo **HP hiện tại** (`mainChar.v * percentHp / 100`).
+3. Tái cân bằng chỉ số Đấu Sĩ:
+   - Giảm HP cơ bản: `defaultHea` giảm từ 30 xuống 25; hệ số HP tối đa `hpMax += (health + healthAdd) * 80` (giảm từ 90 xuống 80).
+   - Tăng Mana tiêu hao của tất cả các chiêu thức Đấu Sĩ trong `Manager.java` (Skill 1: 6-10 MP, Skill 2: 8-12 MP, Skill 3: 15-32 MP, Skill 4: 40-75 MP, Skill 6: 25-60 MP, Skill 7: 30-70 MP, Skill 8: 45-90 MP) và cập nhật `server/update_skills_dau_si.sql`.
+4. Pháp Sư:
+   - Đổi cơ chế Skill 5 (Hồi lực tiến) nội tại tăng sát thương: Thay vì scale theo mana hiện tại, đổi sang scale theo **Mana tối đa (Max MP)** (`Point.java`: `bonusDame = (int) ((long) this.mpMax * percentMana / 100)`).
+   - Đồng bộ hiển thị HUD client (`Paint.java`) và tooltip mô tả (`class_sc.java`).
+5. Cập nhật tài liệu:
+   - `docs/skills/dau_si.md` và `docs/skills/phap_su.md`.
+
+**Files thay đổi:**
+- `game/tools/Patcher.java` — Bổ sung Patch 7 chặn đọc `bB` trong `class_abj.d(int, int)`.
+- `game/libs/KPAH_225_remade.jar` — Cập nhật bytecode `class_abj.class` đã vá.
+- `game/app/src/classes/Paint.java` — Xóa vẽ chữ "Bất Di Biến" trên đầu; đổi HUD Đấu Sĩ tính bonus theo HP hiện tại; đổi HUD Pháp Sư tính bonus theo Max MP.
+- `game/app/src/classes/class_sc.java` — Cập nhật mô tả kỹ năng Skill 4 Đấu Sĩ (theo HP hiện tại) và Skill 5 Pháp Sư (theo Max MP).
+- `game/app/src/classes/ModController.java` — Khởi tạo `player.at[skillId]` an toàn trong `handleAutoSupportSkills`.
+- `server/KPAH/src/player/Point.java` — Giảm HP cơ bản Đấu Sĩ (hea=25, factor=80); Skill 4 buff theo HP hiện tại; Skill 5 Pháp Sư buff theo Max MP.
+- `server/KPAH/src/manager/Manager.java` — Tăng `SKILL_MP` cho Đấu Sĩ.
+- `server/update_skills_dau_si.sql` — Bổ sung SQL update `SKILL_MP` vào bảng `others`.
+- `docs/skills/dau_si.md` & `docs/skills/phap_su.md` — Cập nhật tài liệu thiết kế kỹ năng.
+
+**Kết quả:** ✅ Thành công
+- Server Java biên dịch thành công (`KPAH.jar`).
+- Patcher áp dụng Bytecode Patch 7 thành công.
+- Client Java ME build thành công cả bản Prod và Local (`KPAH_PROD.jar` và `KPAH_MOD.jar`).
+- Đã backup an toàn tất cả các file trước khi sửa đổi.
+
+---
