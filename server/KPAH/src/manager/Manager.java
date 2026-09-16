@@ -566,6 +566,12 @@ public class Manager {
         return POTION_TEMPLATES.getOrDefault(itemId, null);
     }
 
+    public static void ensurePotionTemplate(short id, String name, String name2, byte idImage, short delay, boolean isTrade, short price, short recovered) {
+        if (!POTION_TEMPLATES.containsKey(id)) {
+            POTION_TEMPLATES.put(id, PotionTemplate.builder().id(id).name(name).name2(name2).idImage(idImage).delay(delay).isTrade(isTrade).price(price).recovered(recovered).build());
+        }
+    }
+
     public static ItemQuestTemplate getItemQuestTemplate(byte itemId) {
         return ITEM_QUEST_TEMPLATES.getOrDefault(itemId, null);
     }
@@ -1092,6 +1098,19 @@ public class Manager {
             try {
                 HikariCP.executeUpdate("UPDATE `potion_template` SET `name` = 'Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.', `price` = 10 WHERE `id` = 33");
             } catch (Exception ignored) {}
+            try {
+                HikariCP.executeUpdate("INSERT INTO `potion_template` (`id`, `name`, `name2`, `idImage`, `delay`, `isTrade`, `price`, `recovered`) VALUES "
+                        + "(106, 'Rương Tinh Anh (Bậc 1)\\nMở nhận: Lượng, Tinh anh huyết Sơ Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv1-9.', 'ruongtinhanhbac1', 68, 0, 1, 0, 0), "
+                        + "(160, 'Rương Tinh Anh (Bậc 2)\\nMở nhận: Lượng, Tinh anh huyết Trung Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv10-19.', 'ruongtinhanhbac2', 68, 0, 1, 0, 0), "
+                        + "(161, 'Rương Tinh Anh (Bậc 3)\\nMở nhận: Lượng, Tinh anh huyết Cao Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv20-29.', 'ruongtinhanhbac3', 67, 0, 1, 0, 0), "
+                        + "(162, 'Rương Tinh Anh (Bậc 4)\\nMở nhận: Lượng, Tinh anh huyết Siêu Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv30-35.', 'ruongtinhanhbac4', 67, 0, 1, 0, 0), "
+                        + "(107, 'Tinh Anh Đan\\nTăng 20% sát thương, 20% giáp và 20% HP trong 3 phút.', 'tinhanhdan', 158, 1000, 1, 100, 0), "
+                        + "(108, 'Tinh anh huyết (Sơ Cấp)\\nSử dụng nhận 35.000 kinh nghiệm.', 'binhkntinhanhsocap', 40, 1000, 1, 100, 0), "
+                        + "(109, 'Tinh anh huyết (Trung Cấp)\\nSử dụng nhận 250.000 kinh nghiệm.', 'binhkntinhanhtrungcap', 40, 1000, 1, 200, 0), "
+                        + "(110, 'Tinh anh huyết (Cao Cấp)\\nSử dụng nhận 900.000 kinh nghiệm.', 'binhkntinhanhcaocap', 40, 1000, 1, 500, 0), "
+                        + "(111, 'Tinh anh huyết (Siêu Cấp)\\nSử dụng nhận 2.200.000 kinh nghiệm.', 'binhkntinhanhsieucap', 40, 1000, 1, 1000, 0) "
+                        + "ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `idImage` = VALUES(`idImage`), `isTrade` = VALUES(`isTrade`);");
+            } catch (Exception ignored) {}
             rs = HikariCP.executeQuery("SELECT * FROM `potion_template`");
             while (rs.next()) {
                 PotionTemplate potionTemplate = PotionTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).name2(rs.getString("name2")).idImage(rs.getByte("idImage")).delay(rs.getShort("delay")).isTrade(rs.getBoolean("isTrade")).price(rs.getShort("price")).recovered(rs.getShort("recovered")).build();
@@ -1102,6 +1121,16 @@ public class Manager {
                 POTION_TEMPLATES.put(potionTemplate.getId(), potionTemplate);
             }
             rs.close();
+            // Đảm bảo trong bộ nhớ luôn có đầy đủ template các bậc rương và vật phẩm tinh anh
+            ensurePotionTemplate((short) 106, "Rương Tinh Anh (Bậc 1)\nMở nhận: Lượng, Tinh anh huyết Sơ Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv1-9.", "ruongtinhanhbac1", (byte) 68, (short) 0, true, (short) 0, (short) 0);
+            ensurePotionTemplate((short) 160, "Rương Tinh Anh (Bậc 2)\nMở nhận: Lượng, Tinh anh huyết Trung Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv10-19.", "ruongtinhanhbac2", (byte) 68, (short) 0, true, (short) 0, (short) 0);
+            ensurePotionTemplate((short) 161, "Rương Tinh Anh (Bậc 3)\nMở nhận: Lượng, Tinh anh huyết Cao Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv20-29.", "ruongtinhanhbac3", (byte) 67, (short) 0, true, (short) 0, (short) 0);
+            ensurePotionTemplate((short) 162, "Rương Tinh Anh (Bậc 4)\nMở nhận: Lượng, Tinh anh huyết Siêu Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv30-35.", "ruongtinhanhbac4", (byte) 67, (short) 0, true, (short) 0, (short) 0);
+            ensurePotionTemplate((short) 107, "Tinh Anh Đan\nTăng 20% sát thương, 20% giáp và 20% HP trong 3 phút.", "tinhanhdan", (byte) 158, (short) 1000, true, (short) 100, (short) 0);
+            ensurePotionTemplate((short) 108, "Tinh anh huyết (Sơ Cấp)\nSử dụng nhận 35.000 kinh nghiệm.", "binhkntinhanhsocap", (byte) 40, (short) 1000, true, (short) 100, (short) 0);
+            ensurePotionTemplate((short) 109, "Tinh anh huyết (Trung Cấp)\nSử dụng nhận 250.000 kinh nghiệm.", "binhkntinhanhtrungcap", (byte) 40, (short) 1000, true, (short) 200, (short) 0);
+            ensurePotionTemplate((short) 110, "Tinh anh huyết (Cao Cấp)\nSử dụng nhận 900.000 kinh nghiệm.", "binhkntinhanhcaocap", (byte) 40, (short) 1000, true, (short) 500, (short) 0);
+            ensurePotionTemplate((short) 111, "Tinh anh huyết (Siêu Cấp)\nSử dụng nhận 2.200.000 kinh nghiệm.", "binhkntinhanhsieucap", (byte) 40, (short) 1000, true, (short) 1000, (short) 0);
             // </editor-fold>
 
             Printer.printGreen(String.format("Finish Load Potion Template [%s]", POTION_TEMPLATES.size()));

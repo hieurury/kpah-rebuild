@@ -101,3 +101,27 @@
 
 ---
 
+## [2026-09-16 16:00] — Task #113: Sửa Lỗi Rơi Rương Tinh Anh Cấp Cao & Tối Ưu Hiệu Ứng Bất Di Biến
+
+**Yêu cầu:**
+1. Fix lỗi khi diệt quái vật tinh anh cấp cao (từ cấp 10 trở lên) không nhận được Rương Tinh Anh:
+   - Phân tích: Quái cấp <= 9 rơi Rương Bậc 1 (ID 106). Quái cấp >= 10 rơi Rương Bậc 2 (ID 160), Bậc 3 (ID 161), Bậc 4 (ID 162). Trong DB gốc của server và packet đồng bộ template client, các item ID >= 160 chưa tồn tại hoặc bị tràn kích thước mảng khiến client ném ngoại lệ hoặc server bỏ qua không nhặt được.
+   - Xử lý: Tự động chèn template Rương Tinh Anh Bậc 1-4 (106, 160, 161, 162), Tinh Anh Đan (107) và Tinh Anh Huyết (108..111) vào DB và nạp bộ nhớ đệm `Manager.java`; nâng tổng số lượng potion templates gửi về client (`LoginService.java`) lên tối thiểu 165 để client khởi tạo mảng đầy đủ; mở rộng an toàn mảng vật phẩm client (`MsgHandler.java` case 16) lên 256 phần tử, chống hoàn toàn `ArrayIndexOutOfBoundsException`.
+2. Cải thiện hiệu ứng Bất Di Biến (Skill 4 Đấu Sĩ):
+   - Loại bỏ toàn bộ các vòng hiệu ứng thô (vòng hào quang, trận đồ bát quái xoay).
+   - Chỉ vẽ chữ `Bất Di Biến` màu vàng đỏ (chữ vàng viền đỏ nổi bật) ngay trên đỉnh đầu Đấu Sĩ, không kèm thời gian đếm ngược.
+   - Sửa triệt để lỗi khi bị Choáng (Stun) thì hiệu ứng Bất Di Biến biến mất: Tách rời hoàn toàn logic kiểm tra hiệu ứng Bất Di Biến khỏi cờ `cW` (isStun) và nhận diện buff thông qua danh sách buff chủ động `bC` cùng điều kiện lọc thời lượng > 4s.
+
+**Files thay đổi:**
+- `game/app/src/classes/Paint.java` — Xóa bỏ vòng hiệu ứng thô và số giây đếm ngược, chỉ vẽ chữ vàng đỏ `Bất Di Biến` trên đầu; bỏ điều kiện `!mainChar.cW` để không bị mất hiệu ứng hình ảnh và bonus công khi bị choáng.
+- `game/app/src/classes/MsgHandler.java` — Mở rộng mảng potion template và inventory arrays (`bq`, `bs`, `class_sc.l`) lên 256 phần tử trong case 16, đảm bảo an toàn tuyệt đối khi nhận Rương Tinh Anh Bậc 2-4 (ID 160-162).
+- `server/KPAH/src/manager/Manager.java` — Tự động chèn và load các potion template Rương Tinh Anh 160-162, 106, 107, 108..111 vào DB/bộ nhớ server.
+- `server/KPAH/src/services/LoginService.java` — Đồng bộ độ dài danh sách potion template chuẩn (>= 165) khi player đăng nhập.
+- `server/update_skills_dau_si.sql` — Bổ sung câu lệnh SQL `INSERT ... ON DUPLICATE KEY UPDATE` cho các template Rương Tinh Anh và Tinh Anh Đan/Huyết.
+
+**Kết quả:** ✅ Thành công
+- Server Java compile thành công 100% (`server/KPAH/dist/KPAH.jar`).
+- Client Java ME build thành công 100% (`game/build/dist/KPAH_PROD.jar` và `game/build/dist/kpah_mod_v1.0.0.1_local.jar`).
+- Đã tạo backup các file trong `_backup/` trước khi sửa.
+
+---

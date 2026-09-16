@@ -104,8 +104,15 @@ public class LoginService {
         Message m = new Message(CommandMessage.LOGIN);
         m.writer().writeByte(pl.getPoint().getSpeed());
         m.writer().writeShort(Manager.getPotionTemplate((byte) 20).getPrice());
-        m.writer().writeByte(Manager.POTION_TEMPLATES.size());
-        for (short key = 0; key < Manager.POTION_TEMPLATES.size(); key++) {
+        short maxPotionId = 0;
+        for (Short id : Manager.POTION_TEMPLATES.keySet()) {
+            if (id != null && id > maxPotionId) {
+                maxPotionId = id;
+            }
+        }
+        int totalPotions = Math.max(165, maxPotionId + 1);
+        m.writer().writeByte((byte) totalPotions);
+        for (short key = 0; key < totalPotions; key++) {
             PotionTemplate itemPotion = Manager.getPotionTemplate(key);
             if (itemPotion == null) {
                 m.writer().writeByte(0);

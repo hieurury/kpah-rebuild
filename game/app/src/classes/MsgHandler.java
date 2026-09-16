@@ -16,8 +16,59 @@ public class MsgHandler {
 				handleMonsterAttack(mobId, targetId, damage, targetHp);
 				return;
 			}
+			case 16:
 			case 19: {
+				if (class_hw.Y < 256) {
+					class_hw.Y = 256;
+				}
+				if (class_sc.l == null || class_sc.l.length < 256) {
+					class_ub[] newL = new class_ub[256];
+					if (class_sc.l != null) {
+						System.arraycopy(class_sc.l, 0, newL, 0, class_sc.l.length);
+					}
+					for (int i = 0; i < 256; i++) {
+						if (newL[i] == null) {
+							newL[i] = new class_ub();
+							newL[i].d = (short) i;
+							newL[i].g = "";
+							newL[i].h = "";
+						}
+					}
+					class_sc.l = newL;
+				} else {
+					for (int i = 0; i < class_sc.l.length; i++) {
+						if (class_sc.l[i] == null) {
+							class_sc.l[i] = new class_ub();
+							class_sc.l[i].d = (short) i;
+							class_sc.l[i].g = "";
+							class_sc.l[i].h = "";
+						}
+					}
+				}
+				if (class_sc.l[106] != null && (class_sc.l[106].g == null || class_sc.l[106].g.length() == 0)) {
+					class_sc.l[106].e = 68;
+					class_sc.l[106].g = "Rương Tinh Anh (Bậc 1)\nMở nhận: Lượng, Tinh anh huyết Sơ Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv1-9.";
+				}
+				if (class_sc.l[160] != null && (class_sc.l[160].g == null || class_sc.l[160].g.length() == 0)) {
+					class_sc.l[160].e = 68;
+					class_sc.l[160].g = "Rương Tinh Anh (Bậc 2)\nMở nhận: Lượng, Tinh anh huyết Trung Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv10-19.";
+				}
+				if (class_sc.l[161] != null && (class_sc.l[161].g == null || class_sc.l[161].g.length() == 0)) {
+					class_sc.l[161].e = 67;
+					class_sc.l[161].g = "Rương Tinh Anh (Bậc 3)\nMở nhận: Lượng, Tinh anh huyết Cao Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv20-29.";
+				}
+				if (class_sc.l[162] != null && (class_sc.l[162].g == null || class_sc.l[162].g.length() == 0)) {
+					class_sc.l[162].e = 67;
+					class_sc.l[162].g = "Rương Tinh Anh (Bậc 4)\nMở nhận: Lượng, Tinh anh huyết Siêu Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv30-35.";
+				}
 				if (class_acv.s != null && class_acv.s.q != null) {
+					if (class_acv.s.q.bs == null || class_acv.s.q.bs.length < 256) {
+						long[] newBs = new long[256];
+						if (class_acv.s.q.bs != null) {
+							System.arraycopy(class_acv.s.q.bs, 0, newBs, 0, class_acv.s.q.bs.length);
+						}
+						class_acv.s.q.bs = newBs;
+					}
 					if (class_acv.s.q.bq == null || class_acv.s.q.bq.length < 256) {
 						int[] newBq = new int[256];
 						if (class_acv.s.q.bq != null) {

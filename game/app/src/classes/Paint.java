@@ -48,13 +48,27 @@ public class Paint {
 
 			boolean hasBatDiBien = false;
 			long now = System.currentTimeMillis();
-			long secLeft = 0;
-			for (int i = 0; i < mainChar.de.size(); i++) {
-				Object obj = mainChar.de.elementAt(i);
-				if (obj instanceof class_zx && ((class_zx) obj).h == 19 && !mainChar.cW) {
-					hasBatDiBien = true;
-					secLeft = (((class_zx) obj).a - now) / 1000L;
-					break;
+
+			// 1. Kiểm tra mảng buff chủ động bC (chỉ có khi bật Bất Di Biến)
+			if (mainChar.bC != null) {
+				for (int b = 0; b < mainChar.bC.length; b++) {
+					if (mainChar.bC[b] == 19) {
+						hasBatDiBien = true;
+						break;
+					}
+				}
+			}
+
+			// 2. Kiểm tra trong danh sách hiệu ứng de (thời gian hiệu lực > 4s để loại trừ choáng thường 3s)
+			if (!hasBatDiBien && mainChar.de != null) {
+				for (int i = 0; i < mainChar.de.size(); i++) {
+					Object obj = mainChar.de.elementAt(i);
+					if (obj instanceof class_zx && ((class_zx) obj).h == 19) {
+						if (((class_zx) obj).a - now > 4000L) {
+							hasBatDiBien = true;
+							break;
+						}
+					}
 				}
 			}
 
@@ -63,58 +77,35 @@ public class Paint {
 			int sx = mainChar.cK - camX;
 			int sy = mainChar.cL - camY;
 
-			if (!hasBatDiBien || secLeft <= 0) {
-				// Nếu vừa hết buff nhưng đang trong 20s hồi chiêu còn lại
-				if (mainChar.aq != null && mainChar.at != null && 4 < mainChar.aq.length && 4 < mainChar.at.length) {
-					long passed = now - mainChar.aq[4];
-					long totalCd = mainChar.at[4];
-					if (passed > 0 && passed < totalCd) {
-						long cdRemain = (totalCd - passed + 999L) / 1000L;
-						if (cdRemain > 0 && cdRemain <= 25) {
-							class_d.a.a(g, "[Hồi chiêu: " + cdRemain + "s]", sx, sy - 48, 2);
-						}
-					}
+			if (hasBatDiBien) {
+				// Vẽ chữ "Bất Di Biến" màu vàng đỏ trên đầu nhân vật (không vẽ các vòng hiệu ứng và không kèm thời gian)
+				String tag = "Bất Di Biến";
+				int tagY = sy - 52;
+				if (class_d.j != null && class_d.j.length > 3) {
+					// Viền đỏ (class_d.j[2])
+					class_d.j[2].a(g, tag, sx - 1, tagY, 2);
+					class_d.j[2].a(g, tag, sx + 1, tagY, 2);
+					class_d.j[2].a(g, tag, sx, tagY - 1, 2);
+					class_d.j[2].a(g, tag, sx, tagY + 1, 2);
+					// Chữ vàng rực rỡ (class_d.j[3]) ở giữa tạo màu vàng đỏ nổi bật
+					class_d.j[3].a(g, tag, sx, tagY, 2);
+				} else if (class_d.a != null) {
+					class_d.a.a(g, tag, sx, tagY, 2);
 				}
 				return;
 			}
 
-			long t = now;
-			int pulse = (int) ((t / 100L) % 6);
-
-			// 1. Trận đồ Thổ Thạch khổng lồ dưới chân (bán kính lớn 32px)
-			int rX = 26 + pulse;
-			int rY = 12 + (pulse >> 1);
-			g.setColor(0xD4AF37); // Vàng kim cổ điển
-			g.drawArc(sx - rX, sy - rY, rX << 1, rY << 1, 0, 360);
-			g.setColor(0xFFA500); // Cam rực rỡ
-			g.drawArc(sx - rX + 2, sy - rY + 1, (rX - 2) << 1, (rY - 1) << 1, 0, 360);
-
-			// Các tia năng lượng xoay quanh trận đồ
-			int angle = (int) ((t / 20L) % 360);
-			g.setColor(0xFFFF00);
-			g.drawArc(sx - rX - 2, sy - rY - 1, (rX + 2) << 1, (rY + 1) << 1, angle, 60);
-			g.drawArc(sx - rX - 2, sy - rY - 1, (rX + 2) << 1, (rY + 1) << 1, (angle + 180) % 360, 60);
-
-			// 2. Thể hình Titan bộc phát: Hào quang hộ thể bao quanh thân người
-			int bodyW = 24 + (pulse >> 1);
-			int bodyH = 34 + pulse;
-			int bodyY = sy - 20;
-			g.setColor(0xD4AF37);
-			g.drawArc(sx - (bodyW >> 1), bodyY - (bodyH >> 1), bodyW, bodyH, 0, 360);
-			g.setColor(0xFFA500);
-			g.drawArc(sx - (bodyW >> 1) + 1, bodyY - (bodyH >> 1) + 1, bodyW - 2, bodyH - 2, 0, 360);
-
-			// 3. Hạt thạch kình bay cuộn quanh thân thể
-			for (int pIdx = 0; pIdx < 6; pIdx++) {
-				int pOffX = (int) (((t / 35L + pIdx * 60) % 40) - 20);
-				int pOffY = (int) (-((t / 20L + pIdx * 15) % 45));
-				g.setColor(pIdx % 2 == 0 ? 0xFFFF00 : 0xD4AF37);
-				g.fillRect(sx + pOffX, sy + pOffY, 2, 2);
+			// Nếu vừa hết buff nhưng đang trong 20s hồi chiêu còn lại
+			if (mainChar.aq != null && mainChar.at != null && 4 < mainChar.aq.length && 4 < mainChar.at.length) {
+				long passed = now - mainChar.aq[4];
+				long totalCd = mainChar.at[4];
+				if (passed > 0 && passed < totalCd) {
+					long cdRemain = (totalCd - passed + 999L) / 1000L;
+					if (cdRemain > 0 && cdRemain <= 25) {
+						class_d.a.a(g, "[Hồi chiêu: " + cdRemain + "s]", sx, sy - 48, 2);
+					}
+				}
 			}
-
-			// 4. Danh hiệu [Bất Di Biến] trên đỉnh đầu
-			String tag = "[Bất Di Biến " + secLeft + "s]";
-			class_d.a.a(g, tag, sx, sy - 52, 2);
 		} catch (Exception ignored) {
 		}
 	}
@@ -186,12 +177,23 @@ public class Paint {
 				int bonusAttackDauSi = 0;
 				if ((mainChar.aO == 3 || mainChar.aJ == 3) && class_hw.aS != null && class_hw.aS.length > 4) {
 					boolean hasBatDiBien = false;
-					if (mainChar.de != null) {
-						for (int bIdx = 0; bIdx < mainChar.de.size(); bIdx++) {
-							Object obj = mainChar.de.elementAt(bIdx);
-							if (obj instanceof class_zx && ((class_zx) obj).h == 19 && !mainChar.cW) {
+					long now = System.currentTimeMillis();
+					if (mainChar.bC != null) {
+						for (int b = 0; b < mainChar.bC.length; b++) {
+							if (mainChar.bC[b] == 19) {
 								hasBatDiBien = true;
 								break;
+							}
+						}
+					}
+					if (!hasBatDiBien && mainChar.de != null) {
+						for (int bIdx = 0; bIdx < mainChar.de.size(); bIdx++) {
+							Object obj = mainChar.de.elementAt(bIdx);
+							if (obj instanceof class_zx && ((class_zx) obj).h == 19) {
+								if (((class_zx) obj).a - now > 4000L) {
+									hasBatDiBien = true;
+									break;
+								}
 							}
 						}
 					}
