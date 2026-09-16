@@ -1146,6 +1146,11 @@ public class Manager {
             rs = HikariCP.executeQuery("SELECT * FROM `potion_template`");
             while (rs.next()) {
                 PotionTemplate potionTemplate = PotionTemplate.builder().id(rs.getShort("id")).name(rs.getString("name")).name2(rs.getString("name2")).idImage(rs.getByte("idImage")).delay(rs.getShort("delay")).isTrade(rs.getBoolean("isTrade")).price(rs.getShort("price")).recovered(rs.getShort("recovered")).build();
+                short pid = potionTemplate.getId();
+                if (pid == 1 || pid == 2 || pid == 3 || pid == 21 || pid == 22 || pid == 93 || pid == 94
+                        || pid == 4 || pid == 5 || pid == 6 || pid == 23 || pid == 24 || pid == 95 || pid == 96) {
+                    potionTemplate.setDelay((short) 10000); // Khóa hồi chiêu 10s mọi bình HP/MP
+                }
                 if (potionTemplate.getId() == 33) {
                     potionTemplate.setName("Thẻ mua bán. Cho phép tự động sửa chữa trang bị ở mọi nơi với giá 150%. Sử dụng trực tiếp để giao dịch với Hắc Ngưu.");
                     potionTemplate.setPrice((short) 10);

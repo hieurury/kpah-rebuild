@@ -205,3 +205,34 @@
 - Tất cả các file đã được backup an toàn trong các thư mục `_backup/` tương ứng.
 
 ---
+
+## [2026-09-16 23:30] — Task #116: Thiết Lập Cooldown Bơm HP/MP 10 Giây & Tăng Sức Mạnh Cho Quái Vật
+
+**Yêu cầu:**
+1. Khắc phục vấn nạn spam bơm HP và MP quá nhanh gây quá tải hạ tầng Client - Server:
+   - Thiết lập thời gian hồi chiêu (cooldown) là **10 giây (10.000ms)** mỗi lần bơm máu (HP) hoặc mana (MP).
+   - Cơ chế hoạt động đồng bộ: Khi sử dụng bất kỳ bình HP nào, toàn bộ các bình HP cùng nhóm đều bị khóa trong 10 giây (không thể đổi bình khác để lách cooldown). Tương tự với toàn bộ các bình MP.
+   - Phía Server: Thêm `lastTimeUseHpPotion` và `lastTimeUseMpPotion` vào `Inventory.java`; chặn đứng mọi request bơm HP/MP dưới 10s trong `UseItemService.java`; cập nhật `delay = 10000` cho các template bình thuốc trong `Manager.java`.
+   - Phía Client: Cập nhật `class_sc.l[id].c = 10000` cho toàn bộ bình HP/MP trong `MsgHandler.java` (case 16/19); đồng bộ khóa toàn bộ mảng `class_acv.s.q.bs` khi nhận packet 22 thành công; hiển thị `"Hồi chiêu: 10 giây"` trong tooltip rương đồ (`ModHelpers.java`).
+2. Tăng thêm sức mạnh cho quái vật để tạo tính công bằng và thử thách trong chiến đấu:
+   - **Tăng máu (Max HP):** Quái thường tăng 20% lượng HP tối đa trong `Monster.getMaxHp()`.
+   - **Tăng sát thương công (Attack Damage):** Nâng mức sát thương tối thiểu và tối đa thêm ~20-25% theo cấp quái: `minAtk = Math.max(20, (int) (mobLv * 13 + 10))`, `maxAtk = Math.max(30, (int) (mobLv * 17 + 20))`.
+   - **Tăng sát thương cào xước tối thiểu (Scratch Damage):** `Math.max(5, (int) (mobLv * 2.0 + 4))`.
+   - **Bổ sung tỉ lệ Bạo Kích cho quái thường:** Thêm 8% cơ hội Bạo Kích gây $\times 1.3$ sát thương bất ngờ.
+   - **Điều chỉnh giảm phạt cấp độ (Level Difference Penalty):** Giảm mức suy giảm sát thương khi người chơi vượt cấp quái từ 20%/cấp (tối đa 80%) xuống còn 10%/cấp (tối đa 60%), giúp quái luôn duy trì được tính uy hiếp hợp lý khi người chơi thăng cấp.
+
+**Files thay đổi:**
+- `server/KPAH/src/player/Inventory.java` — Bổ sung `lastTimeUseHpPotion` và `lastTimeUseMpPotion`.
+- `server/KPAH/src/services/UseItemService.java` — Kiểm tra và cưỡng chế cooldown 10s cho nhóm HP và nhóm MP.
+- `server/KPAH/src/manager/Manager.java` — Gán delay 10000ms cho template các bình HP/MP.
+- `server/KPAH/src/map/Monster.java` — Tăng 20% HP quái thường, tăng ~25% sát thương cơ bản và scratch damage, thêm 8% bạo kích quái thường, giảm phạt level diff.
+- `game/app/src/classes/MsgHandler.java` — Khóa delay 10s cho toàn bộ bình HP/MP trong template và đồng bộ mảng cooldown `bs` khi nhận phản hồi dùng bình.
+- `game/app/src/classes/ModHelpers.java` — Thêm dòng `"Hồi chiêu: 10 giây"` vào tooltip vật phẩm.
+- `server/update_potion_cooldown.sql` — Tạo script SQL cập nhật `delay = 10000` cho bảng `potion_template`.
+
+**Kết quả:** ✅ Thành công
+- Server Java biên dịch thành công 100% (`KPAH.jar`).
+- Client Java ME build thành công 100% (`kpah_mod_v1.0.0.1_local.jar`).
+- Đã sao lưu backup tất cả các file trong `_backup/` trước khi sửa đổi.
+
+---

@@ -38,6 +38,10 @@ public class Inventory {
 
     @Builder.Default
     private final long[] lastTimeUsePotion = new long[Manager.POTION_TEMPLATES.size()];
+    @Builder.Default
+    private long lastTimeUseHpPotion = 0;
+    @Builder.Default
+    private long lastTimeUseMpPotion = 0;
 
     public void initIdItem() {
         maxIdItem = Short.MIN_VALUE;

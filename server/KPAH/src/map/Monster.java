@@ -64,7 +64,11 @@ public class Monster implements Cloneable {
         if (template == null) {
             return 100;
         }
-        return isElite ? (int) (template.getMaxHp() * 8.0) : template.getMaxHp();
+        if (isElite) {
+            return (int) (template.getMaxHp() * 8.0);
+        }
+        // Tăng 20% lượng máu cơ bản cho quái thường để tăng tính thử thách và công bằng
+        return isKhoangSan() ? template.getMaxHp() : (int) (template.getMaxHp() * 1.2);
     }
 
     @Synchronized
@@ -271,12 +275,12 @@ public class Monster implements Cloneable {
         int mobLv = this.template.getLevel();
         int plDef = (pl != null && pl.getPoint() != null) ? pl.getPoint().getDefend() : 0;
 
-        // 1. Sát thương cơ bản tự nhiên của quái theo level
-        int minAtk = Math.max(16, mobLv * 11 + 5);
-        int maxAtk = Math.max(24, mobLv * 14 + 15);
+        // 1. Sát thương cơ bản tự nhiên của quái theo level (tăng nhẹ ~20-25% sức mạnh)
+        int minAtk = Math.max(20, (int) (mobLv * 13 + 10));
+        int maxAtk = Math.max(30, (int) (mobLv * 17 + 20));
         int baseAtk = Util.nextInt(minAtk, maxAtk);
 
-        // 2. Bonus cận chiến hoặc tinh anh
+        // 2. Bonus cận chiến hoặc tinh anh / bạo kích
         if (isMelee()) {
             baseAtk = (int) (baseAtk * 1.1); // Cận chiến +10%
         }
@@ -291,11 +295,16 @@ public class Monster implements Cloneable {
             if (Util.isTrue(25.0, 100.0)) {
                 baseAtk = (int) (baseAtk * 1.5);
             }
+        } else {
+            // Quái thường có 8% cơ hội Bạo Kích x1.3 để tạo độ khó và bất ngờ
+            if (Util.isTrue(8.0, 100.0)) {
+                baseAtk = (int) (baseAtk * 1.3);
+            }
         }
 
         // 3. Sát thương cào xước tối thiểu (min scratch damage) theo level quái
         // Khi giáp người chơi rất cao, quái vẫn gây ra lượng sát thương nhỏ hợp lý (không bị về 1 dame vô lý)
-        int minScratch = Math.max(3, (int) (mobLv * 1.5 + 2));
+        int minScratch = Math.max(5, (int) (mobLv * 2.0 + 4));
         if (isElite) {
             minScratch = Math.max(25, (int) (mobLv * 3.5 + 15));
         }
@@ -303,13 +312,13 @@ public class Monster implements Cloneable {
         int netDmg = Math.max(baseAtk - plDef, minScratch);
 
         // 4. Cơ chế khoảng cách level cho quái thường:
-        // Cứ cách 1 lv (người chơi cao hơn quái) thì quái bị giảm 20% dame lên người chơi, tối đa 80%.
-        // Không áp dụng cho quái tinh anh, cao cấp và các loại boss.
+        // Cứ cách 1 lv (người chơi cao hơn quái) thì quái bị giảm 10% dame (cũ 20%), tối đa 60% (cũ 80%).
+        // Giúp quái vẫn duy trì sự uy hiếp và sức mạnh công bằng khi người chơi up level.
         if (isNormalMonster() && pl != null && pl.getInfo() != null) {
             int playerLevel = pl.getInfo().getLevel();
             int diffLevel = playerLevel - mobLv;
             if (diffLevel > 0) {
-                int dmgReductionPercent = Math.min(80, diffLevel * 20);
+                int dmgReductionPercent = Math.min(60, diffLevel * 10);
                 netDmg = Math.max(1, (int) (netDmg * (100 - dmgReductionPercent) / 100.0));
             }
         }

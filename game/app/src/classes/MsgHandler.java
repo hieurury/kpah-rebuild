@@ -61,6 +61,19 @@ public class MsgHandler {
 					class_sc.l[162].e = 67;
 					class_sc.l[162].g = "Rương Tinh Anh (Bậc 4)\nMở nhận: Lượng, Tinh anh huyết Siêu Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv30-35.";
 				}
+				// Khóa hồi chiêu 10 giây cho toàn bộ bình HP và MP trên client
+				int[] allHpPots = {1, 2, 3, 21, 22, 93, 94};
+				for (int i = 0; i < allHpPots.length; i++) {
+					if (allHpPots[i] < class_sc.l.length && class_sc.l[allHpPots[i]] != null) {
+						class_sc.l[allHpPots[i]].c = 10000;
+					}
+				}
+				int[] allMpPots = {4, 5, 6, 23, 24, 95, 96};
+				for (int i = 0; i < allMpPots.length; i++) {
+					if (allMpPots[i] < class_sc.l.length && class_sc.l[allMpPots[i]] != null) {
+						class_sc.l[allMpPots[i]].c = 10000;
+					}
+				}
 				if (class_acv.s != null && class_acv.s.q != null) {
 					if (class_acv.s.q.bs == null || class_acv.s.q.bs.length < 256) {
 						long[] newBs = new long[256];
@@ -116,6 +129,25 @@ public class MsgHandler {
 							}
 							if (valueAdd != 0) {
 								Paint.addStatusPopup(Paint.POPUP_HP, valueAdd, class_acv.s.q.cK, class_acv.s.q.cL - 30);
+							}
+						}
+						// Đồng bộ khóa cooldown 10s cho toàn bộ nhóm bình HP hoặc MP
+						long now = System.currentTimeMillis();
+						if (class_acv.s.q.bs != null) {
+							if (isHp) {
+								int[] hpPots = {1, 2, 3, 21, 22, 93, 94};
+								for (int i = 0; i < hpPots.length; i++) {
+									if (hpPots[i] < class_acv.s.q.bs.length) {
+										class_acv.s.q.bs[hpPots[i]] = now;
+									}
+								}
+							} else if (isMp) {
+								int[] mpPots = {4, 5, 6, 23, 24, 95, 96};
+								for (int i = 0; i < mpPots.length; i++) {
+									if (mpPots[i] < class_acv.s.q.bs.length) {
+										class_acv.s.q.bs[mpPots[i]] = now;
+									}
+								}
 							}
 						}
 						return; // Đã xử lý chuẩn xác, chặn không cho class_abj cũ gán sai

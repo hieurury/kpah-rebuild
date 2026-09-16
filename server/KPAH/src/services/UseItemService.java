@@ -38,16 +38,31 @@ public class UseItemService {
         if (!Util.canDoWithTime(player.getInventory().getLastTimeUsePotion()[id], potion.getTemplate().getDelay())
                 || (player.getPoint().isFullHp() && potion.isHpAverage())
                 || (player.getPoint().isFullMp() && potion.isMpAverage())
+                || (potion.isHpAverage() && !Util.canDoWithTime(player.getInventory().getLastTimeUseHpPotion(), 10000L))
+                || (potion.isMpAverage() && !Util.canDoWithTime(player.getInventory().getLastTimeUseMpPotion(), 10000L))
                 || (id == 19 && player.getLocation().getZone().getMap().isMapVillage())) {
             return;
         }
-        player.getInventory().getLastTimeUsePotion()[id] = System.currentTimeMillis();
+        long now = System.currentTimeMillis();
+        player.getInventory().getLastTimeUsePotion()[id] = now;
         if (potion.isHpAverage()) {
+            player.getInventory().setLastTimeUseHpPotion(now);
+            for (short hpId : new short[]{1, 2, 3, 21, 22, 93, 94}) {
+                if (hpId < player.getInventory().getLastTimeUsePotion().length) {
+                    player.getInventory().getLastTimeUsePotion()[hpId] = now;
+                }
+            }
             short valueAdd = (short) Manager.getMpHpPlus(0, id);
             player.getPoint().plusHp(valueAdd);
             onUsePotionHp(player, potion, valueAdd);
             InventoryService.instance.minusQuantityItemPotion(player, potion, (short) 1);
         } else if (potion.isMpAverage()) {
+            player.getInventory().setLastTimeUseMpPotion(now);
+            for (short mpId : new short[]{4, 5, 6, 23, 24, 95, 96}) {
+                if (mpId < player.getInventory().getLastTimeUsePotion().length) {
+                    player.getInventory().getLastTimeUsePotion()[mpId] = now;
+                }
+            }
             short valueAdd = (short) Manager.getMpHpPlus(1, id);
             player.getPoint().plusMp(valueAdd);
             onUsePotionMp(player, potion, valueAdd);

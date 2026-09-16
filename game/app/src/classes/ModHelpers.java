@@ -113,13 +113,14 @@ public class ModHelpers {
 			}
 
 			// Với các bình HP/MP cơ bản có sẵn trong bảng hồi phục gốc
-			if (n < 7 || (n >= 14 && n < 20)) {
+			if (n < 7 || (n >= 21 && n <= 24) || (n >= 93 && n <= 96)) {
 				try {
 					if (class_yi.V != null && n < class_yi.V.length && class_yi.V[n] != null) {
 						String s = "0" + rawName + "\nSố lượng: " + count;
 						if (class_yi.V[n].b > 0) {
 							s += "\nHồi phục: " + class_yi.V[n].b + " " + (potion.h != null ? potion.h : "");
 						}
+						s += "\nHồi chiêu: 10 giây";
 						return s;
 					}
 				} catch (Throwable ignored) {
