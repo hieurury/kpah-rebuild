@@ -293,6 +293,33 @@ public class BuffService {
         MapService.instance.sendAllPlayerInMap(mob, msg);
     }
 
+    public void sendRemoveBuffPoison(@NonNull Monster mob) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(mob.getId());
+        msg.writer().writeByte(Const.CATEGORY_MONSTER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(0);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-3); // b4 = -3: Gỡ bỏ hiệu ứng độc tức thì
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(mob, msg);
+    }
+
+    public void sendRemoveBuffPoison(@NonNull Player player) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(player.getIdPlayer());
+        msg.writer().writeByte(Const.CATEGORY_PLAYER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(0);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-3); // b4 = -3: Gỡ bỏ hiệu ứng độc tức thì
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(player, msg);
+    }
+
+
     public void sendAddBuffInfluence(@NonNull Player player, byte idBuff) throws IOException {
         Message msg = new Message(CommandMessage.BUFF_ATTACK);
         msg.writer().writeShort(player.getIdPlayer());

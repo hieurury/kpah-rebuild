@@ -169,8 +169,8 @@
 1. Định vị phong cách Cung Thủ (Class ID: 4) thành Xạ Thủ Siêu Sát Thương (Glass Cannon):
    - Base Stats: Dame cơ bản tăng vọt (Agi x2.2), Tỉ lệ chí mạng cơ bản cao (Luck / 15 + 5%), nhưng máu cực thấp (Hea x50) và mana hạn chế (Spi x16). Chỉ số khởi tạo: Str 20, Agi 35, Spi 10, Hea 10, Luck 15.
 2. Thiết kế & Triển khai cơ chế bộ kỹ năng Cung Thủ:
-   - **Skill 3 (Bát kim tiễn đáo):** Bắn nhiều đòn liên tiếp theo cấp kỹ năng (Cấp 1–3 bắn 3 đòn; Cấp 4–9 bắn số đòn = cấp, tối đa 9 đòn, nhịp bắn 240ms). Cơ chế **Độc Nổ (Poison Detonate)**: lập tức rút cạn toàn bộ sát thương độc DoT còn lại trên mục tiêu và kết thúc hiệu ứng trúng độc.
-   - **Skill 4 (Độc lưu tiễn):** Buff duy trì 60s, hồi chiêu cố định 80s (khoảng trống 20s không buff); đòn đánh thường và chiêu thức gán độc DoT kéo dài 10s lên mục tiêu, mỗi giây gây sát thương = `30% + 5%/cấp` Lực tấn công.
+   - **Skill 3 (Bát kim tiễn đáo):** Bắn nhiều đòn liên tiếp theo cấp kỹ năng (Cấp 1–3 bắn 3 đòn; Cấp 4–9 bắn số đòn = cấp, tối đa 9 đòn, nhịp bắn 240ms). Cơ chế **Độc Nổ (Poison Detonate)**: lập tức rút cạn toàn bộ sát thương độc DoT còn lại trên mục tiêu và kết thúc hiệu ứng trúng độc; đồng bộ sát thương nổ độc hiển thị số trừ máu màu **TÍM** cực lớn nhảy trên đầu mục tiêu qua packet 89 và gỡ bỏ ngay lập tức animation bọt độc xoay quanh mục tiêu.
+   - **Skill 4 (Độc lưu tiễn):** Buff duy trì 60s, hồi chiêu cố định 80s (khoảng trống 20s không buff); đòn đánh thường và chiêu thức gán độc DoT kéo dài 10s lên mục tiêu, mỗi giây gây sát thương = `30% + 5%/cấp` Lực tấn công (nhảy số trừ máu màu **TÍM** nguyên bản 8px trên đầu mục tiêu).
    - **Skill 5 (Hộ độc tiễn):** Kỹ năng nội tại tăng `5% + 2%/cấp` Tỉ lệ chí mạng; đặc biệt khi mục tiêu đang dính độc, nhận thêm `50% + 10%/cấp` Sát thương chí mạng.
    - **Skill 6 (Thập diện tâm tiễn):** Hồi chiêu 6s; tỉ lệ `10% + 2%/cấp` gây trạng thái **MÙ (Blind)** trong 1s (khi bị mù, đối thủ 100% đánh hụt/Miss cả quái lẫn người chơi).
    - **Skill 7 (Thăng thiên loạn tiễn):** Hồi chiêu 7s; gây trạng thái **Vết thương sâu** trong 5s (giảm 50% lượng máu hồi phục của đối thủ từ mọi nguồn); đồng thời tăng cho bản thân `10% + 2%/cấp` Né đòn trong 5s.

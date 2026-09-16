@@ -395,6 +395,8 @@ public class SkillService {
                     int detonateDmg = playerTarget.getBuffInfluence().detonatePoison();
                     if (detonateDmg > 0) {
                         playerTarget.injured(detonateDmg, false, ItemEquipConst.DAMAGE_MAGIC, false);
+                        BuffService.instance.sendSubHpByBuffInfluence(playerTarget, (short) Math.min(Short.MAX_VALUE, detonateDmg));
+                        BuffService.instance.sendRemoveBuffPoison(playerTarget);
                     }
                 }
                 final int fDamePlayer = damePlayer;
@@ -551,6 +553,8 @@ public class SkillService {
                     int detonateDmg = mob.getBuffInfluence().detonatePoison();
                     if (detonateDmg > 0) {
                         mob.injured(player, detonateDmg, false, false, false);
+                        BuffService.instance.sendSubHpByBuffInfluence(mob, (short) Math.min(Short.MAX_VALUE, detonateDmg));
+                        BuffService.instance.sendRemoveBuffPoison(mob);
                     }
                 }
                 final int fDameAttack = dameAttack;

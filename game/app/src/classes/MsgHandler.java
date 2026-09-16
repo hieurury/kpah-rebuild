@@ -193,6 +193,28 @@ public class MsgHandler {
 						}
 					}
 					return;
+				} else if (b4 == -3) {
+					// Gỡ bỏ hiệu ứng Độc tức thì (khi bị Độc Nổ rút cạn)
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								if (entity.de != null) {
+									for (int j = entity.de.size() - 1; j >= 0; j--) {
+										Object obj = entity.de.elementAt(j);
+										if (obj instanceof class_zx && ((class_zx) obj).h == 22 && ((class_zx) obj).effectType == 0) {
+											entity.de.removeElementAt(j);
+										}
+									}
+								}
+								break;
+							}
+						}
+					}
+					if (class_acv.s != null && class_acv.s.q != null && class_acv.s.q.cG == targetId) {
+						MainCharInfo.poisonEndTime = 0L;
+					}
+					return;
 				} else if (b4 == 4) {
 					// Áp dụng trúng độc (BUFF_DOC_TO)
 					int sec = dur > 0 ? dur : 10;
