@@ -136,6 +136,10 @@ public class Monster implements Cloneable {
                         int level = this.template.getLevel();
                         // 1. Giáp phòng thủ phẳng theo level quái
                         int mobDef = isElite ? level * 5 : level * 2;
+                        if (this.buffInfluence != null && this.buffInfluence.isGiamGiap()) {
+                            mobDef -= mobDef * 10 / 100;
+                            if (mobDef < 0) mobDef = 0;
+                        }
                         damage -= mobDef;
                         
                         // 2. Kháng sát thương theo % (damage mitigation)
@@ -564,7 +568,7 @@ public class Monster implements Cloneable {
     }
 
     private void attackPlayer() throws IOException {
-        if (isDie() || this.buffInfluence.isStunned()) {
+        if (isDie() || this.buffInfluence.isStunned() || this.buffInfluence.isHoaDa()) {
             return;
         }
         getPlayerCanAttack();
@@ -804,7 +808,7 @@ public class Monster implements Cloneable {
         
         // Wandering logic
         // "tuy nhiên trong lúc đó logic di chuyển vẫn kích hoạt" - timer vẫn đếm và kiểm tra
-        if (!this.isDie() && !this.buffInfluence.isStunned() && playerTarget == null) {
+        if (!this.isDie() && !this.buffInfluence.isStunned() && !this.buffInfluence.isHoaDa() && playerTarget == null) {
             // Quái đánh xa không đi nhong nhong làm loãng bãi: chỉ quái cận chiến mới nhích nhẹ
             if (!isMelee()) {
                 return;

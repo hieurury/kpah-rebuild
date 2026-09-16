@@ -203,6 +203,48 @@ public class MsgHandler {
 						}
 					}
 					return;
+				} else if (b4 == 7) {
+					// Áp dụng Hóa Đá (BUFF_HOA_DA - Bất động + Vòng xám tro)
+					int sec = dur > 0 ? dur : 1;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								entity.cW = true;
+								entity.cZ = System.currentTimeMillis() + (long) (sec * 1000L);
+								class_zx eff = new class_zx(entity.cK, entity.cL, 22);
+								eff.isDebuff = true;
+								eff.effectType = 7;
+								eff.a(sec);
+								entity.a(eff);
+								break;
+							}
+						}
+					}
+					if (class_acv.s != null && class_acv.s.q != null && class_acv.s.q.cG == targetId) {
+						MainCharInfo.hoaDaEndTime = System.currentTimeMillis() + (long) sec * 1000L;
+					}
+					return;
+				} else if (b4 == 9) {
+					// Áp dụng Giảm Giáp (BUFF_GIAM_GIAP - Vòng đỏ cam)
+					int sec = dur > 0 ? dur : 5;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_zx eff = new class_zx(entity.cK, entity.cL, 22);
+								eff.isDebuff = true;
+								eff.effectType = 9;
+								eff.a(sec);
+								entity.a(eff);
+								break;
+							}
+						}
+					}
+					if (class_acv.s != null && class_acv.s.q != null && class_acv.s.q.cG == targetId) {
+						MainCharInfo.giamGiapEndTime = System.currentTimeMillis() + (long) sec * 1000L;
+					}
+					return;
 				} else if (b4 == 2) {
 					// Hút MP
 					if (b3 == 7 && s2 > 0 && class_acv.s != null && class_acv.s.l != null) {

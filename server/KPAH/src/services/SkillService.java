@@ -325,6 +325,48 @@ public class SkillService {
         msg.writer().writeByte(isXuyenGiap ? 0 : 1);
         msg.writer().writeByte(player.getSkill().getLevelSkill()[typeSkill]);
         MapService.instance.sendAllPlayerInMap(player, msg);
+
+        // Hiệu ứng kỹ năng Đấu Sĩ trong PvP
+        if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            if (typeSkill == 3) {
+                // Skill 3: Khổng kình bát vĩ (multi-hit + 50% stun mỗi đòn)
+                int totalHits = (lvSkill <= 3) ? 3 : Math.min(9, (int) lvSkill);
+                if (Util.isTrue(50, 100)) {
+                    playerTarget.getBuffInfluence().addBuffStunned((short) 1);
+                }
+                for (int hit = 2; hit <= totalHits; hit++) {
+                    if (playerTarget.isDie()) break;
+                    int nextDame = playerTarget.injured(damePlayer, false, ItemEquipConst.DAMAGE_PHYSIC, false);
+                    if (Util.isTrue(50, 100)) {
+                        playerTarget.getBuffInfluence().addBuffStunned((short) 1);
+                    }
+                    Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_PLAYER);
+                    hitMsg.writer().writeShort(player.getIdPlayer());
+                    hitMsg.writer().writeShort(playerTarget.getIdPlayer());
+                    hitMsg.writer().writeByte(typeSkill);
+                    hitMsg.writer().writeInt(nextDame);
+                    hitMsg.writer().writeInt(playerTarget.getPoint().getHp());
+                    hitMsg.writer().writeByte(effAttack);
+                    hitMsg.writer().writeByte(1);
+                    hitMsg.writer().writeByte(isXuyenGiap ? 0 : 1);
+                    hitMsg.writer().writeByte(lvSkill);
+                    MapService.instance.sendAllPlayerInMap(player, hitMsg);
+                }
+            } else if (typeSkill == 6) {
+                // Skill 6: Giảm giáp 10% trong 5s
+                playerTarget.getBuffInfluence().addBuffGiamGiap((short) 5, 10);
+            } else if (typeSkill == 7) {
+                // Skill 7: Tỉ lệ hóa đá 1s theo cấp (20% - 65%)
+                int rateHoaDa = 20 + (lvSkill > 0 ? (lvSkill - 1) * 5 : 0);
+                if (Util.isTrue(rateHoaDa, 100)) {
+                    playerTarget.getBuffInfluence().addBuffHoaDa((short) 1);
+                }
+            } else if (typeSkill == 8) {
+                // Skill 8: Choáng 1s
+                playerTarget.getBuffInfluence().addBuffStunned((short) 1);
+            }
+        }
     }
 
     private void onPlayerAttackMob(@NonNull Player player, @NonNull Monster mob, ItemEquip cuoc) throws IOException {
@@ -363,6 +405,48 @@ public class SkillService {
         msg.writer().writeByte(isXuyenGiap ? 0 : 1);
         msg.writer().writeByte(player.getSkill().getLevelSkill()[typeSkill]);
         MapService.instance.sendAllPlayerInMap(player, msg);
+
+        // Hiệu ứng kỹ năng Đấu Sĩ khi tấn công quái đơn
+        if (!mob.isKhoangSan() && player.getInfo().getClassPlayer() == Const.DAU_SI) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            if (typeSkill == 3) {
+                // Skill 3: Khổng kình bát vĩ (multi-hit + 50% stun mỗi đòn)
+                int totalHits = (lvSkill <= 3) ? 3 : Math.min(9, (int) lvSkill);
+                if (Util.isTrue(50, 100)) {
+                    mob.getBuffInfluence().addBuffStunned((short) 1);
+                }
+                for (int hit = 2; hit <= totalHits; hit++) {
+                    if (mob.isDie()) break;
+                    int nextDame = mob.injured(player, dameAttack, isXuyenGiap, false, false);
+                    if (Util.isTrue(50, 100)) {
+                        mob.getBuffInfluence().addBuffStunned((short) 1);
+                    }
+                    Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_MONSTER);
+                    hitMsg.writer().writeShort(player.getIdPlayer());
+                    hitMsg.writer().writeShort(mob.getId());
+                    hitMsg.writer().writeByte(typeSkill);
+                    hitMsg.writer().writeInt(nextDame);
+                    hitMsg.writer().writeInt(mob.getHp());
+                    hitMsg.writer().writeByte(effAttack);
+                    hitMsg.writer().writeByte(1);
+                    hitMsg.writer().writeByte(isXuyenGiap ? 0 : 1);
+                    hitMsg.writer().writeByte(lvSkill);
+                    MapService.instance.sendAllPlayerInMap(player, hitMsg);
+                }
+            } else if (typeSkill == 6) {
+                // Skill 6: Giảm giáp 10% trong 5s
+                mob.getBuffInfluence().addBuffGiamGiap((short) 5, 10);
+            } else if (typeSkill == 7) {
+                // Skill 7: Hóa đá 1s theo cấp (20% - 65%)
+                int rateHoaDa = 20 + (lvSkill > 0 ? (lvSkill - 1) * 5 : 0);
+                if (Util.isTrue(rateHoaDa, 100)) {
+                    mob.getBuffInfluence().addBuffHoaDa((short) 1);
+                }
+            } else if (typeSkill == 8) {
+                // Skill 8: Choáng 1s
+                mob.getBuffInfluence().addBuffStunned((short) 1);
+            }
+        }
     }
 
     private void onPlayerAttackMultiMob(@NonNull Player player, @NonNull List<Monster> mobs) throws IOException {
@@ -403,6 +487,34 @@ public class SkillService {
             msg.writer().writeInt(mob.getHp());
         }
         MapService.instance.sendAllPlayerInMap(player, msg);
+
+        // Hiệu ứng kỹ năng Đấu Sĩ khi tấn công nhiều quái (AoE)
+        if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            if (typeSkill == 6) {
+                // Skill 6: Giảm giáp 10% trong 5s lên toàn bộ quái trúng chiêu
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan()) {
+                        m.getBuffInfluence().addBuffGiamGiap((short) 5, 10);
+                    }
+                }
+            } else if (typeSkill == 7) {
+                // Skill 7: Tỉ lệ hóa đá 1s theo cấp (20% - 65%) lên từng quái
+                int rateHoaDa = 20 + (lvSkill > 0 ? (lvSkill - 1) * 5 : 0);
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan() && Util.isTrue(rateHoaDa, 100)) {
+                        m.getBuffInfluence().addBuffHoaDa((short) 1);
+                    }
+                }
+            } else if (typeSkill == 8) {
+                // Skill 8: Choáng 1s lên toàn bộ quái trúng chiêu
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan()) {
+                        m.getBuffInfluence().addBuffStunned((short) 1);
+                    }
+                }
+            }
+        }
     }
 
     @Synchronized

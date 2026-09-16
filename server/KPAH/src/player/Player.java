@@ -64,6 +64,7 @@ public class Player {
     private List<Short> otherPlayerInside;
     private QuestData questData;
     private long timeEndBuffTinhAnh;
+    private long lastTimeHitDauSi;
 
     public boolean hasBuffTinhAnh() {
         return System.currentTimeMillis() < this.timeEndBuffTinhAnh;
@@ -116,14 +117,19 @@ public class Player {
             if (!isInjuredByEffect) {
                 int def = (typeDame == ItemEquipConst.DAMAGE_MAGIC ? this.point.getDefendMagic() : this.point.getDefend());
                 byte classPlayer = this.info.getClassPlayer();
-                byte skillLevel = this.skill.getLevelSkill()[classPlayer == Const.DAU_SI ? 5 : 4];
-                if (classPlayer == Const.DAU_SI) {
-                    def += def * (Manager.getSkillDamPercent(classPlayer, BuffConst.BUFF_PHONG_THU, skillLevel) / 100);
-                }
                 if (classPlayer == Const.CHIEN_BINH && skillBuff.isExistBuff(BuffConst.CUONG_THAN_GIAP)) {
                     def += def * skillBuff.getPercentDame(BuffConst.CUONG_THAN_GIAP) / 100;
                 }
+                if (this.buffInfluence != null && this.buffInfluence.isGiamGiap()) {
+                    def -= def * 10 / 100;
+                    if (def < 0) {
+                        def = 0;
+                    }
+                }
                 damage -= def;
+                if (classPlayer == Const.DAU_SI) {
+                    lastTimeHitDauSi = System.currentTimeMillis();
+                }
                 if (Util.isTrue((double) this.point.getHapThu(), 100.0)) {
                     damage -= damage * this.point.getHapThu() / 100;
                 }
@@ -286,6 +292,16 @@ public class Player {
     public void update() throws IOException, SQLException {
         buffInfluence.update();
         skillBuff.update();
+        // Passive Skill 5: Khí huyết sinh sôi của Đấu Sĩ (10s không bị đánh -> hồi 2% HP tối đa / giây)
+        if (!isDie() && this.info.getClassPlayer() == Const.DAU_SI && this.skill != null && this.skill.getLevelSkill()[5] > 0) {
+            if (System.currentTimeMillis() - lastTimeHitDauSi >= 10000L) {
+                if (this.point.getHp() < this.point.getHpMax()) {
+                    int regenAmount = (int) Math.max(1, (long) this.point.getHpMax() * 2 / 100);
+                    this.point.setHp(Math.min(this.point.getHpMax(), this.point.getHp() + regenAmount));
+                    MapService.instance.onNewHpMp(this);
+                }
+            }
+        }
         if (isDie() && this.info.getLevel() < Settings.LEVEL_CAN_AUTO_REVIVE) {
             if (Util.canDoWithTime(sundry.getLastTimeDie(), sundry.getMiliSecondRevive())) {
                 MapService.instance.revivePlayer(this, (byte) 100);

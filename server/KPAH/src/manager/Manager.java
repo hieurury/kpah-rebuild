@@ -423,6 +423,9 @@ public class Manager {
         if (clazz == Const.PHAP_SU && skillType == 7) {
             return 60; // Song hộ công thủ cố định 60s mọi cấp theo thiết kế
         }
+        if (clazz == Const.DAU_SI && skillType == 4) {
+            return 60; // Bất di biến Đấu Sĩ cố định 60s mọi cấp theo thiết kế
+        }
         return getTimeLifeBuffSkill(skillType, skillLevel);
     }
 
@@ -465,11 +468,33 @@ public class Manager {
         SKILL_MP[Const.PHAP_SU][8] = new short[]{0, 80, 95, 110, 125, 140, 155, 170, 185, 200, 220}; // Hải long 4s CD
         SKILL_MP[Const.PHAP_SU][9] = new short[]{0, 100, 115, 130, 145, 160, 175, 190, 205, 220, 235}; // Song long 5s CD
         SKILL_MP[Const.PHAP_SU][10] = new short[]{0, 120, 135, 150, 165, 180, 195, 210, 225, 240, 250}; // Hàn băng vũ 6s CD
+
+        // Đấu Sĩ: Tanker & khống chế, tiêu hao MP vừa phải, tránh spam liên tục
+        SKILL_MP[Const.DAU_SI][0] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // Đập
+        SKILL_MP[Const.DAU_SI][1] = new short[]{0, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5}; // Thổ Tú
+        SKILL_MP[Const.DAU_SI][2] = new short[]{0, 3, 3, 3, 4, 4, 4, 5, 5, 5, 5}; // Kim sơn thủy
+        SKILL_MP[Const.DAU_SI][3] = new short[]{0, 7, 7, 8, 8, 9, 9, 10, 10, 12, 12}; // Khổng kình bát vĩ (multi-hit)
+        SKILL_MP[Const.DAU_SI][4] = new short[]{0, 10, 10, 11, 11, 12, 12, 13, 13, 14, 15}; // Bất di biến (buff HP dame + size)
+        SKILL_MP[Const.DAU_SI][5] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // Khí huyết sinh sôi (passive)
+        SKILL_MP[Const.DAU_SI][6] = new short[]{0, 12, 15, 18, 21, 24, 27, 30, 33, 36, 36}; // Kinh thiên động địa (giảm giáp)
+        SKILL_MP[Const.DAU_SI][7] = new short[]{0, 14, 17, 20, 23, 26, 29, 32, 35, 38, 38}; // Sơn Tinh bộ thiên (hóa đá)
+        SKILL_MP[Const.DAU_SI][8] = new short[]{0, 20, 24, 28, 32, 36, 40, 44, 48, 52, 55}; // Thạch nhũ công tâm (choáng AoE + dame HP)
     }
 
     public static long getSkillCooldown(byte clazz, byte skillType, byte level) {
         if (level <= 0) {
             return 0;
+        }
+        if (clazz == Const.DAU_SI) {
+            if (skillType == 0) return 800L;  // Đập: 800ms
+            if (skillType == 1) return 1500L; // Thổ Tú: 1.5s
+            if (skillType == 2) return 1800L; // Kim sơn thủy: 1.8s
+            if (skillType == 3) return Math.min(4000L, 3000L + (level - 1) * 125L); // Khổng kình bát vĩ: 3.0s - 4.0s
+            if (skillType == 4) return 80000L; // Bất di biến: 80s cố định
+            if (skillType == 5) return 0L;     // Khí huyết sinh sôi: nội tại
+            if (skillType == 6) return 5000L;  // Kinh thiên động địa: 5s
+            if (skillType == 7) return 6000L;  // Sơn Tinh bộ thiên: 6s
+            if (skillType == 8) return 7000L;  // Thạch nhũ công tâm: 7s
         }
         if (clazz == Const.PHAP_SU) {
             if (skillType == 4) return 120000L; // Hồi công lực đan 120s

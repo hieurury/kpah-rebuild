@@ -125,6 +125,22 @@ public class Point {
                 dameAttack += bonusDame;
             }
         }
+        if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
+            // Bất di biến (Skill 4 buff active): khi đang có buff BAT_DI_BIEN, sát thương tăng thêm theo % HP tối đa (5% + 3% * (cấp-1))
+            if (player.getSkillBuff() != null && player.getSkillBuff().isExistBuff(BuffConst.BAT_DI_BIEN)) {
+                byte lvSkill4 = player.getSkill().getLevelSkill()[4];
+                if (lvSkill4 > 0) {
+                    int percentHp = 5 + (lvSkill4 - 1) * 3;
+                    int bonusDame = (int) ((long) this.hpMax * percentHp / 100);
+                    dameAttack += bonusDame;
+                }
+            }
+            // Thạch nhũ công tâm (Skill 8): Tăng 1% sát thương cho mỗi 1000 HP tối đa
+            if (player.getSkill().getTypeSkill() == 8) {
+                int hpBonusPercent = this.hpMax / 1000;
+                dameAttack += (int) ((long) dameAttack * hpBonusPercent / 100);
+            }
+        }
         if (isCrit || isBaoKich) {
             dameAttack *= 2;
         }
@@ -197,9 +213,6 @@ public class Point {
     private void setDefend() {
         defend += agility + agilityAdd;
         defend += InventoryService.instance.sumAttributeValueForId(player, (byte) 1);
-        if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
-            defend += defend * (Manager.getSkillDamPercent(player.getInfo().getClassPlayer(), (byte) 5, player.getSkill().getLevelSkill()[5]) / 100);
-        }
         if (player.getHorse().getAnimalUse() != null) {
             defend += defend * player.getHorse().getAnimalUse().getValue((byte) 56) / 100;
         }
@@ -208,9 +221,6 @@ public class Point {
     private void setDefendMagic() {
         defendMagic += agility + agilityAdd;
         defendMagic += InventoryService.instance.sumAttributeValueForId(player, (byte) 6);
-        if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
-            defendMagic += defendMagic * (Manager.getSkillDamPercent(player.getInfo().getClassPlayer(), (byte) 5, player.getSkill().getLevelSkill()[5]) / 100);
-        }
         if (player.getHorse().getAnimalUse() != null) {
             defendMagic += defendMagic * player.getHorse().getAnimalUse().getValue((byte) 60) / 100;
         }
@@ -284,7 +294,7 @@ public class Point {
                 defaultStr = 10; defaultAgi = 25; defaultSpi = 35; defaultHea = 10; defaultLuck = 10;
             }
             case Const.DAU_SI -> {
-                defaultStr = 20; defaultAgi = 30; defaultSpi = 10; defaultHea = 20; defaultLuck = 10;
+                defaultStr = 20; defaultAgi = 20; defaultSpi = 10; defaultHea = 30; defaultLuck = 10;
             }
             case Const.CUNG_THU -> {
                 defaultStr = 20; defaultAgi = 30; defaultSpi = 15; defaultHea = 15; defaultLuck = 10;
@@ -331,10 +341,20 @@ public class Point {
         switch (player.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH ->
                 hpMax += (health + healthAdd) * 80;
-            case Const.DAU_SI, Const.CHIEN_BINH ->
+            case Const.DAU_SI ->
+                hpMax += (health + healthAdd) * 90;
+            case Const.CHIEN_BINH ->
                 hpMax += (health + healthAdd) * 70;
             case Const.PHAP_SU, Const.CUNG_THU ->
                 hpMax += (health + healthAdd) * 60;
+        }
+        if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
+            // Khí huyết sinh sôi (Skill 5 nội tại Đấu Sĩ): Tăng HP tối đa 10% - 55% (10% + 5% * (cấp-1))
+            byte lvSkill5 = player.getSkill().getLevelSkill()[5];
+            if (lvSkill5 > 0) {
+                int hpPercentBonus = 10 + (lvSkill5 - 1) * 5;
+                hpMax += (int) ((long) hpMax * hpPercentBonus / 100);
+            }
         }
         hpMax += hpMax * percentPlusHp / 100;
         hpMax += InventoryService.instance.sumAttributeValueForId(player, (byte) 33);

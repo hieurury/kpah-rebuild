@@ -10,7 +10,10 @@ public final class class_zx extends class_di {
     private int o = -1;
     public long a = 0L;
     public boolean isDebuff = false;
+    public byte effectType = 0; // 0: độc tím, 7: hóa đá xám tro, 9: giảm giáp đỏ cam
     private static Image purpleRingImg = null;
+    private static Image stoneRingImg = null;
+    private static Image armorBreakRingImg = null;
 
     public class_zx(int n, int n2, int n3) {
         super(n, n2, n3);
@@ -44,40 +47,100 @@ public final class class_zx extends class_di {
 
     public void a(Graphics graphics) {
         if (this.h == 22 && this.isDebuff) {
-            if (purpleRingImg == null) {
-                try {
-                    Image orig = class_yi.d(22);
-                    if (orig != null) {
-                        int w = orig.getWidth();
-                        int h = orig.getHeight();
-                        int[] rgb = new int[w * h];
-                        orig.getRGB(rgb, 0, w, 0, 0, w, h);
-                        for (int i = 0; i < rgb.length; i++) {
-                            int p = rgb[i];
-                            int alpha = (p >> 24) & 0xFF;
-                            if (alpha == 0) continue;
-                            int r = (p >> 16) & 0xFF;
-                            int g = (p >> 8) & 0xFF;
-                            int b = p & 0xFF;
-                            if (g > r && g >= b) {
-                                int newR = Math.min(255, (int)(g * 0.95f) + 30);
-                                int newG = (int)(g * 0.20f);
-                                int newB = Math.min(255, (int)(g * 1.15f) + 40);
+            Image ringImgToDraw = null;
+            if (this.effectType == 7) {
+                // Hiệu ứng Hóa Đá: Vòng đá xám tro
+                if (stoneRingImg == null) {
+                    try {
+                        Image orig = class_yi.d(22);
+                        if (orig != null) {
+                            int w = orig.getWidth();
+                            int h = orig.getHeight();
+                            int[] rgb = new int[w * h];
+                            orig.getRGB(rgb, 0, w, 0, 0, w, h);
+                            for (int i = 0; i < rgb.length; i++) {
+                                int p = rgb[i];
+                                int alpha = (p >> 24) & 0xFF;
+                                if (alpha == 0) continue;
+                                int r = (p >> 16) & 0xFF;
+                                int g = (p >> 8) & 0xFF;
+                                int b = p & 0xFF;
+                                int gray = (r * 30 + g * 59 + b * 11) / 100;
+                                rgb[i] = (alpha << 24) | (gray << 16) | (gray << 8) | gray;
+                            }
+                            stoneRingImg = Image.createRGBImage(rgb, w, h, true);
+                        }
+                    } catch (Throwable t) {
+                        stoneRingImg = null;
+                    }
+                }
+                ringImgToDraw = stoneRingImg;
+            } else if (this.effectType == 9) {
+                // Hiệu ứng Giảm Giáp: Vòng đỏ cam vỡ giáp
+                if (armorBreakRingImg == null) {
+                    try {
+                        Image orig = class_yi.d(22);
+                        if (orig != null) {
+                            int w = orig.getWidth();
+                            int h = orig.getHeight();
+                            int[] rgb = new int[w * h];
+                            orig.getRGB(rgb, 0, w, 0, 0, w, h);
+                            for (int i = 0; i < rgb.length; i++) {
+                                int p = rgb[i];
+                                int alpha = (p >> 24) & 0xFF;
+                                if (alpha == 0) continue;
+                                int g = (p >> 8) & 0xFF;
+                                int newR = Math.min(255, (int)(g * 1.2f) + 40);
+                                int newG = (int)(g * 0.35f);
+                                int newB = 0;
                                 rgb[i] = (alpha << 24) | (newR << 16) | (newG << 8) | newB;
                             }
+                            armorBreakRingImg = Image.createRGBImage(rgb, w, h, true);
                         }
-                        purpleRingImg = Image.createRGBImage(rgb, w, h, true);
+                    } catch (Throwable t) {
+                        armorBreakRingImg = null;
                     }
-                } catch (Throwable t) {
-                    purpleRingImg = null;
                 }
+                ringImgToDraw = armorBreakRingImg;
+            } else {
+                // Mặc định: Hiệu ứng Độc (màu tím)
+                if (purpleRingImg == null) {
+                    try {
+                        Image orig = class_yi.d(22);
+                        if (orig != null) {
+                            int w = orig.getWidth();
+                            int h = orig.getHeight();
+                            int[] rgb = new int[w * h];
+                            orig.getRGB(rgb, 0, w, 0, 0, w, h);
+                            for (int i = 0; i < rgb.length; i++) {
+                                int p = rgb[i];
+                                int alpha = (p >> 24) & 0xFF;
+                                if (alpha == 0) continue;
+                                int r = (p >> 16) & 0xFF;
+                                int g = (p >> 8) & 0xFF;
+                                int b = p & 0xFF;
+                                if (g > r && g >= b) {
+                                    int newR = Math.min(255, (int)(g * 0.95f) + 30);
+                                    int newG = (int)(g * 0.20f);
+                                    int newB = Math.min(255, (int)(g * 1.15f) + 40);
+                                    rgb[i] = (alpha << 24) | (newR << 16) | (newG << 8) | newB;
+                                }
+                            }
+                            purpleRingImg = Image.createRGBImage(rgb, w, h, true);
+                        }
+                    } catch (Throwable t) {
+                        purpleRingImg = null;
+                    }
+                }
+                ringImgToDraw = purpleRingImg;
             }
-            if (purpleRingImg != null) {
+
+            if (ringImgToDraw != null) {
                 if (this.i == -1) {
                     this.i = 0;
                 }
                 int frameY = b[this.h][this.i] * this.g;
-                graphics.drawRegion(purpleRingImg, 0, frameY, class_di.c[this.h], this.g, 0, this.e, this.f, 3);
+                graphics.drawRegion(ringImgToDraw, 0, frameY, class_di.c[this.h], this.g, 0, this.e, this.f, 3);
                 return;
             }
         }

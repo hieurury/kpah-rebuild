@@ -7,6 +7,8 @@ public class MainCharInfo {
 	public static long poisonEndTime = 0; // Mốc thời gian kết thúc trúng độc (DoT ăn mòn)
 	public static long instantPoisonEndTime = 0; // Mốc thời gian kết thúc nhiễm độc (khuếch đại sát thương)
 	public static int instantPoisonStacks = 0; // Số tầng nhiễm độc (tối đa 5)
+	public static long hoaDaEndTime = 0; // Mốc thời gian kết thúc hóa đá
+	public static long giamGiapEndTime = 0; // Mốc thời gian kết thúc giảm giáp
 
 	public static String getPlayerName() {
 		return class_acv.s.q.a_();
@@ -301,6 +303,26 @@ public class MainCharInfo {
 			} else {
 				instantPoisonEndTime = 0;
 				instantPoisonStacks = 0;
+			}
+
+			// 3c. Trạng thái Hóa Đá
+			if (hoaDaEndTime > now) {
+				int secHoaDa = (int) ((hoaDaEndTime - now) / 1000L) + 1;
+				if (secHoaDa > 0 && !hasBuffNamed(list, "Hóa Đá")) {
+					list.addElement(new BuffItem("Hóa Đá", formatTime(secHoaDa), secHoaDa, true, 0x808080));
+				}
+			} else {
+				hoaDaEndTime = 0;
+			}
+
+			// 3d. Trạng thái Giảm Giáp (-10%)
+			if (giamGiapEndTime > now) {
+				int secGiamGiap = (int) ((giamGiapEndTime - now) / 1000L) + 1;
+				if (secGiamGiap > 0 && !hasBuffNamed(list, "Giảm Giáp")) {
+					list.addElement(new BuffItem("Giảm Giáp", formatTime(secGiamGiap), secGiamGiap, true, 0xFF4500));
+				}
+			} else {
+				giamGiapEndTime = 0;
 			}
 
 			// 4. Quét các hiệu ứng buff/skill đang hoạt động trong mainChar.de

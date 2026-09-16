@@ -111,12 +111,7 @@ public class BuffService {
                 }
             }
             case Const.DAU_SI -> {
-                if (playerAttack.getSkillBuff().isExistBuff(BuffConst.BAT_DI_BIEN)) {
-                    short percentDamage = playerAttack.getSkillBuff().getPercentDame(BuffConst.BAT_DI_BIEN);
-                    if (Util.isTrue((double) percentDamage, 100.0)) {
-                        mob.getBuffInfluence().addBuffStunned((short) 5);
-                    }
-                }
+                // Bất di biến mới tăng sát thương theo % HP tối đa (đã xử lý trong Point.getDameAttack)
             }
         }
     }
@@ -133,12 +128,7 @@ public class BuffService {
                 }
             }
             case Const.DAU_SI -> {
-                if (playerAttack.getSkillBuff().isExistBuff(BuffConst.BAT_DI_BIEN)) {
-                    short percentDamage = playerAttack.getSkillBuff().getPercentDame(BuffConst.BAT_DI_BIEN);
-                    if (Util.isTrue((double) percentDamage, 100.0)) {
-                        player.getBuffInfluence().addBuffStunned((short) 5);
-                    }
-                }
+                // Bất di biến mới tăng sát thương theo % HP tối đa (đã xử lý trong Point.getDameAttack)
             }
         }
     }
@@ -306,6 +296,10 @@ public class BuffService {
             dur = player.getBuffInfluence().getSecondPosonedLeft();
         } else if (idBuff == BuffConst.BUFF_NHIEM_DOC) {
             dur = player.getBuffInfluence().getSecondInstantPoisonLeft();
+        } else if (idBuff == BuffConst.BUFF_HOA_DA) {
+            dur = (byte) player.getBuffInfluence().getSecondOfHoaDa();
+        } else if (idBuff == BuffConst.BUFF_GIAM_GIAP) {
+            dur = (byte) player.getBuffInfluence().getSecondOfGiamGiap();
         } else {
             dur = (byte) player.getBuffInfluence().getSecondOfStunned();
         }
@@ -326,6 +320,10 @@ public class BuffService {
             dur = mob.getBuffInfluence().getSecondPosonedLeft();
         } else if (idBuff == BuffConst.BUFF_NHIEM_DOC) {
             dur = mob.getBuffInfluence().getSecondInstantPoisonLeft();
+        } else if (idBuff == BuffConst.BUFF_HOA_DA) {
+            dur = (byte) mob.getBuffInfluence().getSecondOfHoaDa();
+        } else if (idBuff == BuffConst.BUFF_GIAM_GIAP) {
+            dur = (byte) mob.getBuffInfluence().getSecondOfGiamGiap();
         } else {
             dur = (byte) mob.getBuffInfluence().getSecondOfStunned();
         }

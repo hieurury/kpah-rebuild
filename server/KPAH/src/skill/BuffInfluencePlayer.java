@@ -37,6 +37,15 @@ public class BuffInfluencePlayer {
     private short secondOfInstantPoison;
     private long lastTimeInstantPoisoned;
 
+    private boolean isHoaDa;
+    private short secondOfHoaDa;
+    private long lastTimeHoaDa;
+
+    private boolean isGiamGiap;
+    private short secondOfGiamGiap;
+    private int giamGiapPercent;
+    private long lastTimeGiamGiap;
+
     @Synchronized
     public void addBuffPoisoned(short time, short docto) throws IOException {
         addBuffPoisoned(time, 0, (int) docto);
@@ -122,6 +131,40 @@ public class BuffInfluencePlayer {
         // Client KPAH tự quản lý thời gian hết choáng dựa vào cZ, không gửi BUFF_ATTACK (89) để tránh client bị re-stun lặp lại
     }
 
+    @Synchronized
+    public void addBuffHoaDa(short time) throws IOException {
+        isHoaDa = true;
+        secondOfHoaDa = time;
+        lastTimeHoaDa = System.currentTimeMillis();
+        BuffService.instance.sendAddBuffInfluence(this.player, BuffConst.BUFF_HOA_DA);
+    }
+
+    @Synchronized
+    public void removeBuffHoaDa() {
+        if (!isHoaDa) return;
+        isHoaDa = false;
+        secondOfHoaDa = 0;
+        lastTimeHoaDa = 0;
+    }
+
+    @Synchronized
+    public void addBuffGiamGiap(short time, int percent) throws IOException {
+        isGiamGiap = true;
+        secondOfGiamGiap = time;
+        giamGiapPercent = percent;
+        lastTimeGiamGiap = System.currentTimeMillis();
+        BuffService.instance.sendAddBuffInfluence(this.player, BuffConst.BUFF_GIAM_GIAP);
+    }
+
+    @Synchronized
+    public void removeBuffGiamGiap() {
+        if (!isGiamGiap) return;
+        isGiamGiap = false;
+        secondOfGiamGiap = 0;
+        giamGiapPercent = 0;
+        lastTimeGiamGiap = 0;
+    }
+
     public void dispose() {
         this.player = null;
     }
@@ -129,6 +172,12 @@ public class BuffInfluencePlayer {
     public void update() throws IOException {
         if (isStunned && (Util.canDoWithTime(lastTimeStunned, secondOfStunned * 1000) || player.isDie())) {
             removeBuffStunned();
+        }
+        if (isHoaDa && (Util.canDoWithTime(lastTimeHoaDa, secondOfHoaDa * 1000) || player.isDie())) {
+            removeBuffHoaDa();
+        }
+        if (isGiamGiap && (Util.canDoWithTime(lastTimeGiamGiap, secondOfGiamGiap * 1000) || player.isDie())) {
+            removeBuffGiamGiap();
         }
         if (isPoisoned && (Util.canDoWithTime(lastTimePoisoned, secondOfPoisoned * 1000) || player.isDie())) {
             removeBuffPoisoned();
