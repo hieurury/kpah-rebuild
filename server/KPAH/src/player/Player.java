@@ -21,6 +21,7 @@ import services.MapService;
 import services.PartyService;
 import services.Service;
 import services.TradeService;
+import services.UseItemService;
 import skill.BuffInfluencePlayer;
 import consts.BuffConst;
 import consts.Const;
@@ -296,9 +297,18 @@ public class Player {
         if (!isDie() && this.info.getClassPlayer() == Const.DAU_SI && this.skill != null && this.skill.getLevelSkill()[5] > 0) {
             if (System.currentTimeMillis() - lastTimeHitDauSi >= 10000L) {
                 if (this.point.getHp() < this.point.getHpMax()) {
+                    int oldHp = this.point.getHp();
                     int regenAmount = (int) Math.max(1, (long) this.point.getHpMax() * 2 / 100);
-                    this.point.setHp(Math.min(this.point.getHpMax(), this.point.getHp() + regenAmount));
-                    MapService.instance.onNewHpMp(this);
+                    int newHp = Math.min(this.point.getHpMax(), oldHp + regenAmount);
+                    this.point.setHp(newHp);
+                    short actualHealed = (short) (newHp - oldHp);
+                    if (actualHealed > 0) {
+                        try {
+                            UseItemService.instance.onPlusHp(this, actualHealed);
+                        } catch (Exception ignored) {
+                            MapService.instance.onNewHpMp(this);
+                        }
+                    }
                 }
             }
         }

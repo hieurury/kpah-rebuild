@@ -344,8 +344,16 @@ public class MainCharInfo {
 										color = 0xFF1744;
 										isDebuff = true;
 									} else {
-										name = (mainChar.aJ == 4 ? "+Công" : "Bảo Hộ");
-										color = 0x00E676;
+										if (mainChar.aJ == 3 || mainChar.aO == 3) {
+											name = "Bất Di Biến";
+											color = 0x00E676;
+										} else if (mainChar.aJ == 4 || mainChar.aO == 4) {
+											name = "+Công";
+											color = 0x00E676;
+										} else {
+											name = "Bảo Hộ";
+											color = 0x00E676;
+										}
 									}
 									break;
 								case 20:

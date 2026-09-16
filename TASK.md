@@ -72,3 +72,29 @@
 - Đầy đủ tài liệu tra cứu và skill định danh codebase.
 
 ---
+
+## [2026-09-16 15:15] — Task #112: Hoàn Thiện & Khắc Phục Triệt Để 5 Vấn Đề Kỹ Năng Đấu Sĩ
+
+**Yêu cầu:**
+1. Cập nhật mô tả kỹ năng Đấu Sĩ trong menu kỹ năng client (hiện tại hiển thị mô tả cũ do thiếu định dạng `classChar == 3` trong `class_sc.java`).
+2. Sửa lỗi Skill 3 (Khổng kình bát vĩ) dù vung búa nhiều lần nhưng chỉ nổ 1-2 lần dame: Tách các đợt sát thương theo nhịp vung búa bằng Virtual Thread và delay (240ms) cho cả PvP và PvE.
+3. Hiển thị chỉ số Tấn công buff theo % Max HP từ Skill 4 (Bất di biến) trên HUD Avatar (hiển thị màu xanh lá `+xxxx` tương tự Pháp Sư).
+4. Khi hồi máu bằng nội tại Skill 5 (Khí huyết sinh sôi, hồi 2% HP/s sau 10s phi giao tranh) phải nhảy số hồi HP nổi (`+xxxx`) như khi bơm bình máu.
+5. Hiệu ứng trực quan cho Skill 4 (Bất di biến): Render hào quang Titan bộc phát, trận đồ thổ thạch bát quái khổng lồ xoay dưới chân nhân vật và danh hiệu `[Bất Di Biến Xs]` màu vàng kim, hoạt động ổn định trên cả Android (J2ME Loader) lẫn PC.
+6. Sửa lỗi script `server/update_skills_dau_si.sql` (bỏ cột `cooldown` không có trong bảng `skill_news`).
+
+**Files thay đổi:**
+- `game/app/src/classes/class_sc.java` — Bổ sung định dạng mô tả chi tiết 9 kỹ năng Đấu Sĩ mới (`classChar == 3`).
+- `server/KPAH/src/services/SkillService.java` — Xử lý nổ dame theo từng nhịp đánh cho Skill 3 (Virtual Thread + delay 240ms) cho cả quái và người chơi.
+- `game/app/src/classes/MainCharInfo.java` — Định danh buff 19 là "Bất Di Biến" cho Đấu Sĩ.
+- `game/app/src/classes/Paint.java` — Hiển thị buff công xanh lá trên HUD và vẽ hiệu ứng hào quang Titan + trận đồ thổ thạch xoay dưới chân khi bật Skill 4.
+- `server/KPAH/src/player/Player.java` — Kích hoạt Command 22 (USE_POTION) khi hồi máu nội tại Skill 5 để client nhảy số HP nổi.
+- `server/update_skills_dau_si.sql` — Bỏ trường `cooldown` trong câu lệnh SQL update `skill_news`.
+
+**Kết quả:** ✅ Thành công
+- Server Java compile thành công 100% (`server/KPAH/dist/KPAH.jar`).
+- Client Java ME build thành công 100% (`game/build/dist/KPAH_PROD.jar` và `game/build/dist/KPAH_MOD.jar`).
+- Tất cả các file đã được backup an toàn trong `_backup/`.
+
+---
+

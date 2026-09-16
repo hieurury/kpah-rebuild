@@ -447,6 +447,69 @@ extends class_hw {
                 default:
                     return null;
             }
+        } else if (classChar == 3) { // Đấu Sĩ
+            switch (n) {
+                case 0:
+                    v.addElement("Vung búa cận chiến");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hồi chiêu: 0.8s");
+                    break;
+                case 1:
+                    v.addElement("Thổ kình đơn thể");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hồi chiêu: 1.5s");
+                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    break;
+                case 2:
+                    v.addElement("Kim sơn thủy đơn thể");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hồi chiêu: 1.8s");
+                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    break;
+                case 3:
+                    int hits = (lv <= 3) ? 3 : lv;
+                    v.addElement("Liên hoàn kích cực mạnh");
+                    v.addElement("Số đòn đánh: " + hits + " đòn");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "% / đòn");
+                    v.addElement("Tỷ lệ Choáng: 50% mỗi đòn");
+                    v.addElement("Hồi chiêu: " + (3.0f + (lv - 1) * 0.125f) + "s");
+                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    break;
+                case 4:
+                    v.addElement("Khổng lồ hóa cơ thể");
+                    v.addElement("Tăng công: +" + (5 + (lv - 1) * 3) + "% Max HP");
+                    v.addElement("Thời gian duy trì: 60s");
+                    v.addElement("Hồi chiêu: 80s | MP: " + class_qz.b(n, lv));
+                    break;
+                case 5:
+                    v.addElement("Khí huyết sinh sôi");
+                    v.addElement("Tăng Max HP: +" + (10 + (lv - 1) * 5) + "%");
+                    v.addElement("Hồi phục 2% HP/s sau 10s");
+                    v.addElement("Bị động (Không tốn MP)");
+                    break;
+                case 6:
+                    v.addElement("Địa chấn diện rộng");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Giảm 10% Giáp địch 5s");
+                    v.addElement("Hồi chiêu: 5s | MP: " + class_qz.b(n, lv));
+                    break;
+                case 7:
+                    int rateHd = 20 + (lv - 1) * 5;
+                    v.addElement("Mưa đá tảng diện rộng");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Tỷ lệ Hóa Đá 1s: " + rateHd + "%");
+                    v.addElement("Hồi chiêu: 6s | MP: " + class_qz.b(n, lv));
+                    break;
+                case 8:
+                    v.addElement("Thạch nhũ công tâm");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Gây Choáng 1s diện rộng");
+                    v.addElement("Thêm 1% công / 1000 HP");
+                    v.addElement("Hồi chiêu: 7s | MP: " + class_qz.b(n, lv));
+                    break;
+                default:
+                    return null;
+            }
         } else {
             return null;
         }

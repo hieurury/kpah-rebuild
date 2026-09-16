@@ -26,11 +26,83 @@ public class Paint {
 		// 3. Hiển thị chỉ báo nhiệm vụ trên đầu NPC (!) hoặc (?)
 		paintQuestMarkers(g);
 
+		// 3b. Hiển thị hiệu ứng hào quang Titan Bất Di Biến (Skill 4 Đấu Sĩ)
+		paintBatDiBienTitanAura(g);
+
 		// 4. Hiển thị số liệu trạng thái nổi (HP đỏ, MP xanh dương, Độc tím) bay lên
 		paintStatusPopups(g);
 
 		// 5. Hiển thị đè thanh HP & MP bar chuẩn xác và số liệu bên phải thanh bar
 		paintPlayerHpMpBar(g);
+	}
+
+	/**
+	 * Hiệu ứng Bất Di Biến (Skill 4 Đấu Sĩ):
+	 * Tạo thể hình khổng lồ, hào quang thổ thạch bao quanh thân thể và trận đồ dưới chân
+	 */
+	private static void paintBatDiBienTitanAura(Graphics g) {
+		try {
+			if (class_acv.s == null || class_acv.s.q == null) return;
+			class_sc mainChar = class_acv.s.q;
+			if (mainChar.de == null || (mainChar.aO != 3 && mainChar.aJ != 3)) return;
+
+			boolean hasBatDiBien = false;
+			long now = System.currentTimeMillis();
+			long secLeft = 0;
+			for (int i = 0; i < mainChar.de.size(); i++) {
+				Object obj = mainChar.de.elementAt(i);
+				if (obj instanceof class_zx && ((class_zx) obj).h == 19 && !mainChar.cW) {
+					hasBatDiBien = true;
+					secLeft = (((class_zx) obj).a - now) / 1000L;
+					break;
+				}
+			}
+			if (!hasBatDiBien || secLeft <= 0) return;
+
+			int camX = class_abj.j;
+			int camY = class_abj.k;
+			int sx = mainChar.cK - camX;
+			int sy = mainChar.cL - camY;
+
+			long t = now;
+			int pulse = (int) ((t / 100L) % 6);
+
+			// 1. Trận đồ Thổ Thạch khổng lồ dưới chân (bán kính lớn 32px)
+			int rX = 26 + pulse;
+			int rY = 12 + (pulse >> 1);
+			g.setColor(0xD4AF37); // Vàng kim cổ điển
+			g.drawArc(sx - rX, sy - rY, rX << 1, rY << 1, 0, 360);
+			g.setColor(0xFFA500); // Cam rực rỡ
+			g.drawArc(sx - rX + 2, sy - rY + 1, (rX - 2) << 1, (rY - 1) << 1, 0, 360);
+
+			// Các tia năng lượng xoay quanh trận đồ
+			int angle = (int) ((t / 20L) % 360);
+			g.setColor(0xFFFF00);
+			g.drawArc(sx - rX - 2, sy - rY - 1, (rX + 2) << 1, (rY + 1) << 1, angle, 60);
+			g.drawArc(sx - rX - 2, sy - rY - 1, (rX + 2) << 1, (rY + 1) << 1, (angle + 180) % 360, 60);
+
+			// 2. Thể hình Titan bộc phát: Hào quang hộ thể bao quanh thân người
+			int bodyW = 24 + (pulse >> 1);
+			int bodyH = 34 + pulse;
+			int bodyY = sy - 20;
+			g.setColor(0xD4AF37);
+			g.drawArc(sx - (bodyW >> 1), bodyY - (bodyH >> 1), bodyW, bodyH, 0, 360);
+			g.setColor(0xFFA500);
+			g.drawArc(sx - (bodyW >> 1) + 1, bodyY - (bodyH >> 1) + 1, bodyW - 2, bodyH - 2, 0, 360);
+
+			// 3. Hạt thạch kình bay cuộn quanh thân thể
+			for (int pIdx = 0; pIdx < 6; pIdx++) {
+				int pOffX = (int) (((t / 35L + pIdx * 60) % 40) - 20);
+				int pOffY = (int) (-((t / 20L + pIdx * 15) % 45));
+				g.setColor(pIdx % 2 == 0 ? 0xFFFF00 : 0xD4AF37);
+				g.fillRect(sx + pOffX, sy + pOffY, 2, 2);
+			}
+
+			// 4. Danh hiệu [Bất Di Biến] trên đỉnh đầu
+			String tag = "[Bất Di Biến " + secLeft + "s]";
+			class_d.a.a(g, tag, sx, sy - 52, 2);
+		} catch (Exception ignored) {
+		}
 	}
 
 	/**
@@ -96,7 +168,29 @@ public class Paint {
 					}
 				}
 
-				int bonusAttack = bonusAttackTinhAnh + bonusAttackPhapSu;
+				// Bonus Đấu Sĩ Skill 4 (Bất di biến): tăng công theo % Max HP khi đang có buff Bất Di Biến (eff 19)
+				int bonusAttackDauSi = 0;
+				if ((mainChar.aO == 3 || mainChar.aJ == 3) && class_hw.aS != null && class_hw.aS.length > 4) {
+					boolean hasBatDiBien = false;
+					if (mainChar.de != null) {
+						for (int bIdx = 0; bIdx < mainChar.de.size(); bIdx++) {
+							Object obj = mainChar.de.elementAt(bIdx);
+							if (obj instanceof class_zx && ((class_zx) obj).h == 19 && !mainChar.cW) {
+								hasBatDiBien = true;
+								break;
+							}
+						}
+					}
+					if (hasBatDiBien) {
+						byte lvSkill4 = class_hw.aS[4];
+						if (lvSkill4 > 0) {
+							int maxHp = mainChar.w > 0 ? mainChar.w : mainChar.v;
+							bonusAttackDauSi = (int) ((long) maxHp * (5 + (lvSkill4 - 1) * 3) / 100);
+						}
+					}
+				}
+
+				int bonusAttack = bonusAttackTinhAnh + bonusAttackPhapSu + bonusAttackDauSi;
 				int bonusDefend = bonusDefendTinhAnh;
 				int bonusDefendMagic = bonusDefendMagicTinhAnh;
 

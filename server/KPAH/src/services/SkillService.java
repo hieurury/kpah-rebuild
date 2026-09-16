@@ -335,24 +335,33 @@ public class SkillService {
                 if (Util.isTrue(50, 100)) {
                     playerTarget.getBuffInfluence().addBuffStunned((short) 1);
                 }
-                for (int hit = 2; hit <= totalHits; hit++) {
-                    if (playerTarget.isDie()) break;
-                    int nextDame = playerTarget.injured(damePlayer, false, ItemEquipConst.DAMAGE_PHYSIC, false);
-                    if (Util.isTrue(50, 100)) {
-                        playerTarget.getBuffInfluence().addBuffStunned((short) 1);
+                final int fDamePlayer = damePlayer;
+                final byte fEffAttack = effAttack;
+                final boolean fIsXuyenGiap = isXuyenGiap;
+                manager.ExecutorVirtualThread.submitThreadPlayer(() -> {
+                    try {
+                        for (int hit = 2; hit <= totalHits; hit++) {
+                            Thread.sleep(240);
+                            if (playerTarget.isDie()) break;
+                            int nextDame = playerTarget.injured(fDamePlayer, false, ItemEquipConst.DAMAGE_PHYSIC, false);
+                            if (Util.isTrue(50, 100)) {
+                                playerTarget.getBuffInfluence().addBuffStunned((short) 1);
+                            }
+                            Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_PLAYER);
+                            hitMsg.writer().writeShort(player.getIdPlayer());
+                            hitMsg.writer().writeShort(playerTarget.getIdPlayer());
+                            hitMsg.writer().writeByte(typeSkill);
+                            hitMsg.writer().writeInt(nextDame);
+                            hitMsg.writer().writeInt(playerTarget.getPoint().getHp());
+                            hitMsg.writer().writeByte(fEffAttack);
+                            hitMsg.writer().writeByte(1);
+                            hitMsg.writer().writeByte(fIsXuyenGiap ? 0 : 1);
+                            hitMsg.writer().writeByte(lvSkill);
+                            MapService.instance.sendAllPlayerInMap(player, hitMsg);
+                        }
+                    } catch (Exception ignored) {
                     }
-                    Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_PLAYER);
-                    hitMsg.writer().writeShort(player.getIdPlayer());
-                    hitMsg.writer().writeShort(playerTarget.getIdPlayer());
-                    hitMsg.writer().writeByte(typeSkill);
-                    hitMsg.writer().writeInt(nextDame);
-                    hitMsg.writer().writeInt(playerTarget.getPoint().getHp());
-                    hitMsg.writer().writeByte(effAttack);
-                    hitMsg.writer().writeByte(1);
-                    hitMsg.writer().writeByte(isXuyenGiap ? 0 : 1);
-                    hitMsg.writer().writeByte(lvSkill);
-                    MapService.instance.sendAllPlayerInMap(player, hitMsg);
-                }
+                });
             } else if (typeSkill == 6) {
                 // Skill 6: Giảm giáp 10% trong 5s
                 playerTarget.getBuffInfluence().addBuffGiamGiap((short) 5, 10);
@@ -415,24 +424,33 @@ public class SkillService {
                 if (Util.isTrue(50, 100)) {
                     mob.getBuffInfluence().addBuffStunned((short) 1);
                 }
-                for (int hit = 2; hit <= totalHits; hit++) {
-                    if (mob.isDie()) break;
-                    int nextDame = mob.injured(player, dameAttack, isXuyenGiap, false, false);
-                    if (Util.isTrue(50, 100)) {
-                        mob.getBuffInfluence().addBuffStunned((short) 1);
+                final int fDameAttack = dameAttack;
+                final byte fEffAttack = effAttack;
+                final boolean fIsXuyenGiap = isXuyenGiap;
+                manager.ExecutorVirtualThread.submitThreadPlayer(() -> {
+                    try {
+                        for (int hit = 2; hit <= totalHits; hit++) {
+                            Thread.sleep(240);
+                            if (mob.isDie()) break;
+                            int nextDame = mob.injured(player, fDameAttack, fIsXuyenGiap, false, false);
+                            if (Util.isTrue(50, 100)) {
+                                mob.getBuffInfluence().addBuffStunned((short) 1);
+                            }
+                            Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_MONSTER);
+                            hitMsg.writer().writeShort(player.getIdPlayer());
+                            hitMsg.writer().writeShort(mob.getId());
+                            hitMsg.writer().writeByte(typeSkill);
+                            hitMsg.writer().writeInt(nextDame);
+                            hitMsg.writer().writeInt(mob.getHp());
+                            hitMsg.writer().writeByte(fEffAttack);
+                            hitMsg.writer().writeByte(1);
+                            hitMsg.writer().writeByte(fIsXuyenGiap ? 0 : 1);
+                            hitMsg.writer().writeByte(lvSkill);
+                            MapService.instance.sendAllPlayerInMap(player, hitMsg);
+                        }
+                    } catch (Exception ignored) {
                     }
-                    Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_MONSTER);
-                    hitMsg.writer().writeShort(player.getIdPlayer());
-                    hitMsg.writer().writeShort(mob.getId());
-                    hitMsg.writer().writeByte(typeSkill);
-                    hitMsg.writer().writeInt(nextDame);
-                    hitMsg.writer().writeInt(mob.getHp());
-                    hitMsg.writer().writeByte(effAttack);
-                    hitMsg.writer().writeByte(1);
-                    hitMsg.writer().writeByte(isXuyenGiap ? 0 : 1);
-                    hitMsg.writer().writeByte(lvSkill);
-                    MapService.instance.sendAllPlayerInMap(player, hitMsg);
-                }
+                });
             } else if (typeSkill == 6) {
                 // Skill 6: Giảm giáp 10% trong 5s
                 mob.getBuffInfluence().addBuffGiamGiap((short) 5, 10);
