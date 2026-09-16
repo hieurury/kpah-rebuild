@@ -57,12 +57,26 @@ public class Paint {
 					break;
 				}
 			}
-			if (!hasBatDiBien || secLeft <= 0) return;
 
 			int camX = class_abj.j;
 			int camY = class_abj.k;
 			int sx = mainChar.cK - camX;
 			int sy = mainChar.cL - camY;
+
+			if (!hasBatDiBien || secLeft <= 0) {
+				// Nếu vừa hết buff nhưng đang trong 20s hồi chiêu còn lại
+				if (mainChar.aq != null && mainChar.at != null && 4 < mainChar.aq.length && 4 < mainChar.at.length) {
+					long passed = now - mainChar.aq[4];
+					long totalCd = mainChar.at[4];
+					if (passed > 0 && passed < totalCd) {
+						long cdRemain = (totalCd - passed + 999L) / 1000L;
+						if (cdRemain > 0 && cdRemain <= 25) {
+							class_d.a.a(g, "[Hồi chiêu: " + cdRemain + "s]", sx, sy - 48, 2);
+						}
+					}
+				}
+				return;
+			}
 
 			long t = now;
 			int pulse = (int) ((t / 100L) % 6);

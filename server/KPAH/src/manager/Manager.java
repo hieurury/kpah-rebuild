@@ -481,6 +481,16 @@ public class Manager {
         SKILL_MP[Const.DAU_SI][8] = new short[]{0, 20, 24, 28, 32, 36, 40, 44, 48, 52, 55}; // Thạch nhũ công tâm (choáng AoE + dame HP)
     }
 
+    public static void applySkillCooldownRebalance() {
+        if (SKILL_COOLDOWN == null || SKILL_COOLDOWN.length <= Const.DAU_SI) {
+            return;
+        }
+        // Đấu Sĩ Skill 4 (Bất di biến): Cố định 80.000ms (80s) cho TẤT CẢ các cấp 0-10, duy trì 60s -> khoảng trống chuẩn 20s
+        for (int lv = 0; lv < 11; lv++) {
+            SKILL_COOLDOWN[Const.DAU_SI][4][lv] = 80000;
+        }
+    }
+
     public static long getSkillCooldown(byte clazz, byte skillType, byte level) {
         if (level <= 0) {
             return 0;
@@ -821,6 +831,7 @@ public class Manager {
                                 }
                             }
                         }
+                        applySkillCooldownRebalance();
                     }
                     case "SKILL_DAM_PERCENT" -> {
                         SKILL_DAM_PERCENT = new short[arr.length()][][];

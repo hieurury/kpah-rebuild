@@ -81,15 +81,18 @@
 3. Hiển thị chỉ số Tấn công buff theo % Max HP từ Skill 4 (Bất di biến) trên HUD Avatar (hiển thị màu xanh lá `+xxxx` tương tự Pháp Sư).
 4. Khi hồi máu bằng nội tại Skill 5 (Khí huyết sinh sôi, hồi 2% HP/s sau 10s phi giao tranh) phải nhảy số hồi HP nổi (`+xxxx`) như khi bơm bình máu.
 5. Hiệu ứng trực quan cho Skill 4 (Bất di biến): Render hào quang Titan bộc phát, trận đồ thổ thạch bát quái khổng lồ xoay dưới chân nhân vật và danh hiệu `[Bất Di Biến Xs]` màu vàng kim, hoạt động ổn định trên cả Android (J2ME Loader) lẫn PC.
-6. Sửa lỗi script `server/update_skills_dau_si.sql` (bỏ cột `cooldown` không có trong bảng `skill_news`).
+7. Fix triệt để lỗi không thấy hiệu ứng Choáng (Stun) trên mục tiêu: Bổ sung gọi `BuffService.instance.sendAddBuffInfluence(mob, BuffConst.BUFF_STUN)` trong `BuffInfluenceMonster.java` khi quái bị choáng (trước đó chỉ đổi biến nội bộ server mà không gửi packet 89 cho client).
+8. Chuẩn hóa hồi chiêu Skill 4 (Bất di biến): Cố định 80s mọi cấp trong `Manager.java` (`applySkillCooldownRebalance`) và bảng `others` MySQL, tránh tình trạng cấp cao bị cooldown 140s-160s trong DB gốc. Bổ sung hiển thị `[Hồi chiêu: Xs]` đếm lùi 20s trên đầu nhân vật ngay khi hết 60s buff trong `Paint.java`.
 
 **Files thay đổi:**
 - `game/app/src/classes/class_sc.java` — Bổ sung định dạng mô tả chi tiết 9 kỹ năng Đấu Sĩ mới (`classChar == 3`).
 - `server/KPAH/src/services/SkillService.java` — Xử lý nổ dame theo từng nhịp đánh cho Skill 3 (Virtual Thread + delay 240ms) cho cả quái và người chơi.
+- `server/KPAH/src/skill/BuffInfluenceMonster.java` — Gửi packet 89 đồng bộ hiệu ứng Choáng trên quái cho client.
+- `server/KPAH/src/manager/Manager.java` — Khóa hồi chiêu 80.000ms cố định cho Skill 4 Đấu Sĩ trong mảng `SKILL_COOLDOWN`.
 - `game/app/src/classes/MainCharInfo.java` — Định danh buff 19 là "Bất Di Biến" cho Đấu Sĩ.
-- `game/app/src/classes/Paint.java` — Hiển thị buff công xanh lá trên HUD và vẽ hiệu ứng hào quang Titan + trận đồ thổ thạch xoay dưới chân khi bật Skill 4.
+- `game/app/src/classes/Paint.java` — Hiển thị buff công xanh lá trên HUD, vẽ hiệu ứng hào quang Titan + trận đồ thổ thạch xoay dưới chân khi bật Skill 4, hiển thị tag đếm lùi 20s hồi chiêu khi hết buff.
 - `server/KPAH/src/player/Player.java` — Kích hoạt Command 22 (USE_POTION) khi hồi máu nội tại Skill 5 để client nhảy số HP nổi.
-- `server/update_skills_dau_si.sql` — Bỏ trường `cooldown` trong câu lệnh SQL update `skill_news`.
+- `server/update_skills_dau_si.sql` — Bỏ trường `cooldown` trong `skill_news`, bổ sung UPDATE bảng `others` cho `SKILL_COOLDOWN` Đấu Sĩ.
 
 **Kết quả:** ✅ Thành công
 - Server Java compile thành công 100% (`server/KPAH/dist/KPAH.jar`).

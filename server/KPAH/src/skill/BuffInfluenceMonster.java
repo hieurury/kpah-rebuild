@@ -121,6 +121,7 @@ public class BuffInfluenceMonster {
         isStunned = true;
         secondOfStunned = time;
         lastTimeStunned = System.currentTimeMillis();
+        BuffService.instance.sendAddBuffInfluence(mob, BuffConst.BUFF_STUN);
     }
 
     @Synchronized
