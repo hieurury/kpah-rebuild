@@ -10,10 +10,12 @@ public final class class_zx extends class_di {
     private int o = -1;
     public long a = 0L;
     public boolean isDebuff = false;
-    public byte effectType = 0; // 0: độc tím, 7: hóa đá xám tro, 9: giảm giáp đỏ cam
+    public byte effectType = 0; // 0: độc tím, 7: hóa đá xám tro, 9: giảm giáp đỏ cam, 10: mù đen tối, 11: vết thương sâu đỏ máu
     private static Image purpleRingImg = null;
     private static Image stoneRingImg = null;
     private static Image armorBreakRingImg = null;
+    private static Image blindRingImg = null;
+    private static Image deepWoundRingImg = null;
 
     public class_zx(int n, int n2, int n3) {
         super(n, n2, n3);
@@ -102,6 +104,57 @@ public final class class_zx extends class_di {
                     }
                 }
                 ringImgToDraw = armorBreakRingImg;
+            } else if (this.effectType == 10) {
+                // Hiệu ứng Mù: Vòng đen khói tối
+                if (blindRingImg == null) {
+                    try {
+                        Image orig = class_yi.d(22);
+                        if (orig != null) {
+                            int w = orig.getWidth();
+                            int h = orig.getHeight();
+                            int[] rgb = new int[w * h];
+                            orig.getRGB(rgb, 0, w, 0, 0, w, h);
+                            for (int i = 0; i < rgb.length; i++) {
+                                int p = rgb[i];
+                                int alpha = (p >> 24) & 0xFF;
+                                if (alpha == 0) continue;
+                                int g = (p >> 8) & 0xFF;
+                                int dark = Math.min(60, (int)(g * 0.25f));
+                                rgb[i] = (alpha << 24) | (dark << 16) | (dark << 8) | dark;
+                            }
+                            blindRingImg = Image.createRGBImage(rgb, w, h, true);
+                        }
+                    } catch (Throwable t) {
+                        blindRingImg = null;
+                    }
+                }
+                ringImgToDraw = blindRingImg;
+            } else if (this.effectType == 11) {
+                // Hiệu ứng Vết Thương Sâu: Vòng đỏ máu đậm
+                if (deepWoundRingImg == null) {
+                    try {
+                        Image orig = class_yi.d(22);
+                        if (orig != null) {
+                            int w = orig.getWidth();
+                            int h = orig.getHeight();
+                            int[] rgb = new int[w * h];
+                            orig.getRGB(rgb, 0, w, 0, 0, w, h);
+                            for (int i = 0; i < rgb.length; i++) {
+                                int p = rgb[i];
+                                int alpha = (p >> 24) & 0xFF;
+                                if (alpha == 0) continue;
+                                int g = (p >> 8) & 0xFF;
+                                int newR = Math.min(255, (int)(g * 1.4f) + 60);
+                                int newG = (int)(g * 0.15f);
+                                rgb[i] = (alpha << 24) | (newR << 16) | (newG << 8);
+                            }
+                            deepWoundRingImg = Image.createRGBImage(rgb, w, h, true);
+                        }
+                    } catch (Throwable t) {
+                        deepWoundRingImg = null;
+                    }
+                }
+                ringImgToDraw = deepWoundRingImg;
             } else {
                 // Mặc định: Hiệu ứng Độc (màu tím)
                 if (purpleRingImg == null) {

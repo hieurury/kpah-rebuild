@@ -106,8 +106,13 @@ public class BuffService {
         switch (playerAttack.getInfo().getClassPlayer()) {
             case Const.CUNG_THU -> {
                 if (playerAttack.getSkillBuff().isExistBuff(BuffConst.DOC_LUU_TIEN)) {
-                    // Độc tức thì: làm mục tiêu dính độc, cộng dồn tối đa 5 tầng, duy trì 6s
-                    mob.getBuffInfluence().addBuffInstantPoison(playerAttack, (short) 6);
+                    // Skill 4: Gán độc theo thời gian 10s, mỗi giây = 30% (+5%/cấp) lực tấn công
+                    byte lvSkill4 = playerAttack.getSkill().getLevelSkill()[4];
+                    if (lvSkill4 <= 0) lvSkill4 = 1;
+                    int percentAtk = 30 + (lvSkill4 - 1) * 5;
+                    int damagePerSec = (int) ((long) playerAttack.getPoint().getAttack() * percentAtk / 100);
+                    if (damagePerSec <= 0) damagePerSec = 1;
+                    mob.getBuffInfluence().addBuffPoisoned(playerAttack, (short) 10, 0, damagePerSec);
                 }
             }
             case Const.DAU_SI -> {
@@ -123,8 +128,13 @@ public class BuffService {
         switch (playerAttack.getInfo().getClassPlayer()) {
             case Const.CUNG_THU -> {
                 if (playerAttack.getSkillBuff().isExistBuff(BuffConst.DOC_LUU_TIEN)) {
-                    // Độc tức thì: làm mục tiêu dính độc, cộng dồn tối đa 5 tầng, duy trì 6s
-                    player.getBuffInfluence().addBuffInstantPoison((short) 6);
+                    // Skill 4: Gán độc theo thời gian 10s, mỗi giây = 30% (+5%/cấp) lực tấn công
+                    byte lvSkill4 = playerAttack.getSkill().getLevelSkill()[4];
+                    if (lvSkill4 <= 0) lvSkill4 = 1;
+                    int percentAtk = 30 + (lvSkill4 - 1) * 5;
+                    int damagePerSec = (int) ((long) playerAttack.getPoint().getAttack() * percentAtk / 100);
+                    if (damagePerSec <= 0) damagePerSec = 1;
+                    player.getBuffInfluence().addBuffPoisoned((short) 10, 0, damagePerSec);
                 }
             }
             case Const.DAU_SI -> {
@@ -300,6 +310,10 @@ public class BuffService {
             dur = (byte) player.getBuffInfluence().getSecondOfHoaDa();
         } else if (idBuff == BuffConst.BUFF_GIAM_GIAP) {
             dur = (byte) player.getBuffInfluence().getSecondOfGiamGiap();
+        } else if (idBuff == BuffConst.BUFF_MU) {
+            dur = (byte) player.getBuffInfluence().getSecondOfMu();
+        } else if (idBuff == BuffConst.BUFF_VET_THUONG_SAU) {
+            dur = (byte) player.getBuffInfluence().getSecondOfVetThuongSau();
         } else {
             dur = (byte) player.getBuffInfluence().getSecondOfStunned();
         }
@@ -324,6 +338,10 @@ public class BuffService {
             dur = (byte) mob.getBuffInfluence().getSecondOfHoaDa();
         } else if (idBuff == BuffConst.BUFF_GIAM_GIAP) {
             dur = (byte) mob.getBuffInfluence().getSecondOfGiamGiap();
+        } else if (idBuff == BuffConst.BUFF_MU) {
+            dur = (byte) mob.getBuffInfluence().getSecondOfMu();
+        } else if (idBuff == BuffConst.BUFF_VET_THUONG_SAU) {
+            dur = (byte) mob.getBuffInfluence().getSecondOfVetThuongSau();
         } else {
             dur = (byte) mob.getBuffInfluence().getSecondOfStunned();
         }

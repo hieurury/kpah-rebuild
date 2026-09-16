@@ -199,7 +199,7 @@ public class Point {
             case Const.PHAP_SU ->
                 attack += (spirit + spiritAdd) * 2;
             case Const.CUNG_THU ->
-                attack += (agility + agilityAdd) * 1.8;
+                attack += (agility + agilityAdd) * 2.2;
         }
         attack += InventoryService.instance.sumAttributeValueForId(player, (byte) 0);
         if (player.getInfo().getClassPlayer() == Const.CHIEN_BINH) {
@@ -236,8 +236,12 @@ public class Point {
 
     private void setDodge() {
         switch (player.getInfo().getClassPlayer()) {
-            case Const.CUNG_THU ->
+            case Const.CUNG_THU -> {
                 dodge += (agility + agilityAdd) * 0.5;
+                if (player.hasBuffNeDonCungThu()) {
+                    dodge += player.getDodgeBonusCungThu();
+                }
+            }
         }
         dodge += InventoryService.instance.sumAttributeValueForId(player, (byte) 2);
         if (player.getHorse().getAnimalUse() != null) {
@@ -246,7 +250,15 @@ public class Point {
     }
 
     private void setCrit() {
-        critical += luck / 20;
+        if (player.getInfo().getClassPlayer() == Const.CUNG_THU) {
+            critical += luck / 15 + 5; // Tỷ lệ chí mạng cơ bản cao của Cung Thủ
+            byte lvSkill5 = player.getSkill().getLevelSkill()[5];
+            if (lvSkill5 > 0) {
+                critical += 5 + (lvSkill5 - 1) * 2; // Skill 5 Hộ độc tiễn: Tăng 5% + 2%/cấp
+            }
+        } else {
+            critical += luck / 20;
+        }
         critical += InventoryService.instance.sumAttributeValueForId(player, (byte) 4) / 2;
         if (player.getHorse().getAnimalUse() != null) {
             critical += player.getHorse().getAnimalUse().getValue((byte) 40);
@@ -297,7 +309,7 @@ public class Point {
                 defaultStr = 20; defaultAgi = 20; defaultSpi = 10; defaultHea = 25; defaultLuck = 10;
             }
             case Const.CUNG_THU -> {
-                defaultStr = 20; defaultAgi = 30; defaultSpi = 15; defaultHea = 15; defaultLuck = 10;
+                defaultStr = 20; defaultAgi = 35; defaultSpi = 10; defaultHea = 10; defaultLuck = 15;
             }
         }
         this.strength = (short) (defaultStr + levelBonus);
@@ -345,8 +357,10 @@ public class Point {
                 hpMax += (health + healthAdd) * 80;
             case Const.CHIEN_BINH ->
                 hpMax += (health + healthAdd) * 70;
-            case Const.PHAP_SU, Const.CUNG_THU ->
+            case Const.PHAP_SU ->
                 hpMax += (health + healthAdd) * 60;
+            case Const.CUNG_THU ->
+                hpMax += (health + healthAdd) * 50;
         }
         if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
             // Khí huyết sinh sôi (Skill 5 nội tại Đấu Sĩ): Tăng HP tối đa 10% - 55% (10% + 5% * (cấp-1))
@@ -373,8 +387,10 @@ public class Point {
 
     private void setMpMax() {
         switch (player.getInfo().getClassPlayer()) {
-            case Const.KIEM_KHACH, Const.CHIEN_BINH, Const.DAU_SI, Const.CUNG_THU ->
+            case Const.KIEM_KHACH, Const.CHIEN_BINH, Const.DAU_SI ->
                 mpMax += (spirit + spiritAdd) * 20;
+            case Const.CUNG_THU ->
+                mpMax += (spirit + spiritAdd) * 16;
             case Const.PHAP_SU ->
                 mpMax += (spirit + spiritAdd) * 52;
         }
@@ -412,6 +428,9 @@ public class Point {
     public void plusHp(int hp) {
         if (hp < 0) {
             return;
+        }
+        if (player != null && player.getBuffInfluence() != null && player.getBuffInfluence().isVetThuongSau()) {
+            hp = hp / 2; // Giảm 50% khả năng hồi phục HP khi dính Vết thương sâu
         }
         if (this.hp + hp >= hpMax) {
             this.hp = hpMax;

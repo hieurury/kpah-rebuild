@@ -510,6 +510,75 @@ extends class_hw {
                 default:
                     return null;
             }
+        } else if (classChar == 4) { // Cung Thủ
+            switch (n) {
+                case 0:
+                    v.addElement("Bắn tên tầm xa cơ bản");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hồi chiêu: 0.8s");
+                    break;
+                case 1:
+                    v.addElement("Phi tiễn kình lực tầm xa");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hồi chiêu: 1.5s");
+                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    break;
+                case 2:
+                    v.addElement("Xuyên tâm tiễn đơn thể");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hồi chiêu: 1.8s");
+                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    break;
+                case 3:
+                    int hits = (lv <= 3) ? 3 : lv;
+                    v.addElement("Bát kim tiễn đáo");
+                    v.addElement("Số đòn bắn: " + hits + " phát");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "% / phát");
+                    v.addElement("Độc Nổ: Rút cạn toàn bộ độc DoT");
+                    v.addElement("Hồi chiêu: " + (3.0f + (lv - 1) * 0.125f) + "s");
+                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    break;
+                case 4:
+                    int poisonPct = 30 + (lv - 1) * 5;
+                    v.addElement("Độc lưu tiễn (Tẩm độc)");
+                    v.addElement("Gán độc DoT 10s: " + poisonPct + "% công/s");
+                    v.addElement("Thời gian duy trì: 60s");
+                    v.addElement("Hồi chiêu: 80s | MP: " + class_qz.b(n, lv));
+                    break;
+                case 5:
+                    int critBonus = 5 + (lv - 1) * 2;
+                    int critDmgBonus = 50 + (lv - 1) * 10;
+                    v.addElement("Hộ độc tiễn (Nội tại)");
+                    v.addElement("Tăng Tỉ lệ chí mạng: +" + critBonus + "%");
+                    v.addElement("Mục tiêu dính độc: +" + critDmgBonus + "% STCM");
+                    v.addElement("Bị động (Không tốn MP)");
+                    break;
+                case 6:
+                    int rateMu = 10 + (lv - 1) * 2;
+                    v.addElement("Thập diện tâm tiễn (AoE 1)");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Tỉ lệ gây Mù 1s: " + rateMu + "%");
+                    v.addElement("Kẻ địch bị Mù đánh hụt 100%");
+                    v.addElement("Hồi chiêu: 6s | MP: " + class_qz.b(n, lv));
+                    break;
+                case 7:
+                    int dodgeBuff = 10 + (lv - 1) * 2;
+                    v.addElement("Thăng thiên loạn tiễn (AoE 2)");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Gán Vết thương sâu 5s (-50% hồi HP)");
+                    v.addElement("Tăng bản thân Né đòn: +" + dodgeBuff + "% 5s");
+                    v.addElement("Hồi chiêu: 7s | MP: " + class_qz.b(n, lv));
+                    break;
+                case 8:
+                    int lifesteal = 10 + (lv - 1) * 2;
+                    v.addElement("Vạn tiễn quy tâm (AoE 3)");
+                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
+                    v.addElement("Hút máu: Hồi " + lifesteal + "% tổng dame");
+                    v.addElement("Hồi chiêu: 8s | MP: " + class_qz.b(n, lv));
+                    break;
+                default:
+                    return null;
+            }
         } else {
             return null;
         }

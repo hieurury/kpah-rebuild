@@ -47,6 +47,14 @@ public class BuffInfluenceMonster {
     private int giamGiapPercent;
     private long lastTimeGiamGiap;
 
+    private boolean isMu;
+    private short secondOfMu;
+    private long lastTimeMu;
+
+    private boolean isVetThuongSau;
+    private short secondOfVetThuongSau;
+    private long lastTimeVetThuongSau;
+
     @Synchronized
     public void addBuffPoisoned(Player player, short time, short docto) throws IOException {
         addBuffPoisoned(player, time, 0, (int) docto);
@@ -169,6 +177,60 @@ public class BuffInfluenceMonster {
         lastTimeGiamGiap = 0;
     }
 
+    @Synchronized
+    public int detonatePoison() throws IOException {
+        if (!isPoisoned) {
+            return 0;
+        }
+        int secondsLeft = getSecondPosonedLeft();
+        if (secondsLeft <= 0) {
+            removeBuffPoisoned();
+            return 0;
+        }
+        int damagePerTick = flatDamagePerTick;
+        if (percentHpPerTick > 0 && mob != null) {
+            damagePerTick += (int) (mob.getMaxHp() * (percentHpPerTick / 100.0f));
+        }
+        if (damagePerTick <= 0) {
+            damagePerTick = Math.max(1, (int) docTo);
+        }
+        int totalDetonateDamage = damagePerTick * secondsLeft;
+        removeBuffPoisoned();
+        return totalDetonateDamage;
+    }
+
+    @Synchronized
+    public void addBuffMu(short time) throws IOException {
+        isMu = true;
+        secondOfMu = time;
+        lastTimeMu = System.currentTimeMillis();
+        BuffService.instance.sendAddBuffInfluence(mob, BuffConst.BUFF_MU);
+    }
+
+    @Synchronized
+    public void removeBuffMu() {
+        if (!isMu) return;
+        isMu = false;
+        secondOfMu = 0;
+        lastTimeMu = 0;
+    }
+
+    @Synchronized
+    public void addBuffVetThuongSau(short time) throws IOException {
+        isVetThuongSau = true;
+        secondOfVetThuongSau = time;
+        lastTimeVetThuongSau = System.currentTimeMillis();
+        BuffService.instance.sendAddBuffInfluence(mob, BuffConst.BUFF_VET_THUONG_SAU);
+    }
+
+    @Synchronized
+    public void removeBuffVetThuongSau() {
+        if (!isVetThuongSau) return;
+        isVetThuongSau = false;
+        secondOfVetThuongSau = 0;
+        lastTimeVetThuongSau = 0;
+    }
+
     public void clearBuff() throws IOException {
         if (isPoisoned) {
             removeBuffPoisoned();
@@ -185,6 +247,12 @@ public class BuffInfluenceMonster {
         if (isGiamGiap) {
             removeBuffGiamGiap();
         }
+        if (isMu) {
+            removeBuffMu();
+        }
+        if (isVetThuongSau) {
+            removeBuffVetThuongSau();
+        }
     }
 
     public void update() throws IOException {
@@ -196,6 +264,12 @@ public class BuffInfluenceMonster {
         }
         if (isGiamGiap && (Util.canDoWithTime(lastTimeGiamGiap, secondOfGiamGiap * 1000) || mob.isDie())) {
             removeBuffGiamGiap();
+        }
+        if (isMu && (Util.canDoWithTime(lastTimeMu, secondOfMu * 1000) || mob.isDie())) {
+            removeBuffMu();
+        }
+        if (isVetThuongSau && (Util.canDoWithTime(lastTimeVetThuongSau, secondOfVetThuongSau * 1000) || mob.isDie())) {
+            removeBuffVetThuongSau();
         }
         if (isPoisoned && (Util.canDoWithTime(lastTimePoisoned, secondOfPoisoned * 1000) || mob.isDie())) {
             removeBuffPoisoned();

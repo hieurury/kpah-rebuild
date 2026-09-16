@@ -75,6 +75,22 @@ public class Player {
         this.timeEndBuffTinhAnh = System.currentTimeMillis() + durationMs;
     }
 
+    private long timeEndBuffNeDonCungThu;
+    private int dodgeBonusCungThu;
+
+    public boolean hasBuffNeDonCungThu() {
+        return System.currentTimeMillis() < this.timeEndBuffNeDonCungThu;
+    }
+
+    public void setBuffNeDonCungThu(long durationMs, int bonus) {
+        this.timeEndBuffNeDonCungThu = System.currentTimeMillis() + durationMs;
+        this.dodgeBonusCungThu = bonus;
+    }
+
+    public int getDodgeBonusCungThu() {
+        return hasBuffNeDonCungThu() ? dodgeBonusCungThu : 0;
+    }
+
     private long timeEndBuffGioVang;
     private short percentBuffGioVang;
 

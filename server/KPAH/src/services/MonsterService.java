@@ -35,6 +35,16 @@ public class MonsterService {
     }
 
     public int sendMonsterAttack(@NonNull Monster monster, @NonNull Player plTarget) throws IOException {
+        if (monster.getBuffInfluence().isMu()) {
+            // Quái bị MÙ: 100% đánh hụt
+            Message msg = new Message(CommandMessage.MONSTER_ATTACK_PLAYER);
+            msg.writer().writeShort(monster.getId());
+            msg.writer().writeShort(plTarget.getIdPlayer());
+            msg.writer().writeInt(0);
+            msg.writer().writeInt(plTarget.getPoint().getHp());
+            MapService.instance.sendAllPlayerInMap(monster, msg);
+            return 0;
+        }
         int dameMob = monster.getDameAttack(plTarget);
         dameMob = BuffService.instance.onAttackPlayerHasBuff(monster, plTarget, dameMob);
         int damage = plTarget.injured(dameMob, false, ItemEquipConst.DAMAGE_PHYSIC, false);
@@ -184,6 +194,15 @@ public class MonsterService {
      * Uses NEW_HP_MP to silently update the player's HP.
      */
     public int sendMeleeHit(@NonNull Monster monster, @NonNull Player plTarget) throws IOException {
+        if (monster.getBuffInfluence().isMu()) {
+            Message msgDmg = new Message(CommandMessage.MONSTER_ATTACK_PLAYER);
+            msgDmg.writer().writeShort(monster.getId());
+            msgDmg.writer().writeShort(plTarget.getIdPlayer());
+            msgDmg.writer().writeInt(0);
+            msgDmg.writer().writeInt(plTarget.getPoint().getHp());
+            plTarget.getSession().sendMessage(msgDmg);
+            return 0;
+        }
         int dameMob = monster.getDameAttack(plTarget);
         dameMob = BuffService.instance.onAttackPlayerHasBuff(monster, plTarget, dameMob);
         int damage = plTarget.injured(dameMob, false, ItemEquipConst.DAMAGE_PHYSIC, false);

@@ -296,6 +296,40 @@ public class MsgHandler {
 						MainCharInfo.giamGiapEndTime = System.currentTimeMillis() + (long) sec * 1000L;
 					}
 					return;
+				} else if (b4 == 10) {
+					// Áp dụng MÙ (BUFF_MU - 1s)
+					int sec = dur > 0 ? dur : 1;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_zx eff = new class_zx(entity.cK, entity.cL, 22);
+								eff.isDebuff = true;
+								eff.effectType = 10;
+								eff.a(sec);
+								entity.a(eff);
+								break;
+							}
+						}
+					}
+					return;
+				} else if (b4 == 11) {
+					// Áp dụng Vết Thương Sâu (BUFF_VET_THUONG_SAU - 5s)
+					int sec = dur > 0 ? dur : 5;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_zx eff = new class_zx(entity.cK, entity.cL, 22);
+								eff.isDebuff = true;
+								eff.effectType = 11;
+								eff.a(sec);
+								entity.a(eff);
+								break;
+							}
+						}
+					}
+					return;
 				} else if (b4 == 2) {
 					// Hút MP
 					if (b3 == 7 && s2 > 0 && class_acv.s != null && class_acv.s.l != null) {

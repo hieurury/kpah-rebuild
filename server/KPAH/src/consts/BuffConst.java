@@ -30,5 +30,7 @@ public class BuffConst {
     public static final byte BUFF_HOA_DA = 7;
     public static final byte BUFF_DONG_BANG = 8;
     public static final byte BUFF_GIAM_GIAP = 9;
+    public static final byte BUFF_MU = 10;
+    public static final byte BUFF_VET_THUONG_SAU = 11;
 
 }

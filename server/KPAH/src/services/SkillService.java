@@ -287,7 +287,7 @@ public class SkillService {
     private void onPlayerAttackPlayer(@NonNull Player player, @NonNull Player playerTarget) throws IOException {
         boolean isCrit = Util.isTrue((double) player.getPoint().getCritical(), 100.0);
         boolean isBaoKich = Util.isTrue((double) player.getPoint().getBaoKich(), 100.0);
-        boolean isMiss = Util.isTrue((double) playerTarget.getPoint().getDodge(), 100.0);
+        boolean isMiss = player.getBuffInfluence().isMu() || Util.isTrue((double) playerTarget.getPoint().getDodge(), 100.0);
         boolean isXuyenGiap = Util.isTrue((double) player.getPoint().getXuyenGiap(), 100.0);
         boolean x2 = Util.isTrue((double) player.getPoint().getX2(), 100.0);
         byte effAttack = Const.NONE_EFFECT;
@@ -300,6 +300,14 @@ public class SkillService {
             effAttack = Const.BAO_KICK_EFFECT;
         }
         int damePlayer = player.getPoint().getDameAttack(isMiss, isCrit, isBaoKich, false);
+        // Skill 5 Cung Thủ: Sát thương chí mạng lên mục tiêu nhiễm độc tăng 50% (+10%/cấp)
+        if (player.getInfo().getClassPlayer() == Const.CUNG_THU && isCrit && playerTarget.getBuffInfluence().isPoisoned()) {
+            byte lvSkill5 = player.getSkill().getLevelSkill()[5];
+            if (lvSkill5 > 0) {
+                int bonusCritDmgPercent = 50 + (lvSkill5 - 1) * 10;
+                damePlayer += (int) ((long) damePlayer * bonusCritDmgPercent / 100);
+            }
+        }
         damePlayer = BuffService.instance.onAttackPlayerHasBuff(player, playerTarget, damePlayer);
         int dameHit = playerTarget.injured(damePlayer, false, ((player.getInfo().getClassPlayer() == Const.PHAP_SU || player.getInfo().getClassPlayer() == Const.CUNG_THU) ? ItemEquipConst.DAMAGE_MAGIC : ItemEquipConst.DAMAGE_PHYSIC), x2);
         BuffService.instance.onPlayerInjured(player, playerTarget);
@@ -376,12 +384,71 @@ public class SkillService {
                 playerTarget.getBuffInfluence().addBuffStunned((short) 1);
             }
         }
+
+        // Hiệu ứng kỹ năng Cung Thủ trong PvP
+        if (player.getInfo().getClassPlayer() == Const.CUNG_THU) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            if (typeSkill == 3) {
+                // Skill 3: Bát kim tiễn đáo (multi-hit + Độc Nổ)
+                int totalHits = (lvSkill <= 3) ? 3 : Math.min(9, (int) lvSkill);
+                if (playerTarget.getBuffInfluence().isPoisoned()) {
+                    int detonateDmg = playerTarget.getBuffInfluence().detonatePoison();
+                    if (detonateDmg > 0) {
+                        playerTarget.injured(detonateDmg, false, ItemEquipConst.DAMAGE_MAGIC, false);
+                    }
+                }
+                final int fDamePlayer = damePlayer;
+                final byte fEffAttack = effAttack;
+                final boolean fIsXuyenGiap = isXuyenGiap;
+                manager.ExecutorVirtualThread.submitThreadPlayer(() -> {
+                    try {
+                        for (int hit = 2; hit <= totalHits; hit++) {
+                            Thread.sleep(240);
+                            if (playerTarget.isDie()) break;
+                            int nextDame = playerTarget.injured(fDamePlayer, false, ItemEquipConst.DAMAGE_MAGIC, false);
+                            Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_PLAYER);
+                            hitMsg.writer().writeShort(player.getIdPlayer());
+                            hitMsg.writer().writeShort(playerTarget.getIdPlayer());
+                            hitMsg.writer().writeByte(typeSkill);
+                            hitMsg.writer().writeInt(nextDame);
+                            hitMsg.writer().writeInt(playerTarget.getPoint().getHp());
+                            hitMsg.writer().writeByte(fEffAttack);
+                            hitMsg.writer().writeByte(1);
+                            hitMsg.writer().writeByte(fIsXuyenGiap ? 0 : 1);
+                            hitMsg.writer().writeByte(lvSkill);
+                            MapService.instance.sendAllPlayerInMap(player, hitMsg);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                });
+            } else if (typeSkill == 6) {
+                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 1s)
+                int rateMu = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                if (Util.isTrue(rateMu, 100)) {
+                    playerTarget.getBuffInfluence().addBuffMu((short) 1);
+                }
+            } else if (typeSkill == 7) {
+                // Skill 7: Thăng thiên loạn tiễn (Vết thương sâu 5s + Buff né đòn bản thân 5s)
+                playerTarget.getBuffInfluence().addBuffVetThuongSau((short) 5);
+                int dodgeBonus = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                player.setBuffNeDonCungThu(5000L, dodgeBonus);
+                player.getPoint().initPoint();
+            } else if (typeSkill == 8) {
+                // Skill 8: Vạn tiễn quy tâm (Hút máu 10% + 2%/cấp tổng dame)
+                int percentHeal = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                int hpHeal = (int) ((long) dameHit * percentHeal / 100);
+                if (hpHeal > 0) {
+                    player.getPoint().plusHp(hpHeal);
+                    MapService.instance.onNewHpMp(player);
+                }
+            }
+        }
     }
 
     private void onPlayerAttackMob(@NonNull Player player, @NonNull Monster mob, ItemEquip cuoc) throws IOException {
         boolean isCrit = Util.isTrue((double) player.getPoint().getCritical(), 100.0);
         boolean isBaoKich = Util.isTrue((double) player.getPoint().getBaoKich(), 100.0);
-        boolean isMiss = Util.isTrue(2.5, 96.7);
+        boolean isMiss = player.getBuffInfluence().isMu() || Util.isTrue(2.5, 96.7);
         boolean isXuyenGiap = Util.isTrue((double) player.getPoint().getXuyenGiap(), 100.0);
         boolean x2 = Util.isTrue((double) player.getPoint().getX2(), 100.0);
 
@@ -395,6 +462,14 @@ public class SkillService {
             effAttack = Const.BAO_KICK_EFFECT;
         }
         int dameAttack = player.getPoint().getDameAttack(isMiss, isCrit, isBaoKich, true);
+        // Skill 5 Cung Thủ: Sát thương chí mạng lên mục tiêu nhiễm độc tăng 50% (+10%/cấp)
+        if (player.getInfo().getClassPlayer() == Const.CUNG_THU && isCrit && mob.getBuffInfluence().isPoisoned()) {
+            byte lvSkill5 = player.getSkill().getLevelSkill()[5];
+            if (lvSkill5 > 0) {
+                int bonusCritDmgPercent = 50 + (lvSkill5 - 1) * 10;
+                dameAttack += (int) ((long) dameAttack * bonusCritDmgPercent / 100);
+            }
+        }
         if (mob.isKhoangSan()) {
             dameAttack = cuoc.getTemplate().getId() == 466 ? 20 : 10;
         }
@@ -465,12 +540,71 @@ public class SkillService {
                 mob.getBuffInfluence().addBuffStunned((short) 1);
             }
         }
+
+        // Hiệu ứng kỹ năng Cung Thủ khi tấn công quái đơn
+        if (!mob.isKhoangSan() && player.getInfo().getClassPlayer() == Const.CUNG_THU) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            if (typeSkill == 3) {
+                // Skill 3: Bát kim tiễn đáo (multi-hit + Độc Nổ)
+                int totalHits = (lvSkill <= 3) ? 3 : Math.min(9, (int) lvSkill);
+                if (mob.getBuffInfluence().isPoisoned()) {
+                    int detonateDmg = mob.getBuffInfluence().detonatePoison();
+                    if (detonateDmg > 0) {
+                        mob.injured(player, detonateDmg, false, false, false);
+                    }
+                }
+                final int fDameAttack = dameAttack;
+                final byte fEffAttack = effAttack;
+                final boolean fIsXuyenGiap = isXuyenGiap;
+                manager.ExecutorVirtualThread.submitThreadPlayer(() -> {
+                    try {
+                        for (int hit = 2; hit <= totalHits; hit++) {
+                            Thread.sleep(240);
+                            if (mob.isDie()) break;
+                            int nextDame = mob.injured(player, fDameAttack, fIsXuyenGiap, false, false);
+                            Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_MONSTER);
+                            hitMsg.writer().writeShort(player.getIdPlayer());
+                            hitMsg.writer().writeShort(mob.getId());
+                            hitMsg.writer().writeByte(typeSkill);
+                            hitMsg.writer().writeInt(nextDame);
+                            hitMsg.writer().writeInt(mob.getHp());
+                            hitMsg.writer().writeByte(fEffAttack);
+                            hitMsg.writer().writeByte(1);
+                            hitMsg.writer().writeByte(fIsXuyenGiap ? 0 : 1);
+                            hitMsg.writer().writeByte(lvSkill);
+                            MapService.instance.sendAllPlayerInMap(player, hitMsg);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                });
+            } else if (typeSkill == 6) {
+                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 1s)
+                int rateMu = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                if (Util.isTrue(rateMu, 100)) {
+                    mob.getBuffInfluence().addBuffMu((short) 1);
+                }
+            } else if (typeSkill == 7) {
+                // Skill 7: Thăng thiên loạn tiễn (Vết thương sâu 5s + Buff né đòn bản thân 5s)
+                mob.getBuffInfluence().addBuffVetThuongSau((short) 5);
+                int dodgeBonus = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                player.setBuffNeDonCungThu(5000L, dodgeBonus);
+                player.getPoint().initPoint();
+            } else if (typeSkill == 8) {
+                // Skill 8: Vạn tiễn quy tâm (Hút máu 10% + 2%/cấp tổng dame)
+                int percentHeal = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                int hpHeal = (int) ((long) dameHit * percentHeal / 100);
+                if (hpHeal > 0) {
+                    player.getPoint().plusHp(hpHeal);
+                    MapService.instance.onNewHpMp(player);
+                }
+            }
+        }
     }
 
     private void onPlayerAttackMultiMob(@NonNull Player player, @NonNull List<Monster> mobs) throws IOException {
         boolean isCrit = Util.isTrue((double) player.getPoint().getCritical(), 100.0);
         boolean isBaoKich = Util.isTrue((double) player.getPoint().getBaoKich(), 100.0);
-        boolean isMiss = Util.isTrue(2.5, 96.7);
+        boolean isMiss = player.getBuffInfluence().isMu() || Util.isTrue(2.5, 96.7);
         boolean isXuyenGiap = Util.isTrue((double) player.getPoint().getXuyenGiap(), 100.0);
 
         byte effAttack = Const.NONE_EFFECT;
@@ -483,7 +617,16 @@ public class SkillService {
             effAttack = Const.BAO_KICK_EFFECT;
         }
         Monster mobTarget = mobs.get(0);
-        int dameHit = mobTarget.injured(player, player.getPoint().getDameAttack(isMiss, isCrit, isBaoKich, true), isXuyenGiap, false, false);
+        int dameAttack = player.getPoint().getDameAttack(isMiss, isCrit, isBaoKich, true);
+        // Skill 5 Cung Thủ: Sát thương chí mạng lên mục tiêu nhiễm độc tăng 50% (+10%/cấp)
+        if (player.getInfo().getClassPlayer() == Const.CUNG_THU && isCrit && mobTarget.getBuffInfluence().isPoisoned()) {
+            byte lvSkill5 = player.getSkill().getLevelSkill()[5];
+            if (lvSkill5 > 0) {
+                int bonusCritDmgPercent = 50 + (lvSkill5 - 1) * 10;
+                dameAttack += (int) ((long) dameAttack * bonusCritDmgPercent / 100);
+            }
+        }
+        int dameHit = mobTarget.injured(player, dameAttack, isXuyenGiap, false, false);
         if (dameHit == 0) {
             effAttack = Const.MISS_EFFECT;
             isXuyenGiap = false;
@@ -530,6 +673,39 @@ public class SkillService {
                     if (m != null && !m.isDie() && !m.isKhoangSan()) {
                         m.getBuffInfluence().addBuffStunned((short) 1);
                     }
+                }
+            }
+        }
+
+        // Hiệu ứng kỹ năng Cung Thủ khi tấn công nhiều quái (AoE)
+        if (player.getInfo().getClassPlayer() == Const.CUNG_THU) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            if (typeSkill == 6) {
+                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 1s lên quái trúng chiêu)
+                int rateMu = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan() && Util.isTrue(rateMu, 100)) {
+                        m.getBuffInfluence().addBuffMu((short) 1);
+                    }
+                }
+            } else if (typeSkill == 7) {
+                // Skill 7: Thăng thiên loạn tiễn (Vết thương sâu 5s lên tất cả quái + Buff né đòn 5s)
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan()) {
+                        m.getBuffInfluence().addBuffVetThuongSau((short) 5);
+                    }
+                }
+                int dodgeBonus = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                player.setBuffNeDonCungThu(5000L, dodgeBonus);
+                player.getPoint().initPoint();
+            } else if (typeSkill == 8) {
+                // Skill 8: Vạn tiễn quy tâm (Hút máu theo tổng dame gây lên tất cả quái)
+                int totalDmgDealt = dameHit * mobs.size();
+                int percentHeal = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                int hpHeal = (int) ((long) totalDmgDealt * percentHeal / 100);
+                if (hpHeal > 0) {
+                    player.getPoint().plusHp(hpHeal);
+                    MapService.instance.onNewHpMp(player);
                 }
             }
         }

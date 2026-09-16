@@ -426,6 +426,9 @@ public class Manager {
         if (clazz == Const.DAU_SI && skillType == 4) {
             return 60; // Bất di biến Đấu Sĩ cố định 60s mọi cấp theo thiết kế
         }
+        if (clazz == Const.CUNG_THU && skillType == 4) {
+            return 60; // Độc lưu tiễn Cung Thủ duy trì 60s mọi cấp theo thiết kế
+        }
         return getTimeLifeBuffSkill(skillType, skillLevel);
     }
 
@@ -479,6 +482,19 @@ public class Manager {
         SKILL_MP[Const.DAU_SI][6] = new short[]{0, 25, 28, 32, 36, 40, 44, 48, 52, 56, 60}; // Kinh thiên động địa (giảm giáp)
         SKILL_MP[Const.DAU_SI][7] = new short[]{0, 30, 34, 38, 42, 46, 50, 55, 60, 65, 70}; // Sơn Tinh bộ thiên (hóa đá)
         SKILL_MP[Const.DAU_SI][8] = new short[]{0, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90}; // Thạch nhũ công tâm (choáng AoE + dame HP)
+
+        // Cung Thủ: Lượng mana tiêu tốn cao (chỉ đứng sau Pháp Sư)
+        if (SKILL_MP.length > Const.CUNG_THU) {
+            SKILL_MP[Const.CUNG_THU][0] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // Bắn
+            SKILL_MP[Const.CUNG_THU][1] = new short[]{0, 15, 18, 21, 24, 27, 30, 33, 36, 40, 45}; // Phi tiễn
+            SKILL_MP[Const.CUNG_THU][2] = new short[]{0, 20, 24, 28, 32, 36, 40, 45, 50, 55, 60}; // Xuyên tâm tiễn
+            SKILL_MP[Const.CUNG_THU][3] = new short[]{0, 30, 35, 40, 46, 52, 58, 65, 72, 80, 90}; // Bát kim tiễn đáo (multi-hit)
+            SKILL_MP[Const.CUNG_THU][4] = new short[]{0, 50, 58, 66, 75, 84, 93, 102, 112, 122, 135}; // Độc lưu tiễn (buff 60s)
+            SKILL_MP[Const.CUNG_THU][5] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // Hộ độc tiễn (nội tại)
+            SKILL_MP[Const.CUNG_THU][6] = new short[]{0, 40, 46, 52, 60, 68, 76, 85, 94, 104, 115}; // Thập diện tâm tiễn (AoE 1)
+            SKILL_MP[Const.CUNG_THU][7] = new short[]{0, 55, 64, 73, 82, 92, 102, 113, 124, 136, 150}; // Thăng thiên loạn tiễn (AoE 2)
+            SKILL_MP[Const.CUNG_THU][8] = new short[]{0, 70, 80, 90, 102, 114, 126, 140, 154, 168, 185}; // Vạn tiễn quy tâm (AoE 3)
+        }
     }
 
     public static void applySkillCooldownRebalance() {
@@ -488,6 +504,11 @@ public class Manager {
         // Đấu Sĩ Skill 4 (Bất di biến): Cố định 80.000ms (80s) cho TẤT CẢ các cấp 0-10, duy trì 60s -> khoảng trống chuẩn 20s
         for (int lv = 0; lv < 11; lv++) {
             SKILL_COOLDOWN[Const.DAU_SI][4][lv] = 80000;
+        }
+        if (SKILL_COOLDOWN.length > Const.CUNG_THU) {
+            for (int lv = 0; lv < 11; lv++) {
+                SKILL_COOLDOWN[Const.CUNG_THU][4][lv] = 80000;
+            }
         }
     }
 
@@ -505,6 +526,17 @@ public class Manager {
             if (skillType == 6) return 5000L;  // Kinh thiên động địa: 5s
             if (skillType == 7) return 6000L;  // Sơn Tinh bộ thiên: 6s
             if (skillType == 8) return 7000L;  // Thạch nhũ công tâm: 7s
+        }
+        if (clazz == Const.CUNG_THU) {
+            if (skillType == 0) return 800L;  // Bắn: 800ms
+            if (skillType == 1) return 1500L; // Phi tiễn: 1.5s
+            if (skillType == 2) return 1800L; // Xuyên tâm tiễn: 1.8s
+            if (skillType == 3) return Math.min(4000L, 3000L + (level - 1) * 125L); // Bát kim tiễn đáo: 3.0s - 4.0s
+            if (skillType == 4) return 80000L; // Độc lưu tiễn: 80s cố định
+            if (skillType == 5) return 0L;     // Hộ độc tiễn: nội tại
+            if (skillType == 6) return 6000L;  // Thập diện tâm tiễn (AoE 1): 6s
+            if (skillType == 7) return 7000L;  // Thăng thiên loạn tiễn (AoE 2): 7s
+            if (skillType == 8) return 8000L;  // Vạn tiễn quy tâm (AoE 3): 8s
         }
         if (clazz == Const.PHAP_SU) {
             if (skillType == 4) return 120000L; // Hồi công lực đan 120s

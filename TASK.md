@@ -162,3 +162,46 @@
 - Đã backup an toàn tất cả các file trước khi sửa đổi.
 
 ---
+
+## [2026-09-16 22:00] — Task #115: Cải Tổ Toàn Diện Môn Phái Cung Thủ (Glass Cannon, Multi-hit Độc Nổ, Mù, Vết Thương Sâu, Hút Máu, UI Kỹ Năng & Hiệu Ứng)
+
+**Yêu cầu:**
+1. Định vị phong cách Cung Thủ (Class ID: 4) thành Xạ Thủ Siêu Sát Thương (Glass Cannon):
+   - Base Stats: Dame cơ bản tăng vọt (Agi x2.2), Tỉ lệ chí mạng cơ bản cao (Luck / 15 + 5%), nhưng máu cực thấp (Hea x50) và mana hạn chế (Spi x16). Chỉ số khởi tạo: Str 20, Agi 35, Spi 10, Hea 10, Luck 15.
+2. Thiết kế & Triển khai cơ chế bộ kỹ năng Cung Thủ:
+   - **Skill 3 (Bát kim tiễn đáo):** Bắn nhiều đòn liên tiếp theo cấp kỹ năng (Cấp 1–3 bắn 3 đòn; Cấp 4–9 bắn số đòn = cấp, tối đa 9 đòn, nhịp bắn 240ms). Cơ chế **Độc Nổ (Poison Detonate)**: lập tức rút cạn toàn bộ sát thương độc DoT còn lại trên mục tiêu và kết thúc hiệu ứng trúng độc.
+   - **Skill 4 (Độc lưu tiễn):** Buff duy trì 60s, hồi chiêu cố định 80s (khoảng trống 20s không buff); đòn đánh thường và chiêu thức gán độc DoT kéo dài 10s lên mục tiêu, mỗi giây gây sát thương = `30% + 5%/cấp` Lực tấn công.
+   - **Skill 5 (Hộ độc tiễn):** Kỹ năng nội tại tăng `5% + 2%/cấp` Tỉ lệ chí mạng; đặc biệt khi mục tiêu đang dính độc, nhận thêm `50% + 10%/cấp` Sát thương chí mạng.
+   - **Skill 6 (Thập diện tâm tiễn):** Hồi chiêu 6s; tỉ lệ `10% + 2%/cấp` gây trạng thái **MÙ (Blind)** trong 1s (khi bị mù, đối thủ 100% đánh hụt/Miss cả quái lẫn người chơi).
+   - **Skill 7 (Thăng thiên loạn tiễn):** Hồi chiêu 7s; gây trạng thái **Vết thương sâu** trong 5s (giảm 50% lượng máu hồi phục của đối thủ từ mọi nguồn); đồng thời tăng cho bản thân `10% + 2%/cấp` Né đòn trong 5s.
+   - **Skill 8 (Vạn tiễn quy tâm):** Hồi chiêu 8s; Hút máu hồi phục HP cho bản thân = `10% + 2%/cấp` tổng sát thương gây ra (áp dụng cho cả PvP, PvE đơn mục tiêu và AoE quái).
+   - Chuẩn hóa mức tiêu hao Mana (`SKILL_MP`): mức tiêu hao cao thứ 2 trong game, chỉ đứng sau Pháp Sư.
+3. Client Visual & UI:
+   - Render vòng hiệu ứng debuff Mù (vòng khói đen tối xoay chân `effectType = 10`) và Vết thương sâu (vòng đỏ máu xoay chân `effectType = 11`) an toàn trong `class_zx.java` và xử lý packet 89 trong `MsgHandler.java`.
+   - Bổ sung định dạng mô tả chi tiết tiếng Việt cho 9 kỹ năng Cung Thủ trong `class_sc.java` (hiển thị chuẩn xác công thức, cấp học, mana, hồi chiêu và hiệu ứng độc quyền).
+4. Đồng bộ Database & Tài liệu:
+   - Tạo migration script `server/update_skills_cung_thu.sql` cập nhật dữ liệu bảng `skill_news` và cấu hình bảng `others`.
+   - Cập nhật đầy đủ tài liệu thiết kế kỹ năng `docs/skills/cung_thu.md`.
+
+**Files thay đổi:**
+- `server/KPAH/src/consts/BuffConst.java` — Định nghĩa `BUFF_MU = 10`, `BUFF_VET_THUONG_SAU = 11`.
+- `server/KPAH/src/skill/BuffInfluenceMonster.java` — Xử lý buff Mù, Vết thương sâu, cơ chế rút nổ độc `detonatePoison()`.
+- `server/KPAH/src/skill/BuffInfluencePlayer.java` — Xử lý buff Mù, Vết thương sâu, cơ chế rút nổ độc `detonatePoison()` trên người chơi.
+- `server/KPAH/src/player/Player.java` — Thêm cơ chế buff né đòn `timeEndBuffNeDonCungThu` và `dodgeBonusCungThu`.
+- `server/KPAH/src/player/Point.java` — Cập nhật hệ số công Agi x2.2, HP max Hea x50, MP max Spi x16, Base stats khởi tạo, `setCrit()`, `setDodge()`, và `plusHp()` (giảm 50% khi dính Vết thương sâu).
+- `server/KPAH/src/services/BuffService.java` — Cập nhật `onMobInjured`, `onPlayerInjured` (Skill 4 DoT 10s: 30% + 5%/cấp Lực tấn công), `sendAddBuffInfluence` cho `BUFF_MU` và `BUFF_VET_THUONG_SAU`.
+- `server/KPAH/src/services/MonsterService.java` — Quái bị Mù 100% đánh hụt (áp dụng cả đánh thường và cận chiến).
+- `server/KPAH/src/services/SkillService.java` — Check Mù đánh hụt; Skill 5 tăng chí mạng mục tiêu dính độc; Skill 3 multi-hit + Độc Nổ; Skill 6 Mù 1s; Skill 7 Vết thương sâu + Buff Né đòn 5s; Skill 8 Hút máu (PvP, PvE đơn và AoE quái).
+- `server/KPAH/src/manager/Manager.java` — Khóa hồi chiêu cố định Skill 4 (80s), Skill 6 (6s), Skill 7 (7s), Skill 8 (8s); chuẩn hóa `SKILL_MP[Const.CUNG_THU]`.
+- `game/app/src/classes/class_sc.java` — Bổ sung định dạng mô tả chi tiết 9 kỹ năng Cung Thủ mới (`classChar == 4`).
+- `game/app/src/classes/MsgHandler.java` — Xử lý packet 89 case 10 (`BUFF_MU`) và case 11 (`BUFF_VET_THUONG_SAU`).
+- `game/app/src/classes/class_zx.java` — Render vòng khói đen huyền bí (Mù) và vòng đỏ máu (Vết thương sâu) an toàn dưới chân nhân vật.
+- `server/update_skills_cung_thu.sql` — Script SQL cập nhật `skill_news` và mô tả kỹ năng Cung Thủ.
+- `docs/skills/cung_thu.md` — Cập nhật tài liệu thiết kế kỹ năng hoàn chỉnh.
+
+**Kết quả:** ✅ Thành công
+- Server Java biên dịch thành công 100% (`KPAH.jar`).
+- Client Java ME build thành công 100% (`kpah_mod_v1.0.0.1_local.jar`).
+- Tất cả các file đã được backup an toàn trong các thư mục `_backup/` tương ứng.
+
+---
