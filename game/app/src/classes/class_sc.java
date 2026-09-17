@@ -557,7 +557,7 @@ extends class_hw {
                     int rateMu = 10 + (lv - 1) * 2;
                     v.addElement("Thập diện tâm tiễn (AoE 1)");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Tỉ lệ gây Mù 1s: " + rateMu + "%");
+                    v.addElement("Tỉ lệ gây Mù 3s: " + rateMu + "%");
                     v.addElement("Kẻ địch bị Mù đánh hụt 100%");
                     v.addElement("Hồi chiêu: 6s | MP: " + class_qz.b(n, lv));
                     break;

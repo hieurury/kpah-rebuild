@@ -236,3 +236,31 @@
 - Đã sao lưu backup tất cả các file trong `_backup/` trước khi sửa đổi.
 
 ---
+
+## [2026-09-17 21:30] — Task #117: Khôi Phục Cơ Chế Giảm Sức Mạnh Quái Đến 80%, Tối Ưu Sát Thương Cào Xước & Cân Bằng Cung Thủ (DoT +-10%, Lan Độc AoE, Mù 3s)
+
+**Yêu cầu:**
+1. Khôi phục cơ chế giảm sức mạnh quái vật theo độ chênh lệch cấp độ với người chơi:
+   - Cứ mỗi 1 cấp người chơi cao hơn quái, quái bị giảm **20% sát thương**, tối đa giảm tới **80%** (ở độ chênh lệch $\ge 4$ cấp). Quái tinh anh giảm tối đa **60%**. Không áp dụng cho Boss thế giới/phụ bản (type 2).
+   - Tối ưu sát thương cào xước tối thiểu (`minScratch`): Quái thường giảm từ `mobLv * 2.0 + 4` xuống `mobLv * 1.0 + 2` (min 3). Quái Tinh Anh giảm từ `mobLv * 3.5 + 15` xuống `mobLv * 2.0 + 10` (min 15) để người chơi có giáp thủ cao không bị mất hàng trăm HP mỗi nhịp khi quái bu đông trong thời gian bình máu hồi chiêu 10s.
+2. Cân bằng môn phái Cung Thủ (Archer):
+   - **Skill 4 (Độc lưu tiễn):** Bổ sung biến thiên ngẫu nhiên $\pm 10\%$ sát thương DoT độc mỗi giây phát tác trong `BuffInfluenceMonster.java` và `BuffInfluencePlayer.java`.
+   - **Gán độc AoE:** Trong `SkillService.java` (`onPlayerAttackMultiMob`), gọi `BuffService.instance.onMobInjured(player, mob)` cho toàn bộ các mục tiêu phụ ($j \ge 1$), đảm bảo 100% quái trúng sát thương lan đều bị dính độc khi Skill 4 đang kích hoạt.
+   - **Skill 6 (Thập diện tâm tiễn):** Tăng thời gian gây MÙ từ **1s lên 3s** cho cả PvP, PvE đơn và PvE AoE trong `SkillService.java`.
+   - **Giao diện & Tài liệu:** Cập nhật mô tả kỹ năng trên Client `class_sc.java` ("Tỉ lệ gây Mù 3s") và tài liệu `docs/skills/cung_thu.md`.
+
+**Files thay đổi:**
+- `server/KPAH/src/map/Monster.java` — Khôi phục công thức giảm dame theo chênh lệch cấp độ tối đa 80% (tinh anh 60%), tối ưu `minScratch`.
+- `server/KPAH/src/skill/BuffInfluenceMonster.java` — Thêm dao động $\pm 10\%$ sát thương DoT độc phát tác lên quái.
+- `server/KPAH/src/skill/BuffInfluencePlayer.java` — Thêm dao động $\pm 10\%$ sát thương DoT độc phát tác lên người chơi.
+- `server/KPAH/src/services/SkillService.java` — Gán độc cho mọi mục tiêu trúng AoE khi bật Skill 4, tăng thời gian Mù Skill 6 lên 3s.
+- `game/app/src/classes/class_sc.java` — Cập nhật mô tả kỹ năng Skill 6 gây Mù 3s trên Client.
+- `docs/skills/cung_thu.md` — Cập nhật tài liệu thiết kế kỹ năng Cung Thủ.
+
+**Kết quả:** ✅ Thành công
+- Server Java biên dịch thành công 100% (`KPAH.jar`).
+- Client Java ME build thành công 100% (`kpah_mod_v1.0.0.1_local.jar`).
+- Đã sao lưu backup tất cả các file trong các thư mục `_backup/` tương ứng.
+
+---
+

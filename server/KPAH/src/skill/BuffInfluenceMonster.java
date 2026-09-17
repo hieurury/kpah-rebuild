@@ -289,6 +289,11 @@ public class BuffInfluenceMonster {
             if (damageAmount <= 0) {
                 damageAmount = Math.max(1, (int) docTo);
             }
+            // Điều chỉnh sát thương độc theo thời gian thêm dao động +-10% dame
+            int variance = (int) Math.round(damageAmount * 0.10);
+            if (variance > 0) {
+                damageAmount = Util.nextInt(Math.max(1, damageAmount - variance), damageAmount + variance);
+            }
             short dame = (short) mob.injured(playerUser, damageAmount, false, true, false);
             if (dame > 0) {
                 BuffService.instance.sendSubHpByBuffInfluence(mob, dame);

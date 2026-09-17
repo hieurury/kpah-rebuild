@@ -424,10 +424,10 @@ public class SkillService {
                     }
                 });
             } else if (typeSkill == 6) {
-                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 1s)
+                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 3s)
                 int rateMu = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
                 if (Util.isTrue(rateMu, 100)) {
-                    playerTarget.getBuffInfluence().addBuffMu((short) 1);
+                    playerTarget.getBuffInfluence().addBuffMu((short) 3);
                 }
             } else if (typeSkill == 7) {
                 // Skill 7: Thăng thiên loạn tiễn (Vết thương sâu 5s + Buff né đòn bản thân 5s)
@@ -582,10 +582,10 @@ public class SkillService {
                     }
                 });
             } else if (typeSkill == 6) {
-                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 1s)
+                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 3s)
                 int rateMu = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
                 if (Util.isTrue(rateMu, 100)) {
-                    mob.getBuffInfluence().addBuffMu((short) 1);
+                    mob.getBuffInfluence().addBuffMu((short) 3);
                 }
             } else if (typeSkill == 7) {
                 // Skill 7: Thăng thiên loạn tiễn (Vết thương sâu 5s + Buff né đòn bản thân 5s)
@@ -648,6 +648,9 @@ public class SkillService {
         for (int j = 1; j < mobs.size(); j++) {
             Monster mob = mobs.get(j);
             mob.minusHp(player, dameHit);
+            if (!mob.isKhoangSan()) {
+                BuffService.instance.onMobInjured(player, mob);
+            }
             msg.writer().writeShort(mob.getId());
             msg.writer().writeInt(mob.getHp());
         }
@@ -685,11 +688,11 @@ public class SkillService {
         if (player.getInfo().getClassPlayer() == Const.CUNG_THU) {
             byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
             if (typeSkill == 6) {
-                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 1s lên quái trúng chiêu)
+                // Skill 6: Thập diện tâm tiễn (Tỉ lệ MÙ 3s lên quái trúng chiêu)
                 int rateMu = 10 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
                 for (Monster m : mobs) {
                     if (m != null && !m.isDie() && !m.isKhoangSan() && Util.isTrue(rateMu, 100)) {
-                        m.getBuffInfluence().addBuffMu((short) 1);
+                        m.getBuffInfluence().addBuffMu((short) 3);
                     }
                 }
             } else if (typeSkill == 7) {

@@ -29,9 +29,9 @@
 | **1** | **Nhất hồn tiễn** | Đơn thể | Lv 6 – 15 | 1.5s | 15 – 45 MP | Phát bắn dồn kình lực tầm xa (100px) |
 | **2** | **Phi thiên tiễn** | Đơn thể | Lv 11 – 20 | 1.8s | 20 – 60 MP | Tên bay vút tầm xa (110px) |
 | **3** | **Bát kim tiễn đáo** | Đơn thể (Multi-hit) | Lv 17 – 42 | 3.0s – 4.0s | 30 – 90 MP | Bắn liên hoàn (cấp 1-3 bắn 3 đòn, cấp 4+ bắn số đòn = cấp, max 9 đòn). **Cơ chế Độc Nổ (Poison Detonate):** lập tức rút cạn toàn bộ sát thương độc DoT còn lại trên mục tiêu và xóa bỏ hiệu ứng độc |
-| **4** | **Độc lưu tiễn** | Buff chủ động | Lv 3 – 32 | 80s cố định (duy trì 60s) | 50 – 135 MP | Buff chủ động duy trì 60s, cooldown 80s (khoảng trống 20s). Gán độc DoT 10s: mỗi giây gây sát thương = **30% (+5%/cấp) Lực tấn công** của Cung Thủ |
+| **4** | **Độc lưu tiễn** | Buff chủ động | Lv 3 – 32 | 80s cố định (duy trì 60s) | 50 – 135 MP | Buff chủ động duy trì 60s, cooldown 80s (khoảng trống 20s). Khi bật, **toàn bộ sát thương (đơn thể & AoE trúng lan)** đều gán độc DoT 10s: mỗi giây gây sát thương = **30% (+5%/cấp) Lực tấn công ($\pm 10\%$)** của Cung Thủ |
 | **5** | **Hộ độc tiễn** | Bị động (Nội tại) | Lv 3 – 32 | Không có | 0 MP | Tăng **5% (+2%/cấp) Tỉ lệ chí mạng**; Mục tiêu nhiễm độc nhận thêm **50% (+10%/cấp) Sát thương chí mạng** |
-| **6** | **Thập diện tâm tiễn** | AoE (Đánh lan 1) | Lv 25 – 41 | 6.0s | 40 – 115 MP | Bắn mưa tên tỏa 10 phương. Tỉ lệ **10% (+2%/cấp) gây MÙ 1s** (kẻ địch bị mù đánh hụt 100%) |
+| **6** | **Thập diện tâm tiễn** | AoE (Đánh lan 1) | Lv 25 – 41 | 6.0s | 40 – 115 MP | Bắn mưa tên tỏa 10 phương. Tỉ lệ **10% (+2%/cấp) gây MÙ 3s** (kẻ địch bị mù đánh hụt 100%) |
 | **7** | **Thăng thiên loạn tiễn** | AoE (Đánh lan 2) | Lv 30 – 46 | 7.0s | 55 – 150 MP | Bão tên liên hoàn diện rộng. Gán **VẾT THƯƠNG SÂU 5s** (giảm 50% hồi HP của kẻ địch) và tăng bản thân **10% (+2%/cấp) NÉ TRÁNH trong 5s** |
 | **8** | **Vạn tiễn quy tâm** | AoE (Đánh lan 3) | Lv 45 – 61 | 8.0s | 70 – 185 MP | Mưa tên phủ kín trận địa. **HÚT MÁU:** Hồi HP cho bản thân bằng **10% (+2%/cấp) tổng sát thương** gây ra lên kẻ địch |
 

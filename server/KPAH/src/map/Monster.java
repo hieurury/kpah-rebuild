@@ -304,22 +304,25 @@ public class Monster implements Cloneable {
 
         // 3. Sát thương cào xước tối thiểu (min scratch damage) theo level quái
         // Khi giáp người chơi rất cao, quái vẫn gây ra lượng sát thương nhỏ hợp lý (không bị về 1 dame vô lý)
-        int minScratch = Math.max(5, (int) (mobLv * 2.0 + 4));
+        int minScratch = Math.max(3, (int) (mobLv * 1.0 + 2));
         if (isElite) {
-            minScratch = Math.max(25, (int) (mobLv * 3.5 + 15));
+            minScratch = Math.max(15, (int) (mobLv * 2.0 + 10));
         }
 
         int netDmg = Math.max(baseAtk - plDef, minScratch);
 
-        // 4. Cơ chế khoảng cách level cho quái thường:
-        // Cứ cách 1 lv (người chơi cao hơn quái) thì quái bị giảm 10% dame (cũ 20%), tối đa 60% (cũ 80%).
-        // Giúp quái vẫn duy trì sự uy hiếp và sức mạnh công bằng khi người chơi up level.
-        if (isNormalMonster() && pl != null && pl.getInfo() != null) {
-            int playerLevel = pl.getInfo().getLevel();
-            int diffLevel = playerLevel - mobLv;
-            if (diffLevel > 0) {
-                int dmgReductionPercent = Math.min(60, diffLevel * 10);
-                netDmg = Math.max(1, (int) (netDmg * (100 - dmgReductionPercent) / 100.0));
+        // 4. Cơ chế khoảng cách level:
+        // Cứ cách 1 lv (người chơi cao hơn quái) thì quái bị giảm 20% dame lên người chơi, tối đa 80% (tinh anh tối đa 60%).
+        // Không áp dụng cho Boss thế giới/phụ bản (template.getType() == 2).
+        if (!isKhoangSan() && !canNotAttackPlayer() && !playerCanNotAttack() && pl != null && pl.getInfo() != null) {
+            if (this.template != null && this.template.getType() != 2) {
+                int playerLevel = pl.getInfo().getLevel();
+                int diffLevel = playerLevel - mobLv;
+                if (diffLevel > 0) {
+                    int maxReduction = isElite ? 60 : 80;
+                    int dmgReductionPercent = Math.min(maxReduction, diffLevel * 20);
+                    netDmg = Math.max(1, (int) (netDmg * (100 - dmgReductionPercent) / 100.0));
+                }
             }
         }
 
