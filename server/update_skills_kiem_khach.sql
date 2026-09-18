@@ -1,55 +1,48 @@
 -- =============================================================================
 -- KPAH REBALANCE MIGRATION: ĐIỀU CHỈNH TOÀN DIỆN MÔN PHÁI KIẾM KHÁCH (CLASS 0)
 -- Ngày thực hiện: 2026-09-18
--- Nội dung:
--- 1. Cập nhật mô tả kỹ năng Kiếm Khách chuẩn xác theo cơ chế mới:
---    - Skill 3: Kinh lôi bát thủ (Multi-hit + Nhiễm điện 5s)
---    - Skill 4: Hộ sát tiến (Nội tại: Gây thêm sát thương chuẩn + Tỉ lệ nhiễm điện 5s)
---    - Skill 5: Dĩ lực đáo công (Buff 60s/90s CD: Giảm thương 5%-14%, phản đòn 25%-70% tỉ lệ, phản 50%-95% công font vàng)
---    - Skill 6: Thiên lôi điện trảm (AoE: Nhiễm điện 5s diện rộng)
---    - Skill 7: Sấm động dương gian (AoE: Nếu nhiễm điện -> thêm sát thương chuẩn + Choáng 1s)
---    - Skill 8: Kiếm phi kinh thiên (AoE: Nếu nhiễm điện -> Quái thường bị Execute hiện "DIET", Boss/Player chuyển thành sát thương chuẩn font trắng)
 -- =============================================================================
 
--- Cập nhật bảng skill (nếu có lưu mô tả hoặc thuộc tính trong db)
-UPDATE `skills`
-SET
-    `description` = 'Tung chuỗi kiếm liên hoàn chớp giật như lôi đình. Gây hiệu ứng Nhiễm điện trong 5 giây lên mục tiêu.'
-WHERE
-    `class` = 0
-    AND `skill_id` = 3;
+-- Bảng lưu sách kỹ năng trong database KPAH là `skill_news` (dành cho Skill 6, 7, 8).
+-- Trong đó: Kiếm Khách có `charClass` = 0:
+--   - id = 1, idSkill = 6: Thiên lôi điện trảm
+--   - id = 2, idSkill = 7: Sấm động dương gian
+--   - id = 3, idSkill = 8: Kiếm phi kinh thiên
+-- Cột mô tả kỹ năng là `decript` (chú ý: không phải `description`).
 
-UPDATE `skills`
+-- 1. Skill 6: Thiên lôi điện trảm (AoE 1)
+UPDATE `skill_news`
 SET
-    `description` = 'Nội tại: Mọi đòn đánh gây thêm sát thương chuẩn và có tỉ lệ gây Nhiễm điện 5 giây.'
+    `decript` = 'Triệu cuồng lôi tấn công diện rộng. Khiến toàn bộ kẻ địch trúng chiêu bị Nhiễm điện trong 5 giây. Hồi chiêu: 5s.'
 WHERE
-    `class` = 0
-    AND `skill_id` = 4;
+    `charClass` = 0
+    AND `idSkill` = 6;
 
-UPDATE `skills`
+-- 2. Skill 7: Sấm động dương gian (AoE 2)
+UPDATE `skill_news`
 SET
-    `description` = 'Vận kiếm khí hộ thể trong 60 giây: Giảm 5%-14% sát thương nhận vào, có 25%-70% tỷ lệ phản lại 50%-95% công bản thân (font vàng).'
+    `decript` = 'Phóng luồng điện quang cực mạnh càn quét diện rộng. Nếu mục tiêu Nhiễm điện: Gây thêm sát thương chuẩn (bỏ qua giáp) và Choáng 1 giây. Hồi chiêu: 6s.'
 WHERE
-    `class` = 0
-    AND `skill_id` = 5;
+    `charClass` = 0
+    AND `idSkill` = 7;
 
-UPDATE `skills`
+-- 3. Skill 8: Kiếm phi kinh thiên (AoE 3)
+UPDATE `skill_news`
 SET
-    `description` = 'Triệu cuồng lôi tấn công diện rộng. Khiến toàn bộ kẻ địch trúng chiêu bị Nhiễm điện trong 5 giây.'
+    `decript` = 'Cự kiếm từ chín tầng mây cắm xuống đất tiêu diệt diện rộng. Nếu mục tiêu Nhiễm điện: Tiêu diệt quái thường ngay lập tức, gây sát thương chuẩn lên Boss và Người chơi. Hồi chiêu: 7s.'
 WHERE
-    `class` = 0
-    AND `skill_id` = 6;
+    `charClass` = 0
+    AND `idSkill` = 8;
 
-UPDATE `skills`
-SET
-    `description` = 'Phóng luồng điện quang cực mạnh càn quét diện rộng. Nếu mục tiêu Nhiễm điện: Gây thêm sát thương chuẩn và Choáng 1 giây.'
-WHERE
-    `class` = 0
-    AND `skill_id` = 7;
-
-UPDATE `skills`
-SET
-    `description` = 'Cự kiếm từ chín tầng mây cắm xuống đất tiêu diệt diện rộng. Nếu mục tiêu Nhiễm điện: Tiêu diệt quái thường ngay lập tức, gây sát thương chuẩn lên quái cao cấp và người chơi.'
-WHERE
-    `class` = 0
-    AND `skill_id` = 8;
+-- =============================================================================
+-- GHI CHÚ QUAN TRỌNG VỀ HỆ THỐNG KỸ NĂNG KPAH:
+-- Trong database KPAH không có bảng `skills`.
+-- Toàn bộ thông tin, tên chiêu thức và mô tả hiển thị của Skill 1 đến 5:
+--   - Skill 1: Chém thường
+--   - Skill 2: Ngưng kiếm
+--   - Skill 3: Kinh lôi bát thủ (Multi-hit + Nhiễm điện 5s)
+--   - Skill 4: Hộ sát tiến (Nội tại: Thêm sát thương chuẩn + Tỉ lệ nhiễm điện 5s)
+--   - Skill 5: Dĩ lực đáo công (Buff hộ thể 60s/90s CD: Giảm sát thương nhận vào, phản đòn font vàng)
+-- được quản lý và render trực tiếp trong mã nguồn Client Java (`class_sc.java`)
+-- và mã nguồn Server Java (`Manager.java`, `SkillService.java`, `BuffService.java`).
+-- =============================================================================
