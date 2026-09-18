@@ -67,8 +67,7 @@ public class Monster implements Cloneable {
         if (isElite) {
             return (int) (template.getMaxHp() * 8.0);
         }
-        // Tăng 20% lượng máu cơ bản cho quái thường để tăng tính thử thách và công bằng
-        return isKhoangSan() ? template.getMaxHp() : (int) (template.getMaxHp() * 1.2);
+        return template.getMaxHp();
     }
 
     @Synchronized
@@ -275,52 +274,48 @@ public class Monster implements Cloneable {
         int mobLv = this.template.getLevel();
         int plDef = (pl != null && pl.getPoint() != null) ? pl.getPoint().getDefend() : 0;
 
-        // 1. Sát thương cơ bản tự nhiên của quái theo level (tăng nhẹ ~20-25% sức mạnh)
-        int minAtk = Math.max(20, (int) (mobLv * 13 + 10));
-        int maxAtk = Math.max(30, (int) (mobLv * 17 + 20));
+        // 1. Sát thương cơ bản tự nhiên của quái theo level (quái thường nhẹ nhàng, cân bằng nhịp hồi máu 10s)
+        int minAtk = Math.max(8, (int) (mobLv * 6.5 + 5));
+        int maxAtk = Math.max(14, (int) (mobLv * 8.5 + 10));
         int baseAtk = Util.nextInt(minAtk, maxAtk);
 
-        // 2. Bonus cận chiến hoặc tinh anh / bạo kích
+        // 2. Bonus cận chiến hoặc tinh anh
         if (isMelee()) {
-            baseAtk = (int) (baseAtk * 1.1); // Cận chiến +10%
+            baseAtk = (int) (baseAtk * 1.05); // Cận chiến nhẹ nhàng +5%
         }
         if (isElite) {
-            // Quái tinh anh tăng mạnh sát thương +80% (người chơi trang bị kém sẽ chịu không nổi)
-            baseAtk = (int) (baseAtk * 1.8);
+            // Quái tinh anh KHÔNG GIẢM - Khôi phục toàn bộ sức mạnh để thử thách người chơi và giữ giá trị phần thưởng!
+            baseAtk = (int) (baseAtk * 1.85);
             // Trạng thái Cuồng Nộ (Frenzy): dưới 50% HP tăng thêm 25% sát thương
             if (this.hp < getMaxHp() / 2) {
                 baseAtk = (int) (baseAtk * 1.25);
             }
-            // 25% tỷ lệ Bạo Kích (Critical Hit) của Tinh Anh: x1.5 sát thương
+            // 25% tỷ lệ Bạo Kích x1.5 của Quái Tinh Anh
             if (Util.isTrue(25.0, 100.0)) {
                 baseAtk = (int) (baseAtk * 1.5);
-            }
-        } else {
-            // Quái thường có 8% cơ hội Bạo Kích x1.3 để tạo độ khó và bất ngờ
-            if (Util.isTrue(8.0, 100.0)) {
-                baseAtk = (int) (baseAtk * 1.3);
             }
         }
 
         // 3. Sát thương cào xước tối thiểu (min scratch damage) theo level quái
-        // Khi giáp người chơi rất cao, quái vẫn gây ra lượng sát thương nhỏ hợp lý (không bị về 1 dame vô lý)
-        int minScratch = Math.max(3, (int) (mobLv * 1.0 + 2));
+        // Quái thường: cào xước nhẹ khi người chơi full giáp (2..20 sát thương)
+        int minScratch = Math.max(2, (int) (mobLv * 0.6 + 1));
         if (isElite) {
-            minScratch = Math.max(15, (int) (mobLv * 2.0 + 10));
+            // Quái tinh anh: đòn đánh cực nặng thấu giáp (min scratch cao, chống người chơi tank không mất máu)
+            minScratch = Math.max(25, (int) (mobLv * 3.5 + 15));
         }
 
         int netDmg = Math.max(baseAtk - plDef, minScratch);
 
         // 4. Cơ chế khoảng cách level:
-        // Cứ cách 1 lv (người chơi cao hơn quái) thì quái bị giảm 20% dame lên người chơi, tối đa 80% (tinh anh tối đa 60%).
-        // Không áp dụng cho Boss thế giới/phụ bản (template.getType() == 2).
-        if (!isKhoangSan() && !canNotAttackPlayer() && !playerCanNotAttack() && pl != null && pl.getInfo() != null) {
+        // Quái tinh anh (Elite Mob) KHÔNG CÓ khoảng cách cấp độ: sát thương đối với người chơi KHÔNG BỊ GIẢM bởi cấp độ.
+        // Quái thường: Cứ cách 1 lv (người chơi cao hơn quái) thì quái bị giảm 20% dame lên người chơi, tối đa 80%.
+        // Không áp dụng cho Quái Tinh Anh (isElite) và Boss thế giới/phụ bản (template.getType() == 2).
+        if (!isElite && !isKhoangSan() && !canNotAttackPlayer() && !playerCanNotAttack() && pl != null && pl.getInfo() != null) {
             if (this.template != null && this.template.getType() != 2) {
                 int playerLevel = pl.getInfo().getLevel();
                 int diffLevel = playerLevel - mobLv;
                 if (diffLevel > 0) {
-                    int maxReduction = isElite ? 60 : 80;
-                    int dmgReductionPercent = Math.min(maxReduction, diffLevel * 20);
+                    int dmgReductionPercent = Math.min(80, diffLevel * 20);
                     netDmg = Math.max(1, (int) (netDmg * (100 - dmgReductionPercent) / 100.0));
                 }
             }
@@ -546,6 +541,10 @@ public class Monster implements Cloneable {
             }
             short expQty = (short) (level <= 19 ? 1 : Util.nextInt(1, 2));
             its.add(ItemService.instance.createNewItemMap(idPotionExp, expQty, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
+
+            // 7. Tinh Anh Đan (ID: 107): 100% rơi từ quái tinh anh (1-3 viên tùy cấp quái)
+            short tadQty = (short) (level <= 15 ? 1 : (level <= 29 ? Util.nextInt(1, 2) : Util.nextInt(2, 3)));
+            its.add(ItemService.instance.createNewItemMap((short) 107, tadQty, Const.CATEGORY_POTION, scatterX(destX), scatterY(destY), plAttack.getIdPlayer(), zone));
         }
         
         if (isKhoangSan()) {

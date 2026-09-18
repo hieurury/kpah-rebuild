@@ -330,6 +330,11 @@ public class UseItemService {
         InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion(knId, knQty));
         rewardNames.add(knQty + " " + Manager.getPotionTemplate(knId).getName().split("\\n")[0]);
 
+        // 2b. Tinh Anh Đan (ID 107): Tăng 20% sát thương, giáp và HP trong 3 phút
+        short tadChestQty = (short) (tier <= 2 ? 1 : Util.nextInt(1, 2));
+        InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 107, tadChestQty));
+        rewardNames.add(tadChestQty + " Tinh Anh Đan");
+
         // 3. Dược phẩm lớn (HP & MP) theo bậc
         short potId;
         short potQty;
