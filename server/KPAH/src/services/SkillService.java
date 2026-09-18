@@ -558,7 +558,7 @@ public class SkillService {
             visited.add(targetMob.getId());
 
             int hitDame = targetMob.injured(player, chainDamage, false, true, false);
-            BuffService.instance.sendSubHpByBuffInfluence(targetMob, (short) Math.min(Short.MAX_VALUE, hitDame));
+            BuffService.instance.sendChainLightningMob(sourceMob.getId(), targetMob, (short) Math.min(Short.MAX_VALUE, hitDame));
 
             if (targetMob.getBuffInfluence().isNhiemDien()) {
                 triggerChainLightningMob(player, targetMob, hitDame, visited);
@@ -603,7 +603,7 @@ public class SkillService {
             visited.add(targetPl.getIdPlayer());
 
             int hitDame = targetPl.injured(chainDamage, true, ItemEquipConst.DAMAGE_PHYSIC, false);
-            BuffService.instance.sendSubHpByBuffInfluence(targetPl, (short) Math.min(Short.MAX_VALUE, hitDame));
+            BuffService.instance.sendChainLightningPlayer(sourcePl.getIdPlayer(), targetPl, (short) Math.min(Short.MAX_VALUE, hitDame));
 
             if (targetPl.getBuffInfluence().isNhiemDien()) {
                 triggerChainLightningPlayer(attacker, targetPl, hitDame, visited);

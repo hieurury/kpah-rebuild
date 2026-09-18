@@ -269,6 +269,62 @@ public class MsgHandler {
 						}
 					}
 					return;
+				} else if (b4 == -7) {
+					// Sát thương lan sét từ Nhiễm điện (hiệu ứng tia sét class_dn + số Font Vàng)
+					short sourceId = -1;
+					try {
+						sourceId = msg.b().readShort();
+					} catch (Exception ignored) {
+					}
+					class_vh srcEntity = null;
+					class_vh targetEntity = null;
+					if (class_acv.s != null) {
+						if (class_acv.s.q != null) {
+							if (class_acv.s.q.cG == sourceId) srcEntity = class_acv.s.q;
+							if (class_acv.s.q.cG == targetId) targetEntity = class_acv.s.q;
+						}
+						if (class_acv.s.l != null) {
+							for (int i = 0; i < class_acv.s.l.size(); i++) {
+								class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+								if (entity != null) {
+									if (entity.cG == sourceId && srcEntity == null) srcEntity = entity;
+									if (entity.cG == targetId && targetEntity == null) targetEntity = entity;
+								}
+							}
+						}
+					}
+
+					if (targetEntity != null) {
+						// 1. Hiển thị số sát thương Font Vàng
+						if (s2 > 0) {
+							Paint.addYellowDamage(s2, targetEntity.cK, targetEntity.cL - 35);
+						}
+						// 2. Trừ HP entity
+						if (cat == 1 && targetEntity instanceof class_bb) {
+							((class_bb) targetEntity).d((int) s2);
+							if (((class_bb) targetEntity).v <= 0) {
+								((class_bb) targetEntity).cE = true;
+							}
+						} else if (targetEntity instanceof class_hw) {
+							((class_hw) targetEntity).v -= s2;
+							if (((class_hw) targetEntity).v <= 0) {
+								((class_hw) targetEntity).cV = (byte) 3;
+							}
+						}
+						// 3. Hiệu ứng tia sét nối từ kẻ địch bị nhiễm điện (source) sang kẻ địch nhận dame lan (target)
+						try {
+							int startX = (srcEntity != null) ? srcEntity.cK : targetEntity.cK;
+							int startY = (srcEntity != null) ? srcEntity.cL - 15 : targetEntity.cL - 40;
+							class_dn lightning = new class_dn();
+							lightning.b();
+							lightning.a.addElement(new MoveObj(targetEntity.cK, targetEntity.cL - 15));
+							lightning.a(lightning.a, new MoveObj(startX, startY), true);
+							class_abm.b.addElement(lightning);
+							class_abm.a(targetEntity.cK, targetEntity.cL - 15, 11);
+						} catch (Exception ignored) {
+						}
+					}
+					return;
 				} else if (b4 == -3) {
 					// Gỡ bỏ hiệu ứng Độc tức thì (khi bị Độc Nổ rút cạn)
 					if (class_acv.s != null && class_acv.s.l != null) {

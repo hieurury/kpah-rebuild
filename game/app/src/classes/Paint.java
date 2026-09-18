@@ -495,12 +495,12 @@ public class Paint {
 				fontType = FONT_RED; // Đỏ nguyên bản KPAH
 			} else if (type == POPUP_MP) {
 				fontType = FONT_BLUE; // Xanh dương nguyên bản KPAH
-			} else if (type == POPUP_REFLECT) {
-				fontType = FONT_YELLOW; // Vàng phản đòn
+			} else if (type == POPUP_POISON) {
+				fontType = FONT_POISON; // Tím nguyên bản KPAH - CHỈ ÁP DỤNG CHO ĐỘC
 			} else if (type == POPUP_TRUE_DAMAGE) {
 				fontType = FONT_WHITE; // Trắng sát thương chuẩn
 			} else {
-				fontType = FONT_POISON; // Tím nguyên bản KPAH
+				fontType = FONT_YELLOW; // Mọi loại sát thương khác (phản đòn, sét lan,...) đều dùng Font Vàng
 			}
 
 			statusPopups.addElement(new StatusPopup(text, fontType, worldX, worldY));
@@ -513,6 +513,10 @@ public class Paint {
 	}
 
 	public static void addReflectDamage(int damage, int worldX, int worldY) {
+		addStatusPopup(POPUP_REFLECT, -damage, worldX, worldY);
+	}
+
+	public static void addYellowDamage(int damage, int worldX, int worldY) {
 		addStatusPopup(POPUP_REFLECT, -damage, worldX, worldY);
 	}
 

@@ -434,6 +434,33 @@ public class BuffService {
         MapService.instance.sendAllPlayerInMap(player, msg);
     }
 
+    public void sendChainLightningMob(short sourceId, @NonNull Monster targetMob, short damage) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(targetMob.getId());
+        msg.writer().writeByte(Const.CATEGORY_MONSTER);
+        msg.writer().writeByte(0);
+        msg.writer().writeShort(damage);
+        msg.writer().writeByte(0);
+        msg.writer().writeByte(-7); // b4 = -7: Sét lan (Font Vàng + hiệu ứng tia sét class_dn)
+        msg.writer().writeByte(0); // dur
+        msg.writer().writeShort(sourceId); // sourceId để client vẽ tia sét từ nguồn tới mục tiêu
+        MapService.instance.sendAllPlayerInMap(targetMob, msg);
+    }
+
+    public void sendChainLightningPlayer(short sourceId, @NonNull Player targetPl, short damage) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(targetPl.getIdPlayer());
+        msg.writer().writeByte(Const.CATEGORY_PLAYER);
+        msg.writer().writeByte(0);
+        msg.writer().writeShort(damage);
+        msg.writer().writeByte(0);
+        msg.writer().writeByte(-7); // b4 = -7: Sét lan (Font Vàng + hiệu ứng tia sét class_dn)
+        msg.writer().writeByte(0); // dur
+        msg.writer().writeShort(sourceId); // sourceId để client vẽ tia sét từ nguồn tới mục tiêu
+        MapService.instance.sendAllPlayerInMap(targetPl, msg);
+    }
+
+
     public void sendAddBuffInfluence(@NonNull Player player, byte idBuff) throws IOException {
         Message msg = new Message(CommandMessage.BUFF_ATTACK);
         msg.writer().writeShort(player.getIdPlayer());
