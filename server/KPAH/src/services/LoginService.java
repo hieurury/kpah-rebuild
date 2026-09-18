@@ -111,7 +111,7 @@ public class LoginService {
                 maxPotionId = id;
             }
         }
-        int totalPotions = Math.max(165, maxPotionId + 1);
+        int totalPotions = Math.min(255, Math.max(200, maxPotionId + 1));
         m.writer().writeByte((byte) totalPotions);
         for (short key = 0; key < totalPotions; key++) {
             PotionTemplate itemPotion = Manager.getPotionTemplate(key);

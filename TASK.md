@@ -125,3 +125,28 @@
 - Cả Client (`kpah_mod_v1.0.0.1.jar`) và Server (`KPAH.jar`) biên dịch thành công 100%.
 
 ---
+
+## [2026-09-18 23:05] — Task #124: Khắc Phục Lỗi Crash Khi Mở Rương Cấp 30 (Index 165 Out of Bounds) & Sửa Lỗi Nhận Trùng 2 Rương Kho Báu
+
+**Yêu cầu:**
+1. Khắc phục lỗi crash game khi mở Rương Kho Báu Cấp 30: `Index 165 out of bounds for length 164`.
+2. Khắc phục tình trạng nhân vật nhận tới 2 Rương Kho Báu Cấp 30 khi đạt mốc.
+
+**Nguyên nhân gốc rễ:**
+- *Lỗi crash mảng:* Mảng `lastTimeUsePotion` trong `Inventory.java` (server) và `class_sc.l`, `object.q.bs` (client) được cấp phát theo kích thước template lúc đầu (164 phần tử), khi truy cập ID 165 gây `ArrayIndexOutOfBoundsException`.
+- *Lỗi nhận 2 rương:* Luồng mạng đăng nhập (`LoginService`) và luồng nhân vật (`Player.updatePlayer`) chạy đồng thời ngay tại thời điểm đăng nhập (`lastTimeCheckEvents == 0`), tạo điều kiện race condition khiến cả 2 luồng đều kiểm tra `isGiftClaimed == false` và cùng trao 1 rương vào túi trước khi đánh dấu đã nhận.
+
+**Files thay đổi:**
+- `server/KPAH/src/player/Inventory.java` — Mở rộng mảng `lastTimeUsePotion` lên 1000 phần tử, bổ sung các hàm truy cập an toàn `getLastTimeUsePotion(short id)` và `setLastTimeUsePotion(short id, long time)` có kiểm tra biên tuyệt đối.
+- `server/KPAH/src/services/UseItemService.java` — Chuyển toàn bộ thao tác truy cập `lastTimeUsePotion` sang các hàm getter/setter an toàn.
+- `server/KPAH/src/services/LoginService.java` — Tăng dung lượng danh sách potion gửi về client lên tối thiểu 200 phần tử (`Math.max(200, maxPotionId + 1)`).
+- `server/KPAH/src/services/EventService.java` — Đồng bộ hóa (`synchronized(player)`) trong hàm kiểm tra và trao quà; đồng thời thực hiện đánh dấu `claimGift(GIFT_LV30)` trước khi thêm vật phẩm vào hành trang nhằm chặn đứng race condition giữa các luồng.
+- `server/KPAH/src/player/Player.java` — Khởi tạo `lastTimeCheckEvents = System.currentTimeMillis()` trong `setUp()`, ngăn luồng `update()` kích hoạt trùng lặp với `LoginService` tại thời điểm tick 0.
+- `game/app/src/classes/MsgHandler.java` — Tách và kích hoạt hàm `ensurePotionCapacity()` ngay sau khi client xử lý xong gói tin đăng nhập (`msg.a == 1`), tự động mở rộng mảng `class_sc.l`, `class_acv.s.q.bs`, `class_acv.s.q.bq` lên 256 phần tử và định nghĩa thông tin Rương 165.
+
+**Kết quả:** ✅ Thành công
+- Mở rương ID 165 diễn ra mượt mà, không còn văng game hay lỗi out of bounds.
+- Quà mốc chỉ được trao duy nhất 1 lần, chống hoàn toàn trùng lặp dữ liệu.
+- Cả Client (`kpah_mod_v1.0.0.1.jar`) và Server (`KPAH.jar`) biên dịch thành công 100%.
+
+---

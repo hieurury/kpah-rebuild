@@ -35,7 +35,7 @@ public class UseItemService {
         if (potion == null || potion.getQuantity() <= 0) {
             return;
         }
-        if (!Util.canDoWithTime(player.getInventory().getLastTimeUsePotion()[id], potion.getTemplate().getDelay())
+        if (!Util.canDoWithTime(player.getInventory().getLastTimeUsePotion(id), potion.getTemplate().getDelay())
                 || (player.getPoint().isFullHp() && potion.isHpAverage())
                 || (player.getPoint().isFullMp() && potion.isMpAverage())
                 || (potion.isHpAverage() && !Util.canDoWithTime(player.getInventory().getLastTimeUseHpPotion(), 10000L))
@@ -44,13 +44,11 @@ public class UseItemService {
             return;
         }
         long now = System.currentTimeMillis();
-        player.getInventory().getLastTimeUsePotion()[id] = now;
+        player.getInventory().setLastTimeUsePotion(id, now);
         if (potion.isHpAverage()) {
             player.getInventory().setLastTimeUseHpPotion(now);
             for (short hpId : new short[]{1, 2, 3, 21, 22, 93, 94}) {
-                if (hpId < player.getInventory().getLastTimeUsePotion().length) {
-                    player.getInventory().getLastTimeUsePotion()[hpId] = now;
-                }
+                player.getInventory().setLastTimeUsePotion(hpId, now);
             }
             short valueAdd = (short) Manager.getMpHpPlus(0, id);
             player.getPoint().plusHp(valueAdd);
@@ -59,9 +57,7 @@ public class UseItemService {
         } else if (potion.isMpAverage()) {
             player.getInventory().setLastTimeUseMpPotion(now);
             for (short mpId : new short[]{4, 5, 6, 23, 24, 95, 96}) {
-                if (mpId < player.getInventory().getLastTimeUsePotion().length) {
-                    player.getInventory().getLastTimeUsePotion()[mpId] = now;
-                }
+                player.getInventory().setLastTimeUsePotion(mpId, now);
             }
             short valueAdd = (short) Manager.getMpHpPlus(1, id);
             player.getPoint().plusMp(valueAdd);

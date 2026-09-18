@@ -18,78 +18,7 @@ public class MsgHandler {
 			}
 			case 16:
 			case 19: {
-				if (class_hw.Y < 256) {
-					class_hw.Y = 256;
-				}
-				if (class_sc.l == null || class_sc.l.length < 256) {
-					class_ub[] newL = new class_ub[256];
-					if (class_sc.l != null) {
-						System.arraycopy(class_sc.l, 0, newL, 0, class_sc.l.length);
-					}
-					for (int i = 0; i < 256; i++) {
-						if (newL[i] == null) {
-							newL[i] = new class_ub();
-							newL[i].d = (short) i;
-							newL[i].g = "";
-							newL[i].h = "";
-						}
-					}
-					class_sc.l = newL;
-				} else {
-					for (int i = 0; i < class_sc.l.length; i++) {
-						if (class_sc.l[i] == null) {
-							class_sc.l[i] = new class_ub();
-							class_sc.l[i].d = (short) i;
-							class_sc.l[i].g = "";
-							class_sc.l[i].h = "";
-						}
-					}
-				}
-				if (class_sc.l[106] != null && (class_sc.l[106].g == null || class_sc.l[106].g.length() == 0)) {
-					class_sc.l[106].e = 68;
-					class_sc.l[106].g = "Rương Tinh Anh (Bậc 1)\nMở nhận: Lượng, Tinh anh huyết Sơ Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv1-9.";
-				}
-				if (class_sc.l[160] != null && (class_sc.l[160].g == null || class_sc.l[160].g.length() == 0)) {
-					class_sc.l[160].e = 68;
-					class_sc.l[160].g = "Rương Tinh Anh (Bậc 2)\nMở nhận: Lượng, Tinh anh huyết Trung Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv10-19.";
-				}
-				if (class_sc.l[161] != null && (class_sc.l[161].g == null || class_sc.l[161].g.length() == 0)) {
-					class_sc.l[161].e = 67;
-					class_sc.l[161].g = "Rương Tinh Anh (Bậc 3)\nMở nhận: Lượng, Tinh anh huyết Cao Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv20-29.";
-				}
-				if (class_sc.l[162] != null && (class_sc.l[162].g == null || class_sc.l[162].g.length() == 0)) {
-					class_sc.l[162].e = 67;
-					class_sc.l[162].g = "Rương Tinh Anh (Bậc 4)\nMở nhận: Lượng, Tinh anh huyết Siêu Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv30-35.";
-				}
-				// Khóa hồi chiêu 10 giây cho toàn bộ bình HP và MP trên client
-				int[] allHpPots = {1, 2, 3, 21, 22, 93, 94};
-				for (int i = 0; i < allHpPots.length; i++) {
-					if (allHpPots[i] < class_sc.l.length && class_sc.l[allHpPots[i]] != null) {
-						class_sc.l[allHpPots[i]].c = 10000;
-					}
-				}
-				int[] allMpPots = {4, 5, 6, 23, 24, 95, 96};
-				for (int i = 0; i < allMpPots.length; i++) {
-					if (allMpPots[i] < class_sc.l.length && class_sc.l[allMpPots[i]] != null) {
-						class_sc.l[allMpPots[i]].c = 10000;
-					}
-				}
-				if (class_acv.s != null && class_acv.s.q != null) {
-					if (class_acv.s.q.bs == null || class_acv.s.q.bs.length < 256) {
-						long[] newBs = new long[256];
-						if (class_acv.s.q.bs != null) {
-							System.arraycopy(class_acv.s.q.bs, 0, newBs, 0, class_acv.s.q.bs.length);
-						}
-						class_acv.s.q.bs = newBs;
-					}
-					if (class_acv.s.q.bq == null || class_acv.s.q.bq.length < 256) {
-						int[] newBq = new int[256];
-						if (class_acv.s.q.bq != null) {
-							System.arraycopy(class_acv.s.q.bq, 0, newBq, 0, class_acv.s.q.bq.length);
-						}
-						class_acv.s.q.bq = newBq;
-					}
-				}
+				ensurePotionCapacity();
 				break;
 			}
 			case 22: {
@@ -587,7 +516,8 @@ public class MsgHandler {
 				ex.printStackTrace();
 			}
 
-			if (msg.a == 25 || msg.a == 4 || msg.a == 19 || msg.a == 11) {
+			if (msg.a == 1 || msg.a == 16 || msg.a == 19 || msg.a == 25 || msg.a == 4 || msg.a == 11) {
+				ensurePotionCapacity();
 				updateMaterialVisuals();
 			}
 		} catch (IOException e) {
@@ -716,5 +646,86 @@ public class MsgHandler {
 			return (class_hw) vh;
 		}
 		return null;
+	}
+
+	public static void ensurePotionCapacity() {
+		try {
+			if (class_hw.Y < 256) {
+				class_hw.Y = 256;
+			}
+			if (class_sc.l == null || class_sc.l.length < 256) {
+				class_ub[] newL = new class_ub[256];
+				if (class_sc.l != null) {
+					System.arraycopy(class_sc.l, 0, newL, 0, class_sc.l.length);
+				}
+				for (int i = 0; i < 256; i++) {
+					if (newL[i] == null) {
+						newL[i] = new class_ub();
+						newL[i].d = (short) i;
+						newL[i].g = "";
+						newL[i].h = "";
+					}
+				}
+				class_sc.l = newL;
+			} else {
+				for (int i = 0; i < class_sc.l.length; i++) {
+					if (class_sc.l[i] == null) {
+						class_sc.l[i] = new class_ub();
+						class_sc.l[i].d = (short) i;
+						class_sc.l[i].g = "";
+						class_sc.l[i].h = "";
+					}
+				}
+			}
+			if (class_sc.l[106] != null && (class_sc.l[106].g == null || class_sc.l[106].g.length() == 0)) {
+				class_sc.l[106].e = 68;
+				class_sc.l[106].g = "Rương Tinh Anh (Bậc 1)\nMở nhận: Lượng, Tinh anh huyết Sơ Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv1-9.";
+			}
+			if (class_sc.l[160] != null && (class_sc.l[160].g == null || class_sc.l[160].g.length() == 0)) {
+				class_sc.l[160].e = 68;
+				class_sc.l[160].g = "Rương Tinh Anh (Bậc 2)\nMở nhận: Lượng, Tinh anh huyết Trung Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv10-19.";
+			}
+			if (class_sc.l[161] != null && (class_sc.l[161].g == null || class_sc.l[161].g.length() == 0)) {
+				class_sc.l[161].e = 67;
+				class_sc.l[161].g = "Rương Tinh Anh (Bậc 3)\nMở nhận: Lượng, Tinh anh huyết Cao Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv20-29.";
+			}
+			if (class_sc.l[162] != null && (class_sc.l[162].g == null || class_sc.l[162].g.length() == 0)) {
+				class_sc.l[162].e = 67;
+				class_sc.l[162].g = "Rương Tinh Anh (Bậc 4)\nMở nhận: Lượng, Tinh anh huyết Siêu Cấp, Bình thuốc, Nguyên liệu, Vũ khí Lv30-35.";
+			}
+			if (class_sc.l[165] != null && (class_sc.l[165].g == null || class_sc.l[165].g.length() == 0)) {
+				class_sc.l[165].e = 67;
+				class_sc.l[165].g = "Rương Kho Báu (Cấp 30)\nMở ra nhận đủ nguyên liệu chế trọn bộ trang bị cấp 30 và vũ khí cấp 31 Nhất phẩm.";
+			}
+			// Khóa hồi chiêu 10 giây cho toàn bộ bình HP và MP trên client
+			int[] allHpPots = {1, 2, 3, 21, 22, 93, 94};
+			for (int i = 0; i < allHpPots.length; i++) {
+				if (allHpPots[i] < class_sc.l.length && class_sc.l[allHpPots[i]] != null) {
+					class_sc.l[allHpPots[i]].c = 10000;
+				}
+			}
+			int[] allMpPots = {4, 5, 6, 23, 24, 95, 96};
+			for (int i = 0; i < allMpPots.length; i++) {
+				if (allMpPots[i] < class_sc.l.length && class_sc.l[allMpPots[i]] != null) {
+					class_sc.l[allMpPots[i]].c = 10000;
+				}
+			}
+			if (class_acv.s != null && class_acv.s.q != null) {
+				if (class_acv.s.q.bs == null || class_acv.s.q.bs.length < 256) {
+					long[] newBs = new long[256];
+					if (class_acv.s.q.bs != null) {
+						System.arraycopy(class_acv.s.q.bs, 0, newBs, 0, class_acv.s.q.bs.length);
+					}
+					class_acv.s.q.bs = newBs;
+				}
+				if (class_acv.s.q.bq == null || class_acv.s.q.bq.length < 256) {
+					int[] newBq = new int[256];
+					if (class_acv.s.q.bq != null) {
+						System.arraycopy(class_acv.s.q.bq, 0, newBq, 0, class_acv.s.q.bq.length);
+					}
+					class_acv.s.q.bq = newBq;
+				}
+			}
+		} catch (Exception ignored) {}
 	}
 }

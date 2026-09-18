@@ -26,16 +26,18 @@ public class EventService {
      * 3. Vòng lặp định kỳ nếu đang có quà hẹn gửi lại sau 1 giờ.
      */
     public void checkAndAutoDeliverGifts(@NonNull Player player) {
-        try {
-            if (player.getSession() == null || player.isDie()) {
-                return;
+        synchronized (player) {
+            try {
+                if (player.getSession() == null || player.isDie()) {
+                    return;
+                }
+
+                // 1. Quà mốc Cấp 30: 1 Rương Kho Báu Cấp 30 (ID 165)
+                checkLevel30MilestoneGift(player);
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            // 1. Quà mốc Cấp 30: 1 Rương Kho Báu Cấp 30 (ID 165)
-            checkLevel30MilestoneGift(player);
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -62,12 +64,12 @@ public class EventService {
         boolean canAddPotion = canStack || !player.getInventory().isFullInventory();
 
         if (canAddPotion) {
+            // Đánh dấu đã nhận vĩnh viễn TRƯỚC để chặn mọi luồng đồng thời
+            player.getQuestData().claimGift(GIFT_LV30);
+
             // Trao 1 Rương Kho Báu Cấp 30 vào hành trang
             InventoryService.instance.addItemPotion(player, ItemService.instance.createNewItemPotion((short) 165, 1));
             InventoryService.instance.sendItemPotion(player);
-
-            // Đánh dấu đã nhận vĩnh viễn
-            player.getQuestData().claimGift(GIFT_LV30);
 
             // Gửi popup chúc mừng trang trọng từ hệ thống
             String popupMsg = "🎉 CHÚC MỪNG DŨNG SĨ ĐẠT CẤP 30! 🎉\n"

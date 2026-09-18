@@ -111,6 +111,7 @@ public class Player {
     }
 
     public void setUp() {
+        this.lastTimeCheckEvents = System.currentTimeMillis();
         sundry.setLastTimeUpdateDatabase(System.currentTimeMillis());
         this.sundry.setInGame(true);
         this.otherMobInside = new ArrayList<>();

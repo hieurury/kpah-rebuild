@@ -37,11 +37,24 @@ public class Inventory {
     private List<ItemAnimal> itemAnimalExpiry;
 
     @Builder.Default
-    private final long[] lastTimeUsePotion = new long[Manager.POTION_TEMPLATES.size()];
+    private final long[] lastTimeUsePotion = new long[1000];
     @Builder.Default
     private long lastTimeUseHpPotion = 0;
     @Builder.Default
     private long lastTimeUseMpPotion = 0;
+
+    public long getLastTimeUsePotion(short id) {
+        if (id < 0 || id >= lastTimeUsePotion.length) {
+            return 0;
+        }
+        return lastTimeUsePotion[id];
+    }
+
+    public void setLastTimeUsePotion(short id, long time) {
+        if (id >= 0 && id < lastTimeUsePotion.length) {
+            lastTimeUsePotion[id] = time;
+        }
+    }
 
     public void initIdItem() {
         maxIdItem = Short.MIN_VALUE;
