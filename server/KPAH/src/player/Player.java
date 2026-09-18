@@ -28,12 +28,15 @@ import consts.Const;
 import consts.ItemEquipConst;
 import deposite.Deposite;
 import services.ChangeMapService;
+import services.EventService;
 import utils.Logger;
 import utils.Util;
 
 @Data
 @Builder
 public class Player {
+
+    private long lastTimeCheckEvents;
 
     private ISession session;
     private int idDatabase;
@@ -346,6 +349,10 @@ public class Player {
         if (sundry.isOnBoard() && Util.canDoWithTime(sundry.getLastTimeOnBoard(), 2000)) {
             sundry.setOnBoard(false);
             ChangeMapService.instance.changeMap(this, (short) 10, (short) 1015, (short) 2020);
+        }
+        if (Util.canDoWithTime(lastTimeCheckEvents, 30000L)) {
+            lastTimeCheckEvents = System.currentTimeMillis();
+            EventService.instance.checkAndAutoDeliverGifts(this);
         }
     }
 

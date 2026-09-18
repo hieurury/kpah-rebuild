@@ -73,3 +73,55 @@
 
 ---
 
+## [2026-09-18 17:05] — Task #122: Chuẩn Hóa Hệ Thống Font Dame (Tím Cho Độc, Vàng Cho Lan Sét & Các Loại Khác) & Tích Hợp Hiệu Ứng Tia Sét Lan (class_dn)
+
+**Yêu cầu:**
+1. Hiệu ứng sét lan: Khi kẻ địch bị Nhiễm điện bị đánh trúng và lan sét sang kẻ địch khác, hiển thị hiệu ứng tia sét phóng từ kẻ địch nguồn sang kẻ địch nhận đòn (theo cơ chế tia sét của Skill 6 bằng `class_dn`).
+2. Chuẩn hóa font dame: 
+   - Font tím (`FONT_POISON`) **chỉ áp dụng duy nhất cho sát thương độc**.
+   - Font trắng (`FONT_WHITE`) dành riêng cho sát thương chuẩn (True damage).
+   - Tất cả các loại sát thương còn lại (phản đòn, sét lan, sát thương bổ sung...) **đều dùng font vàng** (`FONT_YELLOW`).
+   - Sửa lỗi dame sét lan trước đó hiển thị font tím (do gửi qua kênh DoT độc).
+
+**Files thay đổi:**
+- `game/app/src/classes/Paint.java` — Điều chỉnh `addStatusPopup`: chỉ `POPUP_POISON` dùng font tím, `POPUP_TRUE_DAMAGE` dùng font trắng, toàn bộ các loại dame khác mặc định dùng `FONT_YELLOW`. Bổ sung method `addYellowDamage`.
+- `game/app/src/classes/MsgHandler.java` — Xử lý packet `BUFF_ATTACK` với mã định danh `b4 = -7` (sét lan): đọc `sourceId`, xác định tọa độ nguồn & đích, tạo hiệu ứng tia sét `class_dn` nối giữa 2 mục tiêu, tạo tia lửa nổ tại đích (`class_abm.a(..., 11)`) và hiển thị dame nhận vào bằng font vàng.
+- `server/KPAH/src/services/BuffService.java` — Thêm 2 method `sendChainLightningMob` và `sendChainLightningPlayer` gửi packet `BUFF_ATTACK` với `b4 = -7` mang theo `sourceId`.
+- `server/KPAH/src/services/SkillService.java` — Trong `triggerChainLightningMob` và `triggerChainLightningPlayer`, chuyển từ `sendSubHpByBuffInfluence` sang `sendChainLightningMob` và `sendChainLightningPlayer`.
+- `server/update_skills_kiem_khach.sql` — Hiệu chỉnh đúng bảng `skill_news` và tên cột `decript`.
+
+**Kết quả:** ✅ Thành công
+- Hiệu ứng tia sét lan `class_dn` hiển thị chuẩn xác giữa các mục tiêu khi kích hoạt Nhiễm điện.
+- Sát thương sét lan hiển thị số màu vàng viền đen nổi bật.
+- Cả Client (`kpah_mod_v1.0.0.1.jar`) và Server (`KPAH.jar`) biên dịch thành công 100%.
+
+---
+
+## [2026-09-18 17:45] — Task #123: Xây Dựng Hệ Thống Sự Kiện & Quà Tặng Tự Động (Event & Gift System) — Mốc Thưởng Cấp 30
+
+**Yêu cầu:**
+1. Bổ sung hệ thống sự kiện và quà tặng vào trò chơi, hỗ trợ tổ chức sự kiện, cấu hình và trao quà tự động.
+2. Tạo phần thưởng mốc đầu tiên:
+   - Điều kiện nhận: Nhân vật đạt Cấp 30 (`level >= 30`).
+   - Hình thức nhận: **Tự động 100%**, hệ thống gửi popup chúc mừng trang trọng và trao quà thẳng vào hành trang nhân vật ngay khi thăng cấp hoặc đăng nhập.
+   - Xử lý hành trang đầy: Nếu hành trang đầy hoặc có vấn đề không gửi được, hệ thống sẽ gửi popup nhắc nhở và **hẹn tự động gửi lại sau 1 giờ** (`retry after 1 hour`).
+   - Phần thưởng: 1 Rương Kho Báu (Cấp 30) (ItemPotion ID 165, icon 67).
+   - Mở rương: Nhận đủ 100% nguyên liệu chế trọn bộ set đồ Cấp 30 Nhất phẩm (8 món) và 1 vũ khí Cấp 31 Nhất phẩm theo môn phái nhân vật (Cận chiến: Kiếm khách/Chiến binh/Đấu sĩ; Tầm xa/phép: Pháp sư/Cung thủ) cùng 45 Ngọc rèn (5 viên x 9 món).
+   - **Ràng buộc đặc biệt:** Quà hoàn toàn **không kèm theo xu** (chỉ có nguyên liệu và ngọc rèn).
+
+**Files thay đổi:**
+- `server/KPAH/src/player/QuestData.java` — Lưu trữ danh sách mã quà đã nhận (`claimedGifts`) và thời gian hẹn gửi lại (`giftRetryTimers`), tích hợp serialize/deserialize JSON vào database MySQL.
+- `server/KPAH/src/manager/Manager.java` — Đăng ký template `potion_template` ID 165 (Rương Kho Báu Cấp 30, icon 67) và tự động insert/update vào database khi khởi động server.
+- `server/KPAH/src/services/UseItemService.java` — Bổ sung `case 165` mở Rương Kho Báu: tính toán chính xác tổng nguyên liệu chế 8 món đồ cấp 30 và vũ khí cấp 31 Nhất phẩm theo class (Vải 360, Da mềm 390, Tơ lụa 21, Da cứng 24, Ngọc 270, Thủy tinh 18, Sắt 120/210, Bạc 6/12, Gỗ 60/150, Sưa 3/9, Ngọc rèn 45), cộng vào túi Gem, không kèm xu, gửi popup chúc mừng.
+- `server/KPAH/src/services/EventService.java` [MỚI] — Service điều phối sự kiện & quà tặng: kiểm tra điều kiện level, trạng thái nhận quà, kiểm tra khoảng trống hành trang, trao rương và gửi popup chúc mừng; hoặc kích hoạt cơ chế hẹn thử lại sau 1 giờ nếu hành trang đầy.
+- `server/KPAH/src/services/MapService.java` — Hook kiểm tra và trao quà tự động ngay khi người chơi thăng cấp (`checkLevelUp`).
+- `server/KPAH/src/services/LoginService.java` — Hook kiểm tra và trao quà tự động ngay khi người chơi đăng nhập hoàn tất vào map.
+- `server/KPAH/src/player/Player.java` — Bổ sung luồng kiểm tra định kỳ (30s) trong vòng lặp `update()` để tự động kích hoạt trao lại quà khi hết thời gian chờ 1 giờ đối với nhân vật đang online.
+- `server/init_events.sql` [MỚI] — Script SQL khởi tạo `potion_template` ID 165 vào database.
+
+**Kết quả:** ✅ Thành công
+- Hệ thống sự kiện hoạt động tự động hoàn toàn, trao quà chính xác khi đạt cấp 30 hoặc hẹn lại sau 1 giờ khi đầy hành trang.
+- Mở rương nhận đúng và đủ 100% nguyên liệu chế tạo set đồ 30 và vũ khí cấp 31 Nhất phẩm, không có xu.
+- Cả Client (`kpah_mod_v1.0.0.1.jar`) và Server (`KPAH.jar`) biên dịch thành công 100%.
+
+---

@@ -62,6 +62,7 @@ public class LoginService {
                         ExecutorVirtualThread.submitThreadPlayer(pl.updatePlayer());
                         ChangeMapService.instance.changeMap(pl, pl.getLocation().getZone(), pl.getLocation().getX(), pl.getLocation().getY());
                         utils.ServerLog.auth("Nhân vật '%s' (ID: %d, Cấp: %d) vào game thành công (Session #%d)", pl.getName(), pl.getIdPlayer(), pl.getInfo().getLevel(), session.getID());
+                        EventService.instance.checkAndAutoDeliverGifts(pl);
                     }
                 }
             }

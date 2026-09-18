@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import lombok.Data;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import utils.Util;
 
@@ -29,6 +30,30 @@ public class QuestData {
     public long totalPixelsTraveled = 0;
     public int totalItemsSold = 0;
     public String claimedDailyLogin = "";
+
+    // Hệ thống Quà Tặng & Sự Kiện
+    public java.util.Set<String> claimedGifts = new java.util.HashSet<>();
+    public java.util.Map<String, Long> giftRetryTimers = new java.util.HashMap<>();
+
+    public boolean isGiftClaimed(String giftId) {
+        return claimedGifts != null && claimedGifts.contains(giftId);
+    }
+
+    public void claimGift(String giftId) {
+        if (claimedGifts == null) claimedGifts = new java.util.HashSet<>();
+        claimedGifts.add(giftId);
+        if (giftRetryTimers != null) giftRetryTimers.remove(giftId);
+    }
+
+    public boolean canRetryGift(String giftId) {
+        if (giftRetryTimers == null || !giftRetryTimers.containsKey(giftId)) return true;
+        return System.currentTimeMillis() >= giftRetryTimers.get(giftId);
+    }
+
+    public void setGiftRetry(String giftId, long delayMs) {
+        if (giftRetryTimers == null) giftRetryTimers = new java.util.HashMap<>();
+        giftRetryTimers.put(giftId, System.currentTimeMillis() + delayMs);
+    }
 
     public static QuestData parse(String jsonString) {
         QuestData data = new QuestData();
@@ -70,6 +95,20 @@ public class QuestData {
                     data.dailyTargets.put(Byte.parseByte(key), dt.getInt(key));
                 }
             }
+            if (obj.has("claimedGifts")) {
+                org.json.JSONArray cg = obj.getJSONArray("claimedGifts");
+                for (int i = 0; i < cg.length(); i++) {
+                    data.claimedGifts.add(cg.getString(i));
+                }
+            }
+            if (obj.has("giftRetryTimers")) {
+                JSONObject grt = obj.getJSONObject("giftRetryTimers");
+                Iterator<String> keys = grt.keys();
+                while (keys.hasNext()) {
+                    String key = keys.next();
+                    data.giftRetryTimers.put(key, grt.getLong(key));
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -105,6 +144,18 @@ public class QuestData {
                 dt.put(String.valueOf(entry.getKey()), entry.getValue());
             }
             obj.put("dailyTargets", dt);
+
+            org.json.JSONArray cg = new org.json.JSONArray();
+            for (String g : claimedGifts) {
+                cg.put(g);
+            }
+            obj.put("claimedGifts", cg);
+
+            JSONObject grt = new JSONObject();
+            for (Map.Entry<String, Long> entry : giftRetryTimers.entrySet()) {
+                grt.put(entry.getKey(), entry.getValue());
+            }
+            obj.put("giftRetryTimers", grt);
         } catch (Exception e) {
             e.printStackTrace();
         }

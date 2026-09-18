@@ -432,6 +432,7 @@ public class MapService {
             MapService.instance.onLevelUp(pl);
             Service.instance.sendMainCharInfo(pl);
             utils.ServerLog.levelUp(pl.getName(), pl.getIdPlayer(), pl.getInfo().getLevel());
+            EventService.instance.checkAndAutoDeliverGifts(pl);
         }
     }
 

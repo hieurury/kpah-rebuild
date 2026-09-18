@@ -1155,7 +1155,8 @@ public class Manager {
                         + "(108, 'Tinh anh huyết (Sơ Cấp)\\nSử dụng nhận 35.000 kinh nghiệm.', 'binhkntinhanhsocap', 40, 1000, 1, 100, 0), "
                         + "(109, 'Tinh anh huyết (Trung Cấp)\\nSử dụng nhận 250.000 kinh nghiệm.', 'binhkntinhanhtrungcap', 40, 1000, 1, 200, 0), "
                         + "(110, 'Tinh anh huyết (Cao Cấp)\\nSử dụng nhận 900.000 kinh nghiệm.', 'binhkntinhanhcaocap', 40, 1000, 1, 500, 0), "
-                        + "(111, 'Tinh anh huyết (Siêu Cấp)\\nSử dụng nhận 2.200.000 kinh nghiệm.', 'binhkntinhanhsieucap', 40, 1000, 1, 1000, 0) "
+                        + "(111, 'Tinh anh huyết (Siêu Cấp)\\nSử dụng nhận 2.200.000 kinh nghiệm.', 'binhkntinhanhsieucap', 40, 1000, 1, 1000, 0), "
+                        + "(165, 'Rương Kho Báu (Cấp 30)\\nMở ra nhận đủ nguyên liệu chế trọn bộ trang bị cấp 30 và vũ khí cấp 31 Nhất phẩm.', 'ruongkhobau30', 67, 0, 1, 0, 0) "
                         + "ON DUPLICATE KEY UPDATE `name` = VALUES(`name`), `idImage` = VALUES(`idImage`), `isTrade` = VALUES(`isTrade`);");
             } catch (Exception ignored) {}
             rs = HikariCP.executeQuery("SELECT * FROM `potion_template`");
@@ -1183,6 +1184,7 @@ public class Manager {
             ensurePotionTemplate((short) 109, "Tinh anh huyết (Trung Cấp)\nSử dụng nhận 250.000 kinh nghiệm.", "binhkntinhanhtrungcap", (byte) 40, (short) 1000, true, (short) 200, (short) 0);
             ensurePotionTemplate((short) 110, "Tinh anh huyết (Cao Cấp)\nSử dụng nhận 900.000 kinh nghiệm.", "binhkntinhanhcaocap", (byte) 40, (short) 1000, true, (short) 500, (short) 0);
             ensurePotionTemplate((short) 111, "Tinh anh huyết (Siêu Cấp)\nSử dụng nhận 2.200.000 kinh nghiệm.", "binhkntinhanhsieucap", (byte) 40, (short) 1000, true, (short) 1000, (short) 0);
+            ensurePotionTemplate((short) 165, "Rương Kho Báu (Cấp 30)\nMở ra nhận đủ nguyên liệu chế trọn bộ trang bị cấp 30 và vũ khí cấp 31 Nhất phẩm.", "ruongkhobau30", (byte) 67, (short) 0, true, (short) 0, (short) 0);
             // </editor-fold>
 
             Printer.printGreen(String.format("Finish Load Potion Template [%s]", POTION_TEMPLATES.size()));

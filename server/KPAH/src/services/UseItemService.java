@@ -182,6 +182,9 @@ public class UseItemService {
                 case 106, 160, 161, 162 -> {
                     openEliteChest(player, potion);
                 }
+                case 165 -> {
+                    openLevel30Chest(player, potion);
+                }
                 case 107 -> {
                     player.setBuffTinhAnh(180000L); // Hiệu lực 3 phút (180 giây)
                     player.getPoint().initPoint();
@@ -265,6 +268,76 @@ public class UseItemService {
         ChatService.instance.sendChatOnlyMe(player, "Bạn nhận được " + Util.formatNumber(expAdd) + " điểm kinh nghiệm!");
         utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã sử dụng [%s] nhận được %s kinh nghiệm.",
                 player.getName(), player.getIdPlayer(), potion.getTemplate().getName().split("\n")[0], Util.formatNumber(expAdd));
+    }
+
+    private void openLevel30Chest(@NonNull Player player, @NonNull ItemPotion chest) throws IOException {
+        // Trừ 1 rương kho báu
+        InventoryService.instance.minusQuantityItemPotion(player, chest, (short) 1);
+
+        // 8 món trang bị cấp 30 Nhất phẩm (Rank 1):
+        // Vải (ID 68): 360, Da mềm (ID 96): 390, Tơ lụa (ID 103): 21, Da cứng (ID 131): 24
+        // Ngọc (ID 82): 270, Thủy tinh (ID 117): 18, Sắt (ID 75): 120, Bạc (ID 110): 6
+        // Gỗ thường (ID 89): 60, Gỗ sưa (ID 124): 3, Ngọc rèn (ID 74): 45 (9 món x 5 viên)
+        short vaiQty = 360;
+        short daMemQty = 390;
+        short toLuaQty = 21;
+        short daCungQty = 24;
+        short ngocQty = 270;
+        short thuyTinhQty = 18;
+        short ngocRenQty = 45;
+
+        short satQty = 120;
+        short bacQty = 6;
+        short goQty = 60;
+        short suaQty = 3;
+
+        byte classChar = player.getInfo().getClassPlayer();
+        boolean isMelee = (classChar == consts.Const.KIEM_KHACH || classChar == consts.Const.CHIEN_BINH || classChar == consts.Const.DAU_SI);
+
+        if (isMelee) {
+            // Vũ khí cận chiến cấp 31: Sắt 90, Gỗ 60, Bạc 6, Gỗ sưa 3
+            satQty += 90; // = 210
+            goQty += 60;  // = 120
+            bacQty += 6;  // = 12
+            suaQty += 3;  // = 6
+        } else {
+            // Vũ khí tầm xa/phép cấp 31: Gỗ 90, Sắt 60, Gỗ sưa 6, Bạc 3
+            goQty += 90;  // = 150
+            satQty += 60; // = 180
+            suaQty += 6;  // = 9
+            bacQty += 3;  // = 9
+        }
+
+        // Trao tất cả nguyên liệu vào hành trang nguyên liệu (ItemGem)
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 68, vaiQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 96, daMemQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 103, toLuaQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 131, daCungQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 82, ngocQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 117, thuyTinhQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 75, satQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 110, bacQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 89, goQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 124, suaQty));
+        InventoryService.instance.addItemGem(player, ItemService.instance.createNewItemGem((short) 74, ngocRenQty));
+
+        // Cập nhật client
+        InventoryService.instance.sendItemPotion(player);
+        InventoryService.instance.sendItemGem(player);
+        Service.instance.sendMainCharInfo(player);
+
+        String msg = "Chúc mừng bạn đã mở [Rương Kho Báu (Cấp 30)]!\n"
+                + "Đã nhận đủ nguyên liệu chế trọn bộ set đồ Cấp 30 và vũ khí Cấp 31 Nhất phẩm gồm:\n"
+                + "• Vải: " + vaiQty + ", Da mềm: " + daMemQty + "\n"
+                + "• Tơ lụa: " + toLuaQty + ", Da cứng: " + daCungQty + "\n"
+                + "• Ngọc: " + ngocQty + ", Thủy tinh: " + thuyTinhQty + "\n"
+                + "• Sắt: " + satQty + ", Bạc: " + bacQty + "\n"
+                + "• Gỗ thường: " + goQty + ", Gỗ sưa: " + suaQty + "\n"
+                + "• Ngọc rèn: " + ngocRenQty + " viên\n"
+                + "Hãy tới gặp Thợ Rèn Thần Bí để bắt đầu chế tạo!";
+        Service.instance.sendLogOut(player.getSession(), msg);
+        ChatService.instance.sendChatOnlyMe(player, "Đã mở Rương Kho Báu (Cấp 30) nhận đủ nguyên liệu chế trọn bộ đồ cấp 30 và vũ khí cấp 31 Nhất phẩm!");
+        utils.ServerLog.combat("Nhân vật '%s' (ID: %d) đã mở [Rương Kho Báu (Cấp 30)]", player.getName(), player.getIdPlayer());
     }
 
     private void openEliteChest(@NonNull Player player, @NonNull ItemPotion chest) throws IOException {
