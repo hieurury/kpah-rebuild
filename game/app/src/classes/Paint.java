@@ -339,14 +339,21 @@ public class Paint {
 	public static final int POPUP_HP = 1;
 	public static final int POPUP_MP = 2;
 	public static final int POPUP_POISON = 3;
+	public static final int POPUP_REFLECT = 4;
+	public static final int POPUP_TRUE_DAMAGE = 5;
+	public static final int POPUP_TEXT_ONLY = 6;
 
 	public static final int FONT_RED = 1;
 	public static final int FONT_BLUE = 2;
 	public static final int FONT_POISON = 3;
+	public static final int FONT_YELLOW = 4;
+	public static final int FONT_WHITE = 5;
 
 	private static javax.microedition.lcdui.Image imgFsRed;
 	private static javax.microedition.lcdui.Image imgFsBlue;
 	private static javax.microedition.lcdui.Image imgFsPoison;
+	private static javax.microedition.lcdui.Image imgFsYellow;
+	private static javax.microedition.lcdui.Image imgFssWhite;
 
 	private static final String FS_CHARS = "0123456789+-%$:abcdefghijklmnopqrstuvwxyz@/";
 	private static final byte[] FS_WIDTHS = new byte[]{
@@ -358,12 +365,46 @@ public class Paint {
 		5                             // /
 	};
 
+	private static final String FSS_CHARS = "0123456789+-./abcdefghijklmnopqrstuvwxyz:@ ";
+
 	/**
-	 * Vẽ chuỗi ký tự bằng Bitmap Font 8px pixel art (đồng bộ kích cỡ với font EXP)
+	 * Vẽ chuỗi ký tự bằng Bitmap Font 8px pixel art hoặc Font 5px FssWhite
 	 */
 	public static void drawFsString(Graphics g, int fontType, String str, int x, int y, int align) {
 		if (str == null || str.length() == 0) return;
 		try {
+			if (fontType == FONT_WHITE) {
+				if (imgFssWhite == null) imgFssWhite = javax.microedition.lcdui.Image.createImage("/font/fss_white.png");
+				if (imgFssWhite == null) return;
+
+				int totalW = 0;
+				int len = str.length();
+				for (int i = 0; i < len; i++) {
+					char c = Character.toLowerCase(str.charAt(i));
+					int idx = FSS_CHARS.indexOf(c);
+					totalW += (idx >= 0 ? 4 : 3);
+				}
+
+				int startX = x;
+				if ((align & Graphics.HCENTER) != 0 || align == 2) {
+					startX = x - (totalW >> 1);
+				} else if ((align & Graphics.RIGHT) != 0 || align == 1) {
+					startX = x - totalW;
+				}
+
+				for (int i = 0; i < len; i++) {
+					char c = Character.toLowerCase(str.charAt(i));
+					int idx = FSS_CHARS.indexOf(c);
+					if (idx >= 0) {
+						g.drawRegion(imgFssWhite, 0, idx * 5, 4, 5, 0, startX, y, 20);
+						startX += 4;
+					} else {
+						startX += 3;
+					}
+				}
+				return;
+			}
+
 			javax.microedition.lcdui.Image fontImg = null;
 			if (fontType == FONT_RED) {
 				if (imgFsRed == null) imgFsRed = javax.microedition.lcdui.Image.createImage("/font/fs_red.png");
@@ -374,6 +415,9 @@ public class Paint {
 			} else if (fontType == FONT_POISON) {
 				if (imgFsPoison == null) imgFsPoison = javax.microedition.lcdui.Image.createImage("/font/fs_poison.png");
 				fontImg = imgFsPoison;
+			} else if (fontType == FONT_YELLOW) {
+				if (imgFsYellow == null) imgFsYellow = javax.microedition.lcdui.Image.createImage("/font/fs_yellow.png");
+				fontImg = imgFsYellow;
 			}
 
 			if (fontImg == null) return;
@@ -435,11 +479,12 @@ public class Paint {
 	 * HP: "+10" hoặc "-10" màu Đỏ (fs_red)
 	 * MP: "+10" hoặc "-10" màu Xanh dương (fs_blue)
 	 * Độc: "-10" màu Tím (fs_poison)
-	 * Kích cỡ chữ nhỏ 8px bằng đúng font EXP của game
+	 * Phản đòn: "-10" màu Vàng (fs_yellow)
+	 * Sát thương chuẩn: "-10" màu Trắng (fss_white)
 	 */
 	public static void addStatusPopup(int type, int value, int worldX, int worldY) {
 		try {
-			if (value == 0) return;
+			if (value == 0 && type != POPUP_TEXT_ONLY) return;
 			if (statusPopups.size() > 25) {
 				statusPopups.removeElementAt(0);
 			}
@@ -450,6 +495,10 @@ public class Paint {
 				fontType = FONT_RED; // Đỏ nguyên bản KPAH
 			} else if (type == POPUP_MP) {
 				fontType = FONT_BLUE; // Xanh dương nguyên bản KPAH
+			} else if (type == POPUP_REFLECT) {
+				fontType = FONT_YELLOW; // Vàng phản đòn
+			} else if (type == POPUP_TRUE_DAMAGE) {
+				fontType = FONT_WHITE; // Trắng sát thương chuẩn
 			} else {
 				fontType = FONT_POISON; // Tím nguyên bản KPAH
 			}
@@ -461,6 +510,25 @@ public class Paint {
 
 	public static void addPoisonDamage(int damage, int worldX, int worldY) {
 		addStatusPopup(POPUP_POISON, -damage, worldX, worldY);
+	}
+
+	public static void addReflectDamage(int damage, int worldX, int worldY) {
+		addStatusPopup(POPUP_REFLECT, -damage, worldX, worldY);
+	}
+
+	public static void addTrueDamage(int damage, int worldX, int worldY) {
+		addStatusPopup(POPUP_TRUE_DAMAGE, -damage, worldX, worldY);
+	}
+
+	public static void addTextPopup(String text, int fontType, int worldX, int worldY) {
+		try {
+			if (text == null || text.length() == 0) return;
+			if (statusPopups.size() > 25) {
+				statusPopups.removeElementAt(0);
+			}
+			statusPopups.addElement(new StatusPopup(text, fontType, worldX, worldY));
+		} catch (Exception ignored) {
+		}
 	}
 
 	public static void paintStatusPopups(Graphics g) {

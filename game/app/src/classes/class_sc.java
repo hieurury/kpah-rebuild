@@ -342,40 +342,50 @@ extends class_hw {
                     v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
                     break;
                 case 3:
-                    v.addElement("Kiếm ảnh lôi trảm");
-                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Hồi chiêu: " + (class_qz.a((byte)n, lv) / 1000.0f) + "s");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    int hits = (lv <= 3) ? 3 : Math.min(10, lv);
+                    v.addElement("Kinh lôi bát thủ (Multi-hit: " + hits + " đòn)");
+                    v.addElement("Gây Nhiễm điện 5s lên mục tiêu");
+                    v.addElement("Nhiễm điện trúng đòn: Lan sét 25% sang 2 kẻ kề");
+                    v.addElement("Lan sét xong lập tức mất Nhiễm điện");
+                    v.addElement("Hồi chiêu: 2.0s | MP: " + class_qz.b(n, lv));
                     break;
                 case 4:
-                    v.addElement("Tăng xuyên giáp đòn đánh");
-                    v.addElement("Xuyên giáp: +" + class_qz.a(n, lv));
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
-                    v.addElement("Bị động (Không hồi chiêu)");
+                    int trueDmgBase = 10 + (lv - 1) * 2;
+                    int shockRate = 10 + (lv - 1) * 5;
+                    v.addElement("Hộ sát tiến (Nội tại)");
+                    v.addElement("Gây thêm: " + trueDmgBase + " (+2% Công) ST Chuẩn");
+                    v.addElement("Tỷ lệ gây Nhiễm điện: " + shockRate + "% trong 5s");
+                    v.addElement("ST Chuẩn bỏ qua 100% giáp");
                     break;
                 case 5:
-                    v.addElement("Vận kiếm khí phản đòn");
-                    v.addElement("Tỷ lệ phản: " + (10 + (lv - 1) * 5) + "%");
-                    v.addElement("Phản công: " + (50 + (lv - 1) * 10) + "%");
+                    int dmgRed = 5 + (lv - 1);
+                    int refRate = 25 + (lv - 1) * 5;
+                    int refDmg = 50 + (lv - 1) * 5;
+                    v.addElement("Dĩ lực đáo công (Duy trì 60s)");
+                    v.addElement("Giảm " + dmgRed + "% sát thương nhận vào");
+                    v.addElement("Tỷ lệ phản đòn: " + refRate + "%");
+                    v.addElement("Sát thương phản: " + refDmg + "% Công bản thân");
                     v.addElement("Hồi chiêu: 90s | MP: " + class_qz.b(n, lv));
                     break;
                 case 6:
-                    v.addElement("Gọi sấm sét diện rộng");
+                    v.addElement("Thiên lôi điện trảm (AoE)");
+                    v.addElement("Gây Nhiễm điện 5s cho toàn bộ kẻ địch trúng");
                     v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Hồi chiêu: 5s");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    v.addElement("Hồi chiêu: 5.0s | MP: " + class_qz.b(n, lv));
                     break;
                 case 7:
-                    v.addElement("Sét chuyền nhiều kẻ địch");
-                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Hồi chiêu: 6s");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    int bonusTrueDmg = 20 + (lv - 1) * 2;
+                    v.addElement("Sấm động dương gian (Sét chuyền)");
+                    v.addElement("Nếu mục tiêu Nhiễm điện: Thêm " + bonusTrueDmg + "% ST Chuẩn");
+                    v.addElement("Gây Choáng 1s và lan sét rồi mất Nhiễm điện");
+                    v.addElement("Hồi chiêu: 6.0s | MP: " + class_qz.b(n, lv));
                     break;
                 case 8:
-                    v.addElement("Đại kiếm trảm diện rộng");
-                    v.addElement("Lực công: " + class_qz.a(n, lv) + "%");
-                    v.addElement("Hồi chiêu: 7s");
-                    v.addElement("Mana tiêu hao: " + class_qz.b(n, lv));
+                    v.addElement("Kiếm phi kinh thiên (Cự kiếm trảm sát)");
+                    v.addElement("Mục tiêu Nhiễm điện:");
+                    v.addElement("• Quái thường: Bị DIỆT lập tức (chữ DIET)");
+                    v.addElement("• Player/Tinh Anh/Boss: Chuyển 100% ST Chuẩn");
+                    v.addElement("Hồi chiêu: 7.0s | MP: " + class_qz.b(n, lv));
                     break;
                 default:
                     return null;

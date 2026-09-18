@@ -16,6 +16,7 @@ public final class class_zx extends class_di {
     private static Image armorBreakRingImg = null;
     private static Image blindRingImg = null;
     private static Image deepWoundRingImg = null;
+    private static Image electricAuraImg = null;
 
     public class_zx(int n, int n2, int n3) {
         super(n, n2, n3);
@@ -48,9 +49,40 @@ public final class class_zx extends class_di {
     }
 
     public void a(Graphics graphics) {
-        if (this.h == 22 && this.isDebuff) {
+        if ((this.h == 22 || this.h == 24) && this.isDebuff) {
             Image ringImgToDraw = null;
-            if (this.effectType == 7) {
+            if (this.effectType == 12) {
+                // Hiệu ứng Nhiễm Điện: Vòng hào quang kiếm khí vàng neon (từ effect 24 của Kiếm Khách)
+                if (electricAuraImg == null) {
+                    try {
+                        Image orig = class_yi.d(24);
+                        if (orig == null) orig = class_yi.d(22);
+                        if (orig != null) {
+                            int w = orig.getWidth();
+                            int h = orig.getHeight();
+                            int[] rgb = new int[w * h];
+                            orig.getRGB(rgb, 0, w, 0, 0, w, h);
+                            for (int i = 0; i < rgb.length; i++) {
+                                int p = rgb[i];
+                                int alpha = (p >> 24) & 0xFF;
+                                if (alpha == 0) continue;
+                                int r = (p >> 16) & 0xFF;
+                                int g = (p >> 8) & 0xFF;
+                                int b = p & 0xFF;
+                                int bright = Math.max(r, Math.max(g, b));
+                                int newR = Math.min(255, (int)(bright * 1.05f) + 30);
+                                int newG = Math.min(255, (int)(bright * 0.95f) + 15);
+                                int newB = Math.min(255, (int)(bright * 0.15f));
+                                rgb[i] = (alpha << 24) | (newR << 16) | (newG << 8) | newB;
+                            }
+                            electricAuraImg = Image.createRGBImage(rgb, w, h, true);
+                        }
+                    } catch (Throwable t) {
+                        electricAuraImg = null;
+                    }
+                }
+                ringImgToDraw = electricAuraImg;
+            } else if (this.effectType == 7) {
                 // Hiệu ứng Hóa Đá: Vòng đá xám tro
                 if (stoneRingImg == null) {
                     try {

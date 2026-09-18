@@ -225,6 +225,50 @@ public class MsgHandler {
 						}
 					}
 					return;
+				} else if (b4 == -4) {
+					// Sát thương phản đòn Kiếm Khách (nhảy số Font Vàng)
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								if (s2 > 0) {
+									Paint.addReflectDamage(s2, entity.cK, entity.cL - 35);
+								}
+								break;
+							}
+						}
+					}
+					return;
+				} else if (b4 == -5) {
+					// Sát thương chuẩn True Damage Kiếm Khách (nhảy số Font Trắng)
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								if (s2 > 0) {
+									Paint.addTrueDamage(s2, entity.cK, entity.cL - 35);
+								}
+								break;
+							}
+						}
+					}
+					return;
+				} else if (b4 == -6) {
+					// Tiêu diệt quái thường tức thì (Chiêu 8 Kiếm Khách) -> Nhảy chữ "DIET" không kèm dame
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_zp.a((byte) 5, (int) entity.cK, (int) (entity.cL - 25));
+								if (cat == 1 && entity instanceof class_bb) {
+									((class_bb) entity).v = 0;
+									((class_bb) entity).cE = true;
+								}
+								break;
+							}
+						}
+					}
+					return;
 				} else if (b4 == -3) {
 					// Gỡ bỏ hiệu ứng Độc tức thì (khi bị Độc Nổ rút cạn)
 					if (class_acv.s != null && class_acv.s.l != null) {
@@ -379,6 +423,46 @@ public class MsgHandler {
 								eff.effectType = 11;
 								eff.a(sec);
 								entity.a(eff);
+								break;
+							}
+						}
+					}
+					return;
+				} else if (b4 == 12) {
+					// Áp dụng Nhiễm Điện (BUFF_NHIEM_DIEN - 5s): Aura kiếm khí vàng neon bao quanh
+					int sec = dur > 0 ? dur : 5;
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								class_zx eff = new class_zx(entity.cK, entity.cL, 24);
+								eff.isDebuff = true;
+								eff.effectType = 12;
+								eff.a(sec);
+								entity.a(eff);
+								break;
+							}
+						}
+					}
+					return;
+				} else if (b4 == -12) {
+					// Gỡ bỏ Nhiễm Điện (khi lan sét hoặc hết thời gian)
+					if (class_acv.s != null && class_acv.s.l != null) {
+						for (int i = 0; i < class_acv.s.l.size(); i++) {
+							class_vh entity = (class_vh) class_acv.s.l.elementAt(i);
+							if (entity != null && entity.cG == targetId) {
+								if (entity.de != null) {
+									for (int j = entity.de.size() - 1; j >= 0; j--) {
+										Object obj = entity.de.elementAt(j);
+										if (obj instanceof class_zx) {
+											class_zx eff = (class_zx) obj;
+											if (eff.isDebuff && eff.effectType == 12) {
+												eff.j = true;
+												entity.de.removeElementAt(j);
+											}
+										}
+									}
+								}
 								break;
 							}
 						}

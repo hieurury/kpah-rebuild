@@ -54,6 +54,10 @@ public class BuffInfluencePlayer {
     private short secondOfVetThuongSau;
     private long lastTimeVetThuongSau;
 
+    private boolean isNhiemDien;
+    private short secondOfNhiemDien;
+    private long lastTimeNhiemDien;
+
     @Synchronized
     public void addBuffPoisoned(short time, short docto) throws IOException {
         addBuffPoisoned(time, 0, (int) docto);
@@ -227,11 +231,36 @@ public class BuffInfluencePlayer {
         lastTimeVetThuongSau = 0;
     }
 
+    @Synchronized
+    public void addBuffNhiemDien(short time) throws IOException {
+        isNhiemDien = true;
+        secondOfNhiemDien = time;
+        lastTimeNhiemDien = System.currentTimeMillis();
+        BuffService.instance.sendAddBuffInfluence(this.player, BuffConst.BUFF_NHIEM_DIEN);
+    }
+
+    @Synchronized
+    public void removeBuffNhiemDien() throws IOException {
+        if (!isNhiemDien) return;
+        isNhiemDien = false;
+        secondOfNhiemDien = 0;
+        lastTimeNhiemDien = 0;
+        BuffService.instance.sendRemoveBuffNhiemDien(this.player);
+    }
+
+    @Synchronized
+    public byte getSecondNhiemDienLeft() {
+        return (byte) Math.max(0, (secondOfNhiemDien - Util.getSecondDifference(System.currentTimeMillis(), lastTimeNhiemDien)));
+    }
+
     public void dispose() {
         this.player = null;
     }
 
     public void update() throws IOException {
+        if (isNhiemDien && (Util.canDoWithTime(lastTimeNhiemDien, secondOfNhiemDien * 1000) || player.isDie())) {
+            removeBuffNhiemDien();
+        }
         if (isStunned && (Util.canDoWithTime(lastTimeStunned, secondOfStunned * 1000) || player.isDie())) {
             removeBuffStunned();
         }

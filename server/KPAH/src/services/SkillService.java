@@ -308,9 +308,14 @@ public class SkillService {
                 damePlayer += (int) ((long) damePlayer * bonusCritDmgPercent / 100);
             }
         }
+        boolean targetWasNhiemDien = playerTarget.getBuffInfluence().isNhiemDien();
         damePlayer = BuffService.instance.onAttackPlayerHasBuff(player, playerTarget, damePlayer);
         int dameHit = playerTarget.injured(damePlayer, false, ((player.getInfo().getClassPlayer() == Const.PHAP_SU || player.getInfo().getClassPlayer() == Const.CUNG_THU) ? ItemEquipConst.DAMAGE_MAGIC : ItemEquipConst.DAMAGE_PHYSIC), x2);
         BuffService.instance.onPlayerInjured(player, playerTarget);
+
+        if (targetWasNhiemDien) {
+            triggerChainLightningPlayer(player, playerTarget, dameHit, new java.util.HashSet<>());
+        }
 
         if (playerTarget.isDie()) {
             player.getInfo().plusKiller((byte) 1);
@@ -445,6 +450,165 @@ public class SkillService {
                 }
             }
         }
+
+        // Hiệu ứng kỹ năng Kiếm Khách trong PvP
+        if (player.getInfo().getClassPlayer() == Const.KIEM_KHACH) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            // Skill 4: Hộ sát tiến (nội tại gây thêm sát thương chuẩn + tỷ lệ nhiễm điện)
+            byte lvSkill4 = player.getSkill().getLevelSkill()[4];
+            if (lvSkill4 > 0) {
+                int trueDamage = 10 + (lvSkill4 - 1) * 2 + (int) ((long) player.getPoint().getAttack() * 2 / 100);
+                if (trueDamage <= 0) trueDamage = 1;
+                int actualTrueDame = playerTarget.injured(trueDamage, true, ItemEquipConst.DAMAGE_PHYSIC, false);
+                BuffService.instance.sendTrueDamagePopup(playerTarget, (short) Math.min(Short.MAX_VALUE, actualTrueDame));
+
+                int rateNhiemDien = 10 + (lvSkill4 - 1) * 5;
+                if (Util.isTrue((double) rateNhiemDien, 100.0)) {
+                    playerTarget.getBuffInfluence().addBuffNhiemDien((short) 5);
+                }
+            }
+
+            if (typeSkill == 3) {
+                // Skill 3: Kinh lôi bát thủ (multi-hit + Nhiễm điện 5s)
+                int totalHits = (lvSkill <= 3) ? 3 : Math.min(9, (int) lvSkill);
+                playerTarget.getBuffInfluence().addBuffNhiemDien((short) 5);
+                final int fDamePlayer = damePlayer;
+                final byte fEffAttack = effAttack;
+                final boolean fIsXuyenGiap = isXuyenGiap;
+                manager.ExecutorVirtualThread.submitThreadPlayer(() -> {
+                    try {
+                        for (int hit = 2; hit <= totalHits; hit++) {
+                            Thread.sleep(240);
+                            if (playerTarget.isDie()) break;
+                            int nextDame = playerTarget.injured(fDamePlayer, false, ItemEquipConst.DAMAGE_PHYSIC, false);
+                            Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_PLAYER);
+                            hitMsg.writer().writeShort(player.getIdPlayer());
+                            hitMsg.writer().writeShort(playerTarget.getIdPlayer());
+                            hitMsg.writer().writeByte(typeSkill);
+                            hitMsg.writer().writeInt(nextDame);
+                            hitMsg.writer().writeInt(playerTarget.getPoint().getHp());
+                            hitMsg.writer().writeByte(fEffAttack);
+                            hitMsg.writer().writeByte(1);
+                            hitMsg.writer().writeByte(fIsXuyenGiap ? 0 : 1);
+                            hitMsg.writer().writeByte(lvSkill);
+                            MapService.instance.sendAllPlayerInMap(player, hitMsg);
+
+                            if (playerTarget.getBuffInfluence().isNhiemDien()) {
+                                triggerChainLightningPlayer(player, playerTarget, nextDame, new java.util.HashSet<>());
+                            }
+                            playerTarget.getBuffInfluence().addBuffNhiemDien((short) 5);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                });
+            } else if (typeSkill == 6) {
+                // Skill 6: Thiên lôi điện trảm (Gây Nhiễm điện 5s)
+                playerTarget.getBuffInfluence().addBuffNhiemDien((short) 5);
+            } else if (typeSkill == 7) {
+                // Skill 7: Sấm động dương gian (Nếu nhiễm điện: thêm Sát thương chuẩn + Choáng 1s)
+                if (targetWasNhiemDien) {
+                    int bonusTrueDmg = (int) ((long) dameHit * (20 + (lvSkill - 1) * 2) / 100);
+                    if (bonusTrueDmg > 0) {
+                        int actualTrue = playerTarget.injured(bonusTrueDmg, true, ItemEquipConst.DAMAGE_PHYSIC, false);
+                        BuffService.instance.sendTrueDamagePopup(playerTarget, (short) Math.min(Short.MAX_VALUE, actualTrue));
+                    }
+                    playerTarget.getBuffInfluence().addBuffStunned((short) 1);
+                }
+            } else if (typeSkill == 8) {
+                // Skill 8: Kiếm phi kinh thiên (Nếu nhiễm điện: Chuyển toàn bộ sát thương thành Sát thương chuẩn)
+                if (targetWasNhiemDien) {
+                    BuffService.instance.sendTrueDamagePopup(playerTarget, (short) Math.min(Short.MAX_VALUE, dameHit));
+                }
+            }
+        }
+    }
+
+    public void triggerChainLightningMob(Player player, Monster sourceMob, int damageDealt, java.util.Set<Short> visited) throws IOException {
+        if (!sourceMob.getBuffInfluence().isNhiemDien()) {
+            return;
+        }
+        sourceMob.getBuffInfluence().removeBuffNhiemDien();
+        visited.add(sourceMob.getId());
+
+        int chainDamage = (int) Math.round(damageDealt * 0.25);
+        if (chainDamage <= 0) {
+            chainDamage = 1;
+        }
+
+        List<Monster> nearbyMobs = new java.util.ArrayList<>();
+        if (sourceMob.getZone() != null && sourceMob.getZone().getMobs() != null) {
+            for (Monster m : sourceMob.getZone().getMobs()) {
+                if (m != null && !m.isDie() && !m.isKhoangSan() && !visited.contains(m.getId())) {
+                    int dist = Util.getDistance(sourceMob.getX(), sourceMob.getY(), m.getX(), m.getY());
+                    if (dist <= 40) {
+                        nearbyMobs.add(m);
+                    }
+                }
+            }
+        }
+        nearbyMobs.sort((m1, m2) -> Integer.compare(
+            Util.getDistance(sourceMob.getX(), sourceMob.getY(), m1.getX(), m1.getY()),
+            Util.getDistance(sourceMob.getX(), sourceMob.getY(), m2.getX(), m2.getY())
+        ));
+
+        int count = 0;
+        for (Monster targetMob : nearbyMobs) {
+            if (count >= 2) break;
+            count++;
+            visited.add(targetMob.getId());
+
+            int hitDame = targetMob.injured(player, chainDamage, false, true, false);
+            BuffService.instance.sendSubHpByBuffInfluence(targetMob, (short) Math.min(Short.MAX_VALUE, hitDame));
+
+            if (targetMob.getBuffInfluence().isNhiemDien()) {
+                triggerChainLightningMob(player, targetMob, hitDame, visited);
+            }
+        }
+    }
+
+    public void triggerChainLightningPlayer(Player attacker, Player sourcePl, int damageDealt, java.util.Set<Short> visited) throws IOException {
+        if (!sourcePl.getBuffInfluence().isNhiemDien()) {
+            return;
+        }
+        sourcePl.getBuffInfluence().removeBuffNhiemDien();
+        visited.add(sourcePl.getIdPlayer());
+
+        int chainDamage = (int) Math.round(damageDealt * 0.25);
+        if (chainDamage <= 0) {
+            chainDamage = 1;
+        }
+
+        List<Player> nearbyPlayers = new java.util.ArrayList<>();
+        if (sourcePl.getLocation() != null && sourcePl.getLocation().getZone() != null) {
+            for (Player pl : sourcePl.getLocation().getZone().getPlayers()) {
+                if (pl != null && !pl.isDie() && pl.isPlayer() && !visited.contains(pl.getIdPlayer()) && pl.getIdPlayer() != attacker.getIdPlayer()) {
+                    if (attacker.getSundry().getPk() != 0 || pl.getSundry().getPk() != 0 || pl.getInfo().getIdNation() != attacker.getInfo().getIdNation()) {
+                        int dist = Util.getDistance(sourcePl.getLocation().getX(), sourcePl.getLocation().getY(), pl.getLocation().getX(), pl.getLocation().getY());
+                        if (dist <= 40) {
+                            nearbyPlayers.add(pl);
+                        }
+                    }
+                }
+            }
+        }
+        nearbyPlayers.sort((p1, p2) -> Integer.compare(
+            Util.getDistance(sourcePl.getLocation().getX(), sourcePl.getLocation().getY(), p1.getLocation().getX(), p1.getLocation().getY()),
+            Util.getDistance(sourcePl.getLocation().getX(), sourcePl.getLocation().getY(), p2.getLocation().getX(), p2.getLocation().getY())
+        ));
+
+        int count = 0;
+        for (Player targetPl : nearbyPlayers) {
+            if (count >= 2) break;
+            count++;
+            visited.add(targetPl.getIdPlayer());
+
+            int hitDame = targetPl.injured(chainDamage, true, ItemEquipConst.DAMAGE_PHYSIC, false);
+            BuffService.instance.sendSubHpByBuffInfluence(targetPl, (short) Math.min(Short.MAX_VALUE, hitDame));
+
+            if (targetPl.getBuffInfluence().isNhiemDien()) {
+                triggerChainLightningPlayer(attacker, targetPl, hitDame, visited);
+            }
+        }
     }
 
     private void onPlayerAttackMob(@NonNull Player player, @NonNull Monster mob, ItemEquip cuoc) throws IOException {
@@ -475,10 +639,14 @@ public class SkillService {
         if (mob.isKhoangSan()) {
             dameAttack = cuoc.getTemplate().getId() == 466 ? 20 : 10;
         }
+        boolean targetWasNhiemDien = mob.getBuffInfluence().isNhiemDien();
         int dameHit = mob.injured(player, dameAttack, isXuyenGiap, false, x2);
         if (dameHit == 0) {
             effAttack = Const.MISS_EFFECT;
             isXuyenGiap = false;
+        }
+        if (!mob.isKhoangSan() && targetWasNhiemDien) {
+            triggerChainLightningMob(player, mob, dameHit, new java.util.HashSet<>());
         }
         Message msg = new Message(CommandMessage.PLAYER_ATTACK_MONSTER);
         msg.writer().writeShort(player.getIdPlayer());
@@ -603,6 +771,84 @@ public class SkillService {
                 }
             }
         }
+
+        // Hiệu ứng kỹ năng Kiếm Khách khi tấn công quái đơn
+        if (!mob.isKhoangSan() && player.getInfo().getClassPlayer() == Const.KIEM_KHACH) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            // Skill 4: Hộ sát tiến (nội tại gây thêm sát thương chuẩn + tỷ lệ nhiễm điện)
+            byte lvSkill4 = player.getSkill().getLevelSkill()[4];
+            if (lvSkill4 > 0) {
+                int trueDamage = 10 + (lvSkill4 - 1) * 2 + (int) ((long) player.getPoint().getAttack() * 2 / 100);
+                if (trueDamage <= 0) trueDamage = 1;
+                int actualTrueDame = mob.injured(player, trueDamage, false, true, false);
+                BuffService.instance.sendTrueDamagePopup(mob, (short) Math.min(Short.MAX_VALUE, actualTrueDame));
+
+                int rateNhiemDien = 10 + (lvSkill4 - 1) * 5;
+                if (Util.isTrue((double) rateNhiemDien, 100.0)) {
+                    mob.getBuffInfluence().addBuffNhiemDien((short) 5);
+                }
+            }
+
+            if (typeSkill == 3) {
+                // Skill 3: Kinh lôi bát thủ (multi-hit + Nhiễm điện 5s)
+                int totalHits = (lvSkill <= 3) ? 3 : Math.min(9, (int) lvSkill);
+                mob.getBuffInfluence().addBuffNhiemDien((short) 5);
+                final int fDameAttack = dameAttack;
+                final byte fEffAttack = effAttack;
+                final boolean fIsXuyenGiap = isXuyenGiap;
+                manager.ExecutorVirtualThread.submitThreadPlayer(() -> {
+                    try {
+                        for (int hit = 2; hit <= totalHits; hit++) {
+                            Thread.sleep(240);
+                            if (mob.isDie()) break;
+                            int nextDame = mob.injured(player, fDameAttack, fIsXuyenGiap, false, false);
+                            Message hitMsg = new Message(CommandMessage.PLAYER_ATTACK_MONSTER);
+                            hitMsg.writer().writeShort(player.getIdPlayer());
+                            hitMsg.writer().writeShort(mob.getId());
+                            hitMsg.writer().writeByte(typeSkill);
+                            hitMsg.writer().writeInt(nextDame);
+                            hitMsg.writer().writeInt(mob.getHp());
+                            hitMsg.writer().writeByte(fEffAttack);
+                            hitMsg.writer().writeByte(1);
+                            hitMsg.writer().writeByte(fIsXuyenGiap ? 0 : 1);
+                            hitMsg.writer().writeByte(lvSkill);
+                            MapService.instance.sendAllPlayerInMap(player, hitMsg);
+
+                            if (mob.getBuffInfluence().isNhiemDien()) {
+                                triggerChainLightningMob(player, mob, nextDame, new java.util.HashSet<>());
+                            }
+                            mob.getBuffInfluence().addBuffNhiemDien((short) 5);
+                        }
+                    } catch (Exception ignored) {
+                    }
+                });
+            } else if (typeSkill == 6) {
+                // Skill 6: Thiên lôi điện trảm (Gây Nhiễm điện 5s)
+                mob.getBuffInfluence().addBuffNhiemDien((short) 5);
+            } else if (typeSkill == 7) {
+                // Skill 7: Sấm động dương gian (Nếu nhiễm điện: thêm Sát thương chuẩn + Choáng 1s)
+                if (targetWasNhiemDien) {
+                    int bonusTrueDmg = (int) ((long) dameHit * (20 + (lvSkill - 1) * 2) / 100);
+                    if (bonusTrueDmg > 0) {
+                        int actualTrue = mob.injured(player, bonusTrueDmg, false, true, false);
+                        BuffService.instance.sendTrueDamagePopup(mob, (short) Math.min(Short.MAX_VALUE, actualTrue));
+                    }
+                    mob.getBuffInfluence().addBuffStunned((short) 1);
+                }
+            } else if (typeSkill == 8) {
+                // Skill 8: Kiếm phi kinh thiên
+                if (targetWasNhiemDien) {
+                    if (!mob.isElite() && !mob.isKhoangSan()) {
+                        // Quái thường: Tiêu diệt ngay lập tức (Execute), hiện chữ "DIET"
+                        mob.minusHp(player, mob.getHp());
+                        BuffService.instance.sendExecutePopup(mob);
+                    } else {
+                        // Quái tinh anh / Boss: Toàn bộ sát thương chuyển thành Sát thương chuẩn (Font Trắng)
+                        BuffService.instance.sendTrueDamagePopup(mob, (short) Math.min(Short.MAX_VALUE, dameHit));
+                    }
+                }
+            }
+        }
     }
 
     private void onPlayerAttackMultiMob(@NonNull Player player, @NonNull List<Monster> mobs) throws IOException {
@@ -619,6 +865,12 @@ public class SkillService {
             effAttack = Const.CRIT_EFFECT;
         } else if (isBaoKich) {
             effAttack = Const.BAO_KICK_EFFECT;
+        }
+        java.util.Map<Short, Boolean> wasNhiemDienMap = new java.util.HashMap<>();
+        for (Monster m : mobs) {
+            if (m != null && !m.isDie() && !m.isKhoangSan()) {
+                wasNhiemDienMap.put(m.getId(), m.getBuffInfluence().isNhiemDien());
+            }
         }
         Monster mobTarget = mobs.get(0);
         int dameAttack = player.getPoint().getDameAttack(isMiss, isCrit, isBaoKich, true);
@@ -655,6 +907,13 @@ public class SkillService {
             msg.writer().writeInt(mob.getHp());
         }
         MapService.instance.sendAllPlayerInMap(player, msg);
+
+        // Kích hoạt lan sét cho các quái vốn bị nhiễm điện trước đòn tấn công
+        for (Monster m : mobs) {
+            if (m != null && !m.isDie() && !m.isKhoangSan() && wasNhiemDienMap.getOrDefault(m.getId(), false)) {
+                triggerChainLightningMob(player, m, dameHit, new java.util.HashSet<>());
+            }
+        }
 
         // Hiệu ứng kỹ năng Đấu Sĩ khi tấn công nhiều quái (AoE)
         if (player.getInfo().getClassPlayer() == Const.DAU_SI) {
@@ -713,6 +972,63 @@ public class SkillService {
                 if (hpHeal > 0) {
                     player.getPoint().plusHp(hpHeal);
                     MapService.instance.onNewHpMp(player);
+                }
+            }
+        }
+
+        // Hiệu ứng kỹ năng Kiếm Khách khi tấn công nhiều quái (AoE)
+        if (player.getInfo().getClassPlayer() == Const.KIEM_KHACH) {
+            byte lvSkill = player.getSkill().getLevelSkill()[typeSkill];
+            // Skill 4: Hộ sát tiến (nội tại gây thêm sát thương chuẩn + tỷ lệ nhiễm điện)
+            byte lvSkill4 = player.getSkill().getLevelSkill()[4];
+            if (lvSkill4 > 0) {
+                int trueDamage = 10 + (lvSkill4 - 1) * 2 + (int) ((long) player.getPoint().getAttack() * 2 / 100);
+                if (trueDamage <= 0) trueDamage = 1;
+                int rateNhiemDien = 10 + (lvSkill4 - 1) * 5;
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan()) {
+                        int actualTrue = m.injured(player, trueDamage, false, true, false);
+                        BuffService.instance.sendTrueDamagePopup(m, (short) Math.min(Short.MAX_VALUE, actualTrue));
+                        if (Util.isTrue((double) rateNhiemDien, 100.0)) {
+                            m.getBuffInfluence().addBuffNhiemDien((short) 5);
+                        }
+                    }
+                }
+            }
+
+            if (typeSkill == 6) {
+                // Skill 6: Thiên lôi điện trảm (Gây Nhiễm điện 5s lên TOÀN BỘ quái trúng chiêu)
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan()) {
+                        m.getBuffInfluence().addBuffNhiemDien((short) 5);
+                    }
+                }
+            } else if (typeSkill == 7) {
+                // Skill 7: Sấm động dương gian (Nếu nhiễm điện: thêm Sát thương chuẩn + Choáng 1s)
+                int bonusPercent = 20 + (lvSkill > 0 ? (lvSkill - 1) * 2 : 0);
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan() && wasNhiemDienMap.getOrDefault(m.getId(), false)) {
+                        int bonusTrueDmg = (int) ((long) dameHit * bonusPercent / 100);
+                        if (bonusTrueDmg > 0) {
+                            int actualTrue = m.injured(player, bonusTrueDmg, false, true, false);
+                            BuffService.instance.sendTrueDamagePopup(m, (short) Math.min(Short.MAX_VALUE, actualTrue));
+                        }
+                        m.getBuffInfluence().addBuffStunned((short) 1);
+                    }
+                }
+            } else if (typeSkill == 8) {
+                // Skill 8: Kiếm phi kinh thiên
+                for (Monster m : mobs) {
+                    if (m != null && !m.isDie() && !m.isKhoangSan() && wasNhiemDienMap.getOrDefault(m.getId(), false)) {
+                        if (!m.isElite()) {
+                            // Quái thường: Execute ngay lập tức, chữ DIET
+                            m.minusHp(player, m.getHp());
+                            BuffService.instance.sendExecutePopup(m);
+                        } else {
+                            // Quái tinh anh / Boss: Chuyển toàn bộ thành Sát thương chuẩn
+                            BuffService.instance.sendTrueDamagePopup(m, (short) Math.min(Short.MAX_VALUE, dameHit));
+                        }
+                    }
                 }
             }
         }

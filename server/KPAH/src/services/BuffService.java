@@ -159,11 +159,16 @@ public class BuffService {
         switch (playerTarget.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.DI_LUC_DAO_CONG)) {
-                    // Cơ chế phản đòn mới: 10% (tăng 5% mỗi cấp) tỷ lệ phản đòn bằng 50% (tăng 10% mỗi cấp) sát thương của bản thân
                     byte lvSkill = playerTarget.getSkill().getLevelSkill()[5];
-                    int rate = 10 + (lvSkill > 0 ? (lvSkill - 1) * 5 : 0);
+                    if (lvSkill <= 0) lvSkill = 1;
+                    // Giảm sát thương nhận vào 5% + 1%/cấp (5% - 14%)
+                    int dmgReducePercent = 5 + (lvSkill - 1) * 1;
+                    damage = Math.max(1, damage * (100 - dmgReducePercent) / 100);
+                    // Tỷ lệ phản đòn: 25% + 5%/cấp (25% - 70%)
+                    int rate = 25 + (lvSkill - 1) * 5;
                     if (Util.isTrue((double) rate, 100.0)) {
-                        int reflectPercent = 50 + (lvSkill > 0 ? (lvSkill - 1) * 10 : 0);
+                        // Phản 50% + 5%/cấp (50% - 95%) sát thương của bản thân
+                        int reflectPercent = 50 + (lvSkill - 1) * 5;
                         int myDame = playerTarget.getPoint().getDameAttack(false, false, false, true);
                         int reflectDame = (int) ((long) myDame * reflectPercent / 100);
                         if (reflectDame <= 0) {
@@ -171,7 +176,7 @@ public class BuffService {
                         }
                         short hp = (short) mobAttack.injured(playerTarget, reflectDame, false, true, false);
                         if (hp > 0) {
-                            sendSubHpByBuffInfluence(mobAttack, hp);
+                            sendReflectDamagePopup(mobAttack, hp);
                         }
                     }
                 }
@@ -209,11 +214,16 @@ public class BuffService {
         switch (playerTarget.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH -> {
                 if (playerTarget.getSkillBuff().isExistBuff(BuffConst.DI_LUC_DAO_CONG)) {
-                    // Cơ chế phản đòn mới PvP: 10% (+5%/cấp) tỷ lệ phản bằng 50% (+10%/cấp) sát thương bản thân
                     byte lvSkill = playerTarget.getSkill().getLevelSkill()[5];
-                    int rate = 10 + (lvSkill > 0 ? (lvSkill - 1) * 5 : 0);
+                    if (lvSkill <= 0) lvSkill = 1;
+                    // Giảm sát thương nhận vào 5% + 1%/cấp (5% - 14%)
+                    int dmgReducePercent = 5 + (lvSkill - 1) * 1;
+                    damage = Math.max(1, damage * (100 - dmgReducePercent) / 100);
+                    // Tỷ lệ phản đòn PvP: 25% + 5%/cấp (25% - 70%)
+                    int rate = 25 + (lvSkill - 1) * 5;
                     if (Util.isTrue((double) rate, 100.0)) {
-                        int reflectPercent = 50 + (lvSkill > 0 ? (lvSkill - 1) * 10 : 0);
+                        // Phản 50% + 5%/cấp (50% - 95%) sát thương bản thân
+                        int reflectPercent = 50 + (lvSkill - 1) * 5;
                         int myDame = playerTarget.getPoint().getDameAttack(false, false, false, false);
                         int reflectDame = (int) ((long) myDame * reflectPercent / 100);
                         if (reflectDame <= 0) {
@@ -221,7 +231,7 @@ public class BuffService {
                         }
                         short hp = (short) playerAttack.injured(reflectDame, true, ItemEquipConst.DAMAGE_PHYSIC, false);
                         if (hp > 0) {
-                            sendSubHpByBuffInfluence(playerAttack, hp);
+                            sendReflectDamagePopup(playerAttack, hp);
                         }
                     }
                 }
@@ -320,6 +330,110 @@ public class BuffService {
     }
 
 
+    public void sendRemoveBuffNhiemDien(@NonNull Monster mob) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(mob.getId());
+        msg.writer().writeByte(Const.CATEGORY_MONSTER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(0);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-12); // b4 = -12: Gỡ bỏ hiệu ứng nhiễm điện
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(mob, msg);
+    }
+
+    public void sendRemoveBuffNhiemDien(@NonNull Player player) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(player.getIdPlayer());
+        msg.writer().writeByte(Const.CATEGORY_PLAYER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(0);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-12); // b4 = -12: Gỡ bỏ hiệu ứng nhiễm điện
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(player, msg);
+    }
+
+    public void sendReflectDamagePopup(@NonNull Monster mob, short dame) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(mob.getId());
+        msg.writer().writeByte(Const.CATEGORY_MONSTER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(dame);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-4); // b4 = -4: Phản đòn (Font Vàng)
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(mob, msg);
+    }
+
+    public void sendReflectDamagePopup(@NonNull Player player, short dame) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(player.getIdPlayer());
+        msg.writer().writeByte(Const.CATEGORY_PLAYER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(dame);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-4); // b4 = -4: Phản đòn (Font Vàng)
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(player, msg);
+    }
+
+    public void sendTrueDamagePopup(@NonNull Monster mob, short dame) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(mob.getId());
+        msg.writer().writeByte(Const.CATEGORY_MONSTER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(dame);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-5); // b4 = -5: Sát thương chuẩn (Font Trắng)
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(mob, msg);
+    }
+
+    public void sendTrueDamagePopup(@NonNull Player player, short dame) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(player.getIdPlayer());
+        msg.writer().writeByte(Const.CATEGORY_PLAYER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(dame);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-5); // b4 = -5: Sát thương chuẩn (Font Trắng)
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(player, msg);
+    }
+
+    public void sendExecutePopup(@NonNull Monster mob) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(mob.getId());
+        msg.writer().writeByte(Const.CATEGORY_MONSTER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(0);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-6); // b4 = -6: Tiêu diệt tức thì (Chữ DIET nhảy lên)
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(mob, msg);
+    }
+
+    public void sendExecutePopup(@NonNull Player player) throws IOException {
+        Message msg = new Message(CommandMessage.BUFF_ATTACK);
+        msg.writer().writeShort(player.getIdPlayer());
+        msg.writer().writeByte(Const.CATEGORY_PLAYER);
+        msg.writer().writeByte(-1);
+        msg.writer().writeShort(0);
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-6); // b4 = -6: Tiêu diệt tức thì (Chữ DIET nhảy lên)
+        msg.writer().writeByte(-1);
+        msg.writer().writeByte(-1);
+        MapService.instance.sendAllPlayerInMap(player, msg);
+    }
+
     public void sendAddBuffInfluence(@NonNull Player player, byte idBuff) throws IOException {
         Message msg = new Message(CommandMessage.BUFF_ATTACK);
         msg.writer().writeShort(player.getIdPlayer());
@@ -341,6 +455,8 @@ public class BuffService {
             dur = (byte) player.getBuffInfluence().getSecondOfMu();
         } else if (idBuff == BuffConst.BUFF_VET_THUONG_SAU) {
             dur = (byte) player.getBuffInfluence().getSecondOfVetThuongSau();
+        } else if (idBuff == BuffConst.BUFF_NHIEM_DIEN) {
+            dur = player.getBuffInfluence().getSecondNhiemDienLeft();
         } else {
             dur = (byte) player.getBuffInfluence().getSecondOfStunned();
         }
@@ -369,6 +485,8 @@ public class BuffService {
             dur = (byte) mob.getBuffInfluence().getSecondOfMu();
         } else if (idBuff == BuffConst.BUFF_VET_THUONG_SAU) {
             dur = (byte) mob.getBuffInfluence().getSecondOfVetThuongSau();
+        } else if (idBuff == BuffConst.BUFF_NHIEM_DIEN) {
+            dur = mob.getBuffInfluence().getSecondNhiemDienLeft();
         } else {
             dur = (byte) mob.getBuffInfluence().getSecondOfStunned();
         }

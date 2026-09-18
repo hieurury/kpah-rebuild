@@ -352,7 +352,7 @@ public class Point {
     private void setHpMax() {
         switch (player.getInfo().getClassPlayer()) {
             case Const.KIEM_KHACH ->
-                hpMax += (health + healthAdd) * 80;
+                hpMax += (health + healthAdd) * 75;
             case Const.DAU_SI ->
                 hpMax += (health + healthAdd) * 80;
             case Const.CHIEN_BINH ->

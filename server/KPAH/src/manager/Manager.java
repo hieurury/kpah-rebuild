@@ -429,6 +429,9 @@ public class Manager {
         if (clazz == Const.CUNG_THU && skillType == 4) {
             return 60; // Độc lưu tiễn Cung Thủ duy trì 60s mọi cấp theo thiết kế
         }
+        if (clazz == Const.KIEM_KHACH && skillType == 5) {
+            return 60; // Dĩ lực đáo công Kiếm Khách duy trì 60s cố định theo thiết kế
+        }
         return getTimeLifeBuffSkill(skillType, skillLevel);
     }
 
@@ -450,15 +453,16 @@ public class Manager {
         if (SKILL_MP == null || SKILL_MP.length < 5) {
             return;
         }
-        // Kiếm Khách: Giảm tiêu hao MP skill 5 (35-80), skill 6-8 (20-75)
+        // Kiếm Khách: Giảm tiêu hao MP skill 5 (35-80), skill 6-8 (20-75), skill 4 nội tại = 0
+        SKILL_MP[Const.KIEM_KHACH][0] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
         SKILL_MP[Const.KIEM_KHACH][1] = new short[]{0, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
         SKILL_MP[Const.KIEM_KHACH][2] = new short[]{0, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14};
         SKILL_MP[Const.KIEM_KHACH][3] = new short[]{0, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20};
-        SKILL_MP[Const.KIEM_KHACH][4] = new short[]{0, 10, 11, 13, 15, 17, 19, 21, 23, 25, 25};
+        SKILL_MP[Const.KIEM_KHACH][4] = new short[]{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}; // Hộ sát tiến (nội tại)
         SKILL_MP[Const.KIEM_KHACH][5] = new short[]{0, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80}; // Phản dame 35-80 MP
-        SKILL_MP[Const.KIEM_KHACH][6] = new short[]{0, 20, 22, 25, 28, 31, 34, 37, 40, 43, 45}; // AoE 25
-        SKILL_MP[Const.KIEM_KHACH][7] = new short[]{0, 25, 28, 31, 34, 37, 40, 43, 46, 50, 55}; // AoE 30
-        SKILL_MP[Const.KIEM_KHACH][8] = new short[]{0, 35, 39, 43, 47, 51, 55, 60, 65, 70, 75}; // AoE 45
+        SKILL_MP[Const.KIEM_KHACH][6] = new short[]{0, 20, 22, 25, 28, 31, 34, 37, 40, 43, 45}; // AoE 20-45 MP
+        SKILL_MP[Const.KIEM_KHACH][7] = new short[]{0, 25, 28, 31, 34, 37, 40, 43, 46, 50, 55}; // AoE 25-55 MP
+        SKILL_MP[Const.KIEM_KHACH][8] = new short[]{0, 35, 39, 43, 47, 51, 55, 60, 65, 70, 75}; // AoE 35-75 MP
 
         // Pháp Sư: Tăng tiêu hao MP kỹ năng tương xứng với bể mana dồi dào, giữ <= 250 MP an toàn cho MIDP
         SKILL_MP[Const.PHAP_SU][1] = new short[]{0, 25, 30, 35, 40, 45, 50, 55, 60, 65, 75};
@@ -501,6 +505,12 @@ public class Manager {
         if (SKILL_COOLDOWN == null || SKILL_COOLDOWN.length <= Const.DAU_SI) {
             return;
         }
+        // Kiếm Khách Skill 5 (Dĩ lực đáo công): Cố định 90.000ms (90s) mọi cấp
+        if (SKILL_COOLDOWN.length > Const.KIEM_KHACH) {
+            for (int lv = 0; lv < 11; lv++) {
+                SKILL_COOLDOWN[Const.KIEM_KHACH][5][lv] = 90000;
+            }
+        }
         // Đấu Sĩ Skill 4 (Bất di biến): Cố định 80.000ms (80s) cho TẤT CẢ các cấp 0-10, duy trì 60s -> khoảng trống chuẩn 20s
         for (int lv = 0; lv < 11; lv++) {
             SKILL_COOLDOWN[Const.DAU_SI][4][lv] = 80000;
@@ -515,6 +525,17 @@ public class Manager {
     public static long getSkillCooldown(byte clazz, byte skillType, byte level) {
         if (level <= 0) {
             return 0;
+        }
+        if (clazz == Const.KIEM_KHACH) {
+            if (skillType == 0) return 800L;  // Chém thường: 800ms
+            if (skillType == 1) return 1500L; // 1.5s
+            if (skillType == 2) return 1800L; // 1.8s
+            if (skillType == 3) return Math.min(4000L, 3000L + (level - 1) * 125L); // Kinh lôi bát thủ: 3.0s - 4.0s
+            if (skillType == 4) return 0L;     // Hộ sát tiến: nội tại
+            if (skillType == 5) return 90000L; // Dĩ lực đáo công: 90s
+            if (skillType == 6) return 5000L;  // Thiên lôi điện trảm: 5s
+            if (skillType == 7) return 6000L;  // Sấm động dương gian: 6s
+            if (skillType == 8) return 7000L;  // Kiếm phi kinh thiên: 7s
         }
         if (clazz == Const.DAU_SI) {
             if (skillType == 0) return 800L;  // Đập: 800ms
@@ -545,12 +566,6 @@ public class Manager {
             if (skillType == 8) return 4000L;  // Hải long xuất thế 4s
             if (skillType == 9) return 5000L;  // Song long thị uy 5s
             if (skillType == 10) return 6000L; // Hàn băng vũ 6s
-        }
-        if (clazz == Const.KIEM_KHACH) {
-            if (skillType == 5) return 90000L; // Dĩ lực đáo công 90s
-            if (skillType == 6) return 5000L;  // Thiên lôi điện trảm 5s
-            if (skillType == 7) return 6000L;  // Sấm động dương gian 6s
-            if (skillType == 8) return 7000L;  // Kiếm phi kinh thiên 7s
         }
         return SKILL_COOLDOWN[clazz][skillType][level];
     }
